@@ -153,6 +153,7 @@ function toggleEditMode () {
     editStore.editContext = null
     editStore.editDataUpdated = false
     editStore.editStudyData = false
+    editStore.enableRowSave = false
     editStore.unsavedData = false
     editStore.unsavedRow = null
     editStore.updatingRow = false

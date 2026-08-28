@@ -637,6 +637,7 @@ describe('ViewHeader.vue', () => {
     appStore.editMode = true
     appStore.selectEnabled = false
     editStore.editDataUpdated = true
+    editStore.enableRowSave = true
 
     mockFetch()
     const wrapper = mountComponent()
@@ -649,6 +650,7 @@ describe('ViewHeader.vue', () => {
     expect(editStore.editContext).toBe(null)
     expect(editStore.editDataUpdated).toBe(false)
     expect(editStore.editStudyData).toBe(false)
+    expect(editStore.enableRowSave).toBe(false)
     expect(editStore.unsavedData).toBe(false)
     expect(editStore.unsavedRow).toBe(null)
     expect(editStore.updatingRow).toBe(false)

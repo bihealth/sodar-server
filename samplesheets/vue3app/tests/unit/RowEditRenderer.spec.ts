@@ -120,8 +120,9 @@ describe('RowEditRenderer.vue', () => {
     params.tableUuid = ASSAY_UUID
   }
 
-  function setUnsavedRow (id: string, tableUuid: string) {
+  function setUnsavedRow (id: string, tableUuid: string, enableSave: boolean) {
     const editStore = useEditStore()
+    editStore.enableRowSave = enableSave
     editStore.unsavedRow = { id: id, tableUuid: tableUuid }
   }
 
@@ -196,7 +197,7 @@ describe('RowEditRenderer.vue', () => {
   })
 
   test('render delete button with another unsaved row', async () => {
-    setUnsavedRow(otherNodeId, STUDY_UUID)
+    setUnsavedRow(otherNodeId, STUDY_UUID, true)
     const wrapper = mountComponent()
     const delBtn = wrapper.find(deleteBtnSel)
     expect(delBtn.attributes().disabled).toBeDefined()
@@ -212,22 +213,33 @@ describe('RowEditRenderer.vue', () => {
     expect(delBtn.attributes().title).toBe(ROW_DEL_MSG_UNSAVED)
   })
 
-  test('render component for study with new row', async () => {
-    setUnsavedRow(nodeId, STUDY_UUID)
+  test('render component with new row and save disabled', async () => {
+    const editStore = useEditStore()
+    setUnsavedRow(nodeId, STUDY_UUID, false)
     const wrapper = mountComponent()
+
+    // Both buttons should be available
+    const delBtn = wrapper.find(deleteBtnSel)
+    expect(delBtn.attributes().disabled).not.toBeDefined()
+    expect(delBtn.attributes().title).toBe(ROW_DEL_MSG_CANCEL)
+    // Save button should be disabled
+    expect(wrapper.find(saveBtnSel).attributes().disabled).toBeDefined()
+    expect(editStore.enableRowSave).toBe(false)
+  })
+
+  test('render component with new row and save enabled', async () => {
+    const editStore = useEditStore()
+    editStore.enableRowSave = true
+
+    setUnsavedRow(nodeId, STUDY_UUID, true)
+    const wrapper = mountComponent()
+
     // Both buttons should be available and enabled
     const delBtn = wrapper.find(deleteBtnSel)
     expect(delBtn.attributes().disabled).not.toBeDefined()
     expect(delBtn.attributes().title).toBe(ROW_DEL_MSG_CANCEL)
-    expect(wrapper.find(saveBtnSel).attributes().disabled).not.toBeDefined()
-  })
-
-  test('render save button for new row with newInit set', async () => {
-    setUnsavedRow(nodeId, STUDY_UUID)
-    params.node.data[sampleColId].newInit = true
-    const wrapper = mountComponent()
     // Save button should be disabled
-    expect(wrapper.find(saveBtnSel).attributes().disabled).toBeDefined()
+    expect(wrapper.find(saveBtnSel).attributes().disabled).not.toBeDefined()
   })
 
   test('render component for assay with existing row', async () => {
@@ -290,7 +302,8 @@ describe('RowEditRenderer.vue', () => {
   })
 
   test('save study row', async () => {
-    setUnsavedRow(nodeId, STUDY_UUID)
+    const editStore = useEditStore()
+    setUnsavedRow(nodeId, STUDY_UUID, true)
     expect(getRowSaveData).not.toHaveBeenCalled()
     expect(saveRow).not.toHaveBeenCalled()
 
@@ -305,11 +318,13 @@ describe('RowEditRenderer.vue', () => {
       tableUuid: STUDY_UUID,
     })
     expect(saveRow).toHaveBeenCalled()
+    expect(editStore.enableRowSave).toBe(false)
   })
 
   test('save assay row', async () => {
+    const editStore = useEditStore()
     setAssayMode()
-    setUnsavedRow(nodeId, ASSAY_UUID)
+    setUnsavedRow(nodeId, ASSAY_UUID, true)
 
     const wrapper = mountComponent()
     await wrapper.find(saveBtnSel).trigger('click')
@@ -322,9 +337,11 @@ describe('RowEditRenderer.vue', () => {
       tableUuid: ASSAY_UUID,
     })
     expect(saveRow).toHaveBeenCalled()
+    expect(editStore.enableRowSave).toBe(false)
   })
 
   test('save with identical existing row', async () => {
+    const editStore = useEditStore()
     // Suppress logging as error message is expected
     vi.spyOn(console, 'error').mockImplementation(() => undefined)
 
@@ -338,7 +355,7 @@ describe('RowEditRenderer.vue', () => {
       id: '1'
     }
     params.api = getMockGridApi([params.node, otherRowNode])
-    setUnsavedRow(nodeId, STUDY_UUID)
+    setUnsavedRow(nodeId, STUDY_UUID, true)
 
     const wrapper = mountComponent()
     await wrapper.find(saveBtnSel).trigger('click')
@@ -348,9 +365,11 @@ describe('RowEditRenderer.vue', () => {
     expect(saveRow).not.toHaveBeenCalled()
     expect(mockNotifyCb).toHaveBeenCalledWith(
       ROW_SAVE_MSG_IDENTICAL, VARIANT_DANGER)
+    expect(editStore.enableRowSave).toBe(true)
   })
 
   test('save with different existing row', async () => {
+    const editStore = useEditStore()
     const otherRowNode = {
       data: {
         rowNum: 2,
@@ -361,7 +380,7 @@ describe('RowEditRenderer.vue', () => {
       id: '1'
     }
     params.api = getMockGridApi([params.node, otherRowNode])
-    setUnsavedRow(nodeId, STUDY_UUID)
+    setUnsavedRow(nodeId, STUDY_UUID, true)
 
     const wrapper = mountComponent()
     await wrapper.find(saveBtnSel).trigger('click')
@@ -370,5 +389,6 @@ describe('RowEditRenderer.vue', () => {
     // Saving should be OK
     expect(getRowSaveData).toHaveBeenCalled()
     expect(saveRow).toHaveBeenCalled()
+    expect(editStore.enableRowSave).toBe(false)
   })
 })

@@ -60,21 +60,6 @@ function enableDelete (): boolean {
   return newRow || sampleOk
 }
 
-function enableSave (): boolean {
-  const cols = params.api.getColumns()
-  if (!cols) return true
-  // NOTE: This assumes we have to fill all nodes in a column
-  for (let i = 1; i < cols.length - 1; i++) { // Skip rowNum and rowEdit
-    const colId: string = cols[i]!.getColId()
-    if (!params.node.data[colId] || params.node.data[colId].newInit) {
-      return false
-    }
-  }
-  return true
-  // NOTE: This allows saving incomplete rows (not yet implemented)
-  // return !params.node.data[colId].newInit && !editStore.updatingRow
-}
-
 function finishUpdateCb () {
   inserting.value = false
   deleting.value = false
@@ -142,6 +127,7 @@ function onDelete () {
       rowNode: params.node,
       tableUuid: params.tableUuid
     })
+    editStore.enableRowSave = false
   } else deleting.value = false // Cancel
 }
 
@@ -181,6 +167,7 @@ function onSave () {
     rowNode: params.node,
     saveData: saveData,
   })
+  editStore.enableRowSave = false
 }
 </script>
 
@@ -199,7 +186,7 @@ function onSave () {
         variant="success"
         class="sodar-list-btn sodar-ss-row-btn sodar-ss-row-save-btn"
         title="Save row"
-        :disabled="!enableSave()"
+        :disabled="!editStore.enableRowSave"
         @click="onSave()">
       <i class="iconify" data-icon="mdi:check-bold"></i>
     </BButton>

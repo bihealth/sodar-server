@@ -8,6 +8,7 @@ export const useEditStore = defineStore('edit', () => {
   const editContext = ref<StudyEditContext | null>(null)
   const editDataUpdated = ref<boolean>(false)
   const editStudyData = ref<boolean>(false)
+  const enableRowSave = ref<boolean>(false)
   const unsavedData = ref<boolean>(false)
   const unsavedRow = ref<EditUnsavedRow | null>(null)
   const updatingRow = ref<boolean>(false)
@@ -28,6 +29,7 @@ export const useEditStore = defineStore('edit', () => {
     editContext,
     editDataUpdated,
     editStudyData,
+    enableRowSave,
     unsavedData,
     unsavedRow,
     updatingRow,

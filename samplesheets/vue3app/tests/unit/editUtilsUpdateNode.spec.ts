@@ -8,6 +8,7 @@ import {
 } from 'ag-grid-community'
 
 import { updateNode } from '@/utils/editUtils.ts'
+import { useEditStore } from '@/stores/editStore.ts'
 import { useTableStore } from '@/stores/tableStore.ts'
 import {
   type NodeUpdateParams,
@@ -156,6 +157,9 @@ describe('updateNode()', () => {
   })
 
   test('update new node', async () => {
+    const editStore = useEditStore()
+    expect(editStore.enableRowSave).toBe(false)
+
     const cd = getMockColDef()
     const cd2 = getMockColDef()
     cd2.cellEditorParams.fieldHeader.type = EDIT_HEADER_TYPE_CHAR
@@ -171,9 +175,8 @@ describe('updateNode()', () => {
     valueParams.editable = undefined // Not defined for new init
     valueParams.newInit = false
     expect(mockRowNode.setDataValue).toHaveBeenCalledWith('col3', valueParams)
-    expect(mockGridApi.refreshCells).toHaveBeenCalledTimes(1)
-    expect(mockGridApi.refreshCells).toHaveBeenCalledWith(
-      { columns: ['rowEdit'], rowNodes: [params.rowNode], force: true })
+    expect(mockGridApi.refreshCells).not.toHaveBeenCalled() // No longer called
+    expect(editStore.enableRowSave).toBe(true)
   })
 
   test('update existing node', async () => {

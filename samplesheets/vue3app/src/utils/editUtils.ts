@@ -164,6 +164,8 @@ export function deleteRow (params: RowDeleteParams) {
 // TODO: Refactor and simplify once fully tested
 export function enableNextNodes (params: NodeEnableParams) {
   const appStore = useAppStore()
+  const editStore = useEditStore()
+
   // TODO: Add assayMode in params?
   const assayMode: boolean = params.tableUuid !== appStore.currentStudyUuid
   const cols: Array<Column> = params.api.getColumns() as Array<Column>
@@ -322,9 +324,8 @@ export function enableNextNodes (params: NodeEnableParams) {
   if (enableNextIdx && enableNextIdx < cols.length - 1) {
     params.startIdx = enableNextIdx
     enableNextNodes(params)
-  } else { // Else refresh cells to enable saving (HACK: see #2490)
-    params.api.refreshCells(
-      {columns: ['rowEdit'], rowNodes: [params.rowNode], force: true})
+  } else { // Enable saving row once end of row is reached
+    editStore.enableRowSave = true
   }
 }
 
@@ -778,6 +779,7 @@ export function updateCells (
 // Formerly handleNodeUpdate()
 // TODO: Large and complex, split into smaller functions?
 export function updateNode (params: NodeUpdateParams) {
+  const editStore = useEditStore()
   const tableStore = useTableStore()
 
   // Sample node in assay
@@ -886,9 +888,7 @@ export function updateNode (params: NodeUpdateParams) {
       tableUuid: params.tableUuid
     })
   } else {
-    // HACK: Refresh row edit cell to trigger enableSave() in RowEditRenderer
-    // TODO: Better approach (see #2490)
-    params.api.refreshCells(
-      {columns: ['rowEdit'], rowNodes: [params.rowNode], force: true})
+    // Enable row save to set enableSave() in RowEditRenderer
+    editStore.enableRowSave = true
   }
 }
