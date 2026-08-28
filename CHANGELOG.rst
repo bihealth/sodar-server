@@ -43,6 +43,7 @@ Fixed
 - **Samplesheets**
     - ``IrodsAccessTicketViewTestMixin.get_ticket_hosts()`` result order not guaranteed (#2445)
     - ``TestUpdateProjectCacheTask.test_update_cache()`` query order not enforced (#2402)
+    - Vue3app missing grid viewport background color (#2530)
 
 Removed
 -------
