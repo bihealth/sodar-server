@@ -464,7 +464,7 @@ class TestSearch(SamplesheetsPluginTestBase):
             study=self.study2,
         )
 
-    def _test_cell_contents(self, row, name, type, study, assay=None):
+    def _test_material_row_contents(self, row, name, type, study, assay=None):
         self.assertEqual(row[0].value, name)
         self.assertTrue(row[0].value_url.startswith(study.get_url()))
         self.assertEqual(row[1].value, type)
@@ -492,7 +492,7 @@ class TestSearch(SamplesheetsPluginTestBase):
             ['Name', 'Type', 'Project', 'Study', 'Assay(s)'],
         )
         self.assertEqual(len(ret[0].rows), 1)
-        self._test_cell_contents(
+        self._test_material_row_contents(
             ret[0].rows[0],
             SOURCE_NAME,
             'Sample',
@@ -525,19 +525,19 @@ class TestSearch(SamplesheetsPluginTestBase):
         )
         self.assertEqual(len(ret[0].rows), 3)
         rows = sorted(ret[0].rows, key=lambda x: (x[0].value, x[3].value))
-        self._test_cell_contents(
+        self._test_material_row_contents(
             rows[0],
             '0815',
             'Source',
             self.study,
         )
-        self._test_cell_contents(
+        self._test_material_row_contents(
             rows[1],
             '0816-N1',
             'Sample',
             self.study2,
         )
-        self._test_cell_contents(
+        self._test_material_row_contents(
             rows[2],
             '0816-N1',
             'Sample',
@@ -547,12 +547,12 @@ class TestSearch(SamplesheetsPluginTestBase):
     def test_search_within_project(self):
         """Test search() with project keyword"""
         ret = self.plugin.search(
-            ['0816-N1'],
+            ['0816-N1', 'test1.txt'],
             self.user_owner,
             Project.objects.filter(title=self.project2.title),
         )
         self.assertEqual(len(ret[0].rows), 1)
-        self._test_cell_contents(
+        self._test_material_row_contents(
             ret[0].rows[0],
             '0816-N1',
             'Sample',
@@ -600,7 +600,7 @@ class TestSearch(SamplesheetsPluginTestBase):
         self.assertEqual(len(ret), 1)
         self.assertEqual(ret[0].category, 'materials')
         self.assertEqual(len(ret[0].rows), 1)
-        self._test_cell_contents(
+        self._test_material_row_contents(
             ret[0].rows[0],
             SOURCE_NAME,
             'Sample',
