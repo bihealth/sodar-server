@@ -185,11 +185,13 @@ export const ROW_DEL_MSG_CONFIRM = 'Delete row? This can not be undone.'
 export const ROW_DEL_MSG_CONFIRM_CANCEL = 'Cancel row insert?'
 export const ROW_DEL_MSG_CONFIRM_IRODS = ' Note that if related sample data ' +
   'exists in iRODS, it may become unreachable.'
-export const ROW_INS_MSG_DISABLED = 'Please save or discard your unsaved row ' +
-  'before inserting a new one'
-export const ROW_SAVE_MSG_IDENTICAL = 'Identical row exists, unable to save'
 export const ROW_DEL_MSG_OK = 'Delete row'
 export const ROW_DEL_MSG_UNSAVED = 'New row needs to be saved or cancelled'
+export const ROW_INS_MSG_DISABLED = 'Please save or discard your unsaved row ' +
+  'before inserting a new one'
+export const ROW_INS_MSG_FAIL_PREFIX = 'Row insert failed: '
+export const ROW_INS_MSG_OK = 'Row inserted'
+export const ROW_SAVE_MSG_IDENTICAL = 'Identical row exists, unable to save'
 
 // Misc edit mode constants
 export const EDIT_TERM_QUERY_MIN_LEN = 3

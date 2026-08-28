@@ -24,6 +24,10 @@ import {
   EDIT_ITEM_TYPE_DATA,
   EDIT_ITEM_TYPE_SAMPLE,
   EDIT_ITEM_TYPE_SOURCE,
+  ROW_INS_MSG_FAIL_PREFIX,
+  ROW_INS_MSG_OK,
+  VARIANT_SUCCESS,
+  VARIANT_DANGER,
 } from '@/constants.ts'
 
 import { copy } from '../testUtils.ts'
@@ -167,6 +171,10 @@ let saveData: RowSaveData
 
 const url = URL_ROW_INS_PREFIX + PROJECT_UUID
 
+// Global Setup ----------------------------------------------------------------
+
+const mockNotifyCb = vi.fn()
+
 // Tests for saveRow() ---------------------------------------------------------
 
 describe('saveRow()', () => {
@@ -226,6 +234,7 @@ describe('saveRow()', () => {
 
     setActivePinia(createPinia())
     const appStore = useAppStore()
+    appStore.notifyCb = mockNotifyCb
     appStore.projectUuid = PROJECT_UUID
     appStore.sodarContext = { csrf_token: 'DummyToken' } as SodarContext
     const editStore = useEditStore()
@@ -277,6 +286,7 @@ describe('saveRow()', () => {
       value: '0814-N1'
     })
     expect(params.finishCb).toHaveBeenCalled()
+    expect(mockNotifyCb).toHaveBeenCalledWith(ROW_INS_MSG_OK, VARIANT_SUCCESS)
 
     expect(editStore.editDataUpdated).toBe(true)
     expect(editStore.editContext!.samples).toEqual(
@@ -331,6 +341,7 @@ describe('saveRow()', () => {
       value: ''
     })
     expect(params.finishCb).toHaveBeenCalled()
+    expect(mockNotifyCb).toHaveBeenCalledWith(ROW_INS_MSG_OK, VARIANT_SUCCESS)
 
     // Assay UUID should be added in editContext for sample
     expect(
@@ -382,11 +393,12 @@ describe('saveRow()', () => {
       { body: JSON.stringify({ new_row: saveData }) }))
     expect(rowNode.setDataValue).not.toHaveBeenCalled()
     expect(params.finishCb).toHaveBeenCalled()
+    expect(mockNotifyCb).toHaveBeenCalledWith(
+      ROW_INS_MSG_FAIL_PREFIX + 'error', VARIANT_DANGER)
+
     expect(editStore.editDataUpdated).toBe(false)
     expect(editStore.unsavedRow).toBe(null)
     expect(editStore.updatingRow).toBe(false)
     expect(editStore.versionSaved).toBe(true)
   })
-
-  // TODO: Test notifyCb calls
 })

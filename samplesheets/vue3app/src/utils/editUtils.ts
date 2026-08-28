@@ -53,6 +53,8 @@ import {
   REQ_POST,
   ROW_DEL_MSG_DELETED,
   ROW_DEL_MSG_FAIL,
+  ROW_INS_MSG_OK,
+  ROW_INS_MSG_FAIL_PREFIX,
   URL_CELL_EDIT_PREFIX,
   URL_ROW_DEL_PREFIX,
   URL_ROW_INS_PREFIX,
@@ -645,10 +647,10 @@ export function saveRow (params: RowSaveParams) {
         editStore.editDataUpdated = true
         editStore.versionSaved = false
         if (appStore.notifyCb) {
-          appStore.notifyCb('Row inserted', VARIANT_SUCCESS)
+          appStore.notifyCb(ROW_INS_MSG_OK, VARIANT_SUCCESS)
         }
       } else {
-        const msg = 'Row insert failed: ' + data.detail
+        const msg = ROW_INS_MSG_FAIL_PREFIX + data.detail
         console.error(msg)
         if (appStore.notifyCb) appStore.notifyCb(msg, VARIANT_DANGER)
       }
