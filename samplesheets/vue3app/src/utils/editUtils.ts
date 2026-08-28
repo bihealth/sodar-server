@@ -51,6 +51,8 @@ import {
   HEADER_NAME_SAMPLE,
   NODE_ID_HEADER_TYPES,
   REQ_POST,
+  ROW_DEL_MSG_DELETED,
+  ROW_DEL_MSG_FAIL,
   URL_CELL_EDIT_PREFIX,
   URL_ROW_DEL_PREFIX,
   URL_ROW_INS_PREFIX,
@@ -148,12 +150,13 @@ export function deleteRow (params: RowDeleteParams) {
         r.setDataValue('rowNum', rowNum)
         rowNum += 1
       })
-      if (appStore.notifyCb) appStore.notifyCb('Row deleted', VARIANT_SUCCESS)
+      if (appStore.notifyCb) {
+        appStore.notifyCb(ROW_DEL_MSG_DELETED, VARIANT_SUCCESS)
+      }
     } else {
-      const msg = 'Row delete failed'
       console.error(
-        `${msg}: ${(res as GenericResponseBody).detail}`)
-      if (appStore.notifyCb) appStore.notifyCb(msg, VARIANT_DANGER)
+        `${ROW_DEL_MSG_FAIL}: ${(res as GenericResponseBody).detail}`)
+      if (appStore.notifyCb) appStore.notifyCb(ROW_DEL_MSG_FAIL, VARIANT_DANGER)
     }
     if (params.finishCb) params.finishCb()
     editStore.updatingRow = false

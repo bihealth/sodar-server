@@ -178,16 +178,18 @@ export const ROW_DEL_MSG_ALL = 'Deleting all rows of a table is currently ' +
   'not supported'
 export const ROW_DEL_MSG_ASSAY = 'Assay rows containing the sample must be ' +
   'first deleted'
+export const ROW_DEL_MSG_DELETED = 'Row deleted'
+export const ROW_DEL_MSG_FAIL = 'Row delete failed'
 export const ROW_DEL_MSG_CANCEL = 'Cancel row insertion'
 export const ROW_DEL_MSG_CONFIRM = 'Delete row? This can not be undone.'
 export const ROW_DEL_MSG_CONFIRM_CANCEL = 'Cancel row insert?'
 export const ROW_DEL_MSG_CONFIRM_IRODS = ' Note that if related sample data ' +
   'exists in iRODS, it may become unreachable.'
-export const ROW_DEL_MSG_OK = 'Delete row'
-export const ROW_DEL_MSG_UNSAVED = 'New row needs to be saved or cancelled'
 export const ROW_INS_MSG_DISABLED = 'Please save or discard your unsaved row ' +
   'before inserting a new one'
 export const ROW_SAVE_MSG_IDENTICAL = 'Identical row exists, unable to save'
+export const ROW_DEL_MSG_OK = 'Delete row'
+export const ROW_DEL_MSG_UNSAVED = 'New row needs to be saved or cancelled'
 
 // Misc edit mode constants
 export const EDIT_TERM_QUERY_MIN_LEN = 3
