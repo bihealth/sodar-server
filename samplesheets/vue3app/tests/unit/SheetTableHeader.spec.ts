@@ -40,12 +40,15 @@ config.global.plugins = [createBootstrap()]
 config.global.stubs = {
   IrodsStatsBadge: { template: '<span class="' + statsBadgeClass + '" />'}
 }
+
 // Mock clipboard (NOTE: has to be done in module root)
 const mockCopy = vi.fn()
 vi.mock('@vueuse/core', async () => {
   const actual = await vi.importActual('@vueuse/core')
   return { ...actual, useClipboard: () => ({ copy: mockCopy }) }
 })
+
+const mockDetailModal = { show: vi.fn() }
 const mockNotifyCb = vi.fn()
 
 // Tests -----------------------------------------------------------------------
@@ -53,7 +56,10 @@ const mockNotifyCb = vi.fn()
 describe('SheetTableHeader.vue', () => {
   function mountComponent (propVals: SheetTableHeaderProps): VueWrapper {
     const props = copy(propVals) as SheetTableHeaderProps
-    return mount(SheetTableHeader, { props: props })
+    return mount(SheetTableHeader, {
+      props: props,
+      stubs: { TableDetailModal: mockDetailModal }
+    })
   }
 
   beforeEach(() => {
@@ -204,5 +210,10 @@ describe('SheetTableHeader.vue', () => {
       IRODS_PATH_COPY_MSG, VARIANT_INFO)
   })
 
-  // TODO: Test modal opening
+  test('open table detail modal on button click', async () => {
+    expect(mockDetailModal.show).not.toHaveBeenCalled()
+    const wrapper = mountComponent(studyProps)
+    await wrapper.find('.sodar-ss-btn-table-detail').trigger('click')
+    expect(mockDetailModal.show).not.toHaveBeenCalled()
+  })
 })
