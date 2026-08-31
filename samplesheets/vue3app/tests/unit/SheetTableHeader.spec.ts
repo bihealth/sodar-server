@@ -48,7 +48,7 @@ vi.mock('@vueuse/core', async () => {
   return { ...actual, useClipboard: () => ({ copy: mockCopy }) }
 })
 
-const mockDetailModal = { show: vi.fn() }
+const mockDetailModal = { template: '<div />', methods: {show: vi.fn() } }
 const mockNotifyCb = vi.fn()
 
 // Tests -----------------------------------------------------------------------
@@ -57,8 +57,8 @@ describe('SheetTableHeader.vue', () => {
   function mountComponent (propVals: SheetTableHeaderProps): VueWrapper {
     const props = copy(propVals) as SheetTableHeaderProps
     return mount(SheetTableHeader, {
-      props: props,
-      stubs: { TableDetailModal: mockDetailModal }
+      global: { stubs: { TableDetailModal: mockDetailModal } },
+      props: props
     })
   }
 
@@ -211,9 +211,10 @@ describe('SheetTableHeader.vue', () => {
   })
 
   test('open table detail modal on button click', async () => {
-    expect(mockDetailModal.show).not.toHaveBeenCalled()
+    expect(mockDetailModal.methods.show).not.toHaveBeenCalled()
     const wrapper = mountComponent(studyProps)
     await wrapper.find('.sodar-ss-btn-table-detail').trigger('click')
-    expect(mockDetailModal.show).not.toHaveBeenCalled()
+    // TODO: Fix
+    expect(mockDetailModal.methods.show).toHaveBeenCalled()
   })
 })
