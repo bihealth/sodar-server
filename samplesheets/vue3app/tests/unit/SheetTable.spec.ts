@@ -1,14 +1,22 @@
 import { type TemplateRef } from 'vue'
 import { beforeEach, describe, expect, test, vi } from 'vitest'
-import { mount, type VueWrapper } from '@vue/test-utils'
+import { config, mount, type VueWrapper } from '@vue/test-utils'
 import { setActivePinia, createPinia } from 'pinia'
 import { AllCommunityModule, ModuleRegistry } from 'ag-grid-community'
 
 import SheetTable from '@/components/SheetTable.vue'
-// import DataCellRenderer from '@/components/renderers/DataCellRenderer.vue'
+import DataCellEditor from '@/components/editors/DataCellEditor.vue'
+import DataCellRenderer from '@/components/renderers/DataCellRenderer.vue'
+import HeaderEditRenderer from '@/components/renderers/HeaderEditRenderer.vue'
+import IrodsButtonsRenderer from '@/components/renderers/IrodsButtonsRenderer.vue'
+import RowEditRenderer from '@/components/renderers/RowEditRenderer.vue'
+import StudyShortcutsRenderer from '@/components/renderers/StudyShortcutsRenderer.vue'
+
 import { useAppStore } from '@/stores/appStore.ts'
 import { useEditStore } from '@/stores/editStore.ts'
 import { useTableStore } from '@/stores/tableStore.ts'
+
+import { insertRow } from '@/utils/editUtils.ts'
 import {
   type RenderTableData,
   type SodarContext,
@@ -43,7 +51,6 @@ const exTopHeaderAssay = [
   ['Derived Data File', 'success'],
 ]
 
-const mockModal = { show: vi.fn() }
 let props: SheetTableProps
 let context: SodarContext
 let tables: RenderTableData
@@ -58,8 +65,27 @@ const excelBtnSel = '.sodar-ss-excel-export-btn'
 
 // Global Setup ----------------------------------------------------------------
 
+const mockModal = { show: vi.fn() }
+
+// Expose renderers and editors for ag-grid
+config.global.components = {
+  DataCellEditor,
+  DataCellRenderer,
+  HeaderEditRenderer,
+  IrodsButtonsRenderer,
+  RowEditRenderer,
+  StudyShortcutsRenderer
+}
+// Register ag-grid modules
 ModuleRegistry.registerModules([AllCommunityModule])
-// TODO: How to expose renderers globally for ag-grid? (see warnings)
+// Mock relevant editUtils functions
+vi.mock('@/utils/editUtils.ts', async () => {
+  const actual = await vi.importActual('@/utils/editUtils.ts')
+  return {
+    ...actual,
+    insertRow: vi.fn(),
+  }
+})
 
 // Tests -----------------------------------------------------------------------
 
@@ -75,13 +101,16 @@ describe('SheetTable.vue', () => {
   }
 
   beforeEach(() => {
+    vi.resetAllMocks()
+
     setActivePinia(createPinia())
     const appStore = useAppStore()
     appStore.editMode = false
+
     context = copy(sodarContext) as SodarContext
     tables = copy(studyTables) as RenderTableData
     // Suppress ag-grid warnings
-    vi.spyOn(console, 'warn').mockImplementation(() => undefined)
+    // vi.spyOn(console, 'warn').mockImplementation(() => undefined)
   })
 
   test('render study table', async () => {
@@ -161,7 +190,15 @@ describe('SheetTable.vue', () => {
     expect(headers[11]?.text()).toBe('Study')
   })
 
-  // TODO: Test render study grid rows once expose issue is solved
+  // TODO: Test render study grid rows
+
+  test('display initial filter value', async () => {
+    const tableStore = useTableStore()
+    tableStore.initialFilter = '0814'
+    const wrapper = mountComponent(STUDY_UUID, false)
+    expect(wrapper.find(
+      '#sodar-ss-data-filter-study').attributes().value).toBe('0814')
+  })
 
   test('render assay grid top header', async () => {
     let exTopHeader = copy(exTopHeaderStudy) as Array<Array<string>>
@@ -247,14 +284,17 @@ describe('SheetTable.vue', () => {
     expect(rowBtn.attributes().title).toBe('')
   })
 
-  test('render assay table in edit mode', async () => {
+  test('call insertRow() for study on button click', async () => {
     const appStore = useAppStore()
     appStore.editMode = true
-    const wrapper = mountComponent(ASSAY_UUID, true)
-    const rowBtn = wrapper.find(rowBtnSel)
-    expect(rowBtn.exists()).toBe(true)
-    expect(rowBtn.attributes().disabled).not.toBeDefined()
-    expect(rowBtn.attributes().title).toBe('')
+    expect(insertRow).not.toHaveBeenCalled()
+
+    const wrapper = mountComponent(STUDY_UUID, false)
+    await wrapper.find(rowBtnSel).trigger('click')
+    expect(insertRow).toHaveBeenCalledWith({
+      assayMode: false,
+      tableUuid: STUDY_UUID
+    }) // TODO: How to get ag-grid to return API here?
   })
 
   test('render study table in edit mode with unsaved row', async () => {
@@ -269,15 +309,29 @@ describe('SheetTable.vue', () => {
     expect(rowBtn.attributes().title).toBe(ROW_INS_MSG_DISABLED)
   })
 
-  test('display initial filter value', async () => {
-    const tableStore = useTableStore()
-    tableStore.initialFilter = '0814'
-    const wrapper = mountComponent(STUDY_UUID, false)
-    expect(wrapper.find(
-      '#sodar-ss-data-filter-study').attributes().value).toBe('0814')
+  test('render assay table in edit mode', async () => {
+    const appStore = useAppStore()
+    appStore.editMode = true
+    const wrapper = mountComponent(ASSAY_UUID, true)
+    const rowBtn = wrapper.find(rowBtnSel)
+    expect(rowBtn.exists()).toBe(true)
+    expect(rowBtn.attributes().disabled).not.toBeDefined()
+    expect(rowBtn.attributes().title).toBe('')
   })
 
-  // TODO: Test insertRow() call
-  // TODO: Test render assay grid rows once expose issue is solved
-  // TODO: Test AgGridDragSelect once expose issue is solved
+  test('call insertRow() for assay on button click', async () => {
+    const appStore = useAppStore()
+    appStore.editMode = true
+    expect(insertRow).not.toHaveBeenCalled()
+
+    const wrapper = mountComponent(ASSAY_UUID, true)
+    await wrapper.find(rowBtnSel).trigger('click')
+    expect(insertRow).toHaveBeenCalledWith({
+      assayMode: true,
+      tableUuid: ASSAY_UUID
+    })
+  })
+
+  // TODO: Test render assay grid rows
+  // TODO: Test AgGridDragSelect
 })
