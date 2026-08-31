@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, test, vi } from 'vitest'
-import { flushPromises, mount, type VueWrapper } from '@vue/test-utils'
+import { config, flushPromises, mount, type VueWrapper } from '@vue/test-utils'
 import { setActivePinia, createPinia } from 'pinia'
 import { createRouter, createWebHashHistory, type Router } from 'vue-router'
 import { createBootstrap } from 'bootstrap-vue-next/plugins/createBootstrap'
@@ -43,16 +43,21 @@ let router: Router
 
 // Global Setup ----------------------------------------------------------------
 
+// Mock modals
+const mockVersionSaveModal = { template: '<div />', methods: {show: vi.fn() } }
+const mockWinExportModal = { template: '<div />', methods: {show: vi.fn() } }
+
+config.global.stubs = {
+  VersionSaveModal: mockVersionSaveModal,
+  WinExportModal: mockWinExportModal
+}
+
 // Replace useToast with mock
 const mockCreate = vi.fn()
 vi.mock('bootstrap-vue-next', async () => {
   const actual = await vi.importActual('bootstrap-vue-next')
   return { ...actual, useToast: () => ({ create: mockCreate, show: vi.fn() }) }
 })
-
-// Mock modals
-const mockVersionSaveModal = { template: '<div />', methods: {show: vi.fn() } }
-const mockWinExportModal = { template: '<div />', methods: {show: vi.fn() } }
 
 // Tests -----------------------------------------------------------------------
 
@@ -78,11 +83,7 @@ describe('ViewHeader.vue', () => {
 
   function mountComponent (): VueWrapper {
     return mount(ViewHeader, {
-      global: {
-        plugins: [router, createBootstrap()],
-        stubs: {
-          VersionSaveModal: mockVersionSaveModal,
-          WinExportModal: mockWinExportModal } } })
+      global: { plugins: [router, createBootstrap()] } })
   }
 
   beforeEach(async () => {

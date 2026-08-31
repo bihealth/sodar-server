@@ -36,9 +36,13 @@ const statsBadgeClass = 'mock-irods-stats-badge'
 
 // Global Setup ----------------------------------------------------------------
 
+const mockDetailModal = { template: '<div />', methods: {show: vi.fn() } }
+const mockNotifyCb = vi.fn()
+
 config.global.plugins = [createBootstrap()]
 config.global.stubs = {
-  IrodsStatsBadge: { template: '<span class="' + statsBadgeClass + '" />'}
+  IrodsStatsBadge: { template: '<span class="' + statsBadgeClass + '" />'},
+  TableDetailModal: mockDetailModal
 }
 
 // Mock clipboard (NOTE: has to be done in module root)
@@ -48,18 +52,13 @@ vi.mock('@vueuse/core', async () => {
   return { ...actual, useClipboard: () => ({ copy: mockCopy }) }
 })
 
-const mockDetailModal = { template: '<div />', methods: {show: vi.fn() } }
-const mockNotifyCb = vi.fn()
 
 // Tests -----------------------------------------------------------------------
 
 describe('SheetTableHeader.vue', () => {
   function mountComponent (propVals: SheetTableHeaderProps): VueWrapper {
     const props = copy(propVals) as SheetTableHeaderProps
-    return mount(SheetTableHeader, {
-      global: { stubs: { TableDetailModal: mockDetailModal } },
-      props: props
-    })
+    return mount(SheetTableHeader, { props: props })
   }
 
   beforeEach(() => {
@@ -214,7 +213,6 @@ describe('SheetTableHeader.vue', () => {
     expect(mockDetailModal.methods.show).not.toHaveBeenCalled()
     const wrapper = mountComponent(studyProps)
     await wrapper.find('.sodar-ss-btn-table-detail').trigger('click')
-    // TODO: Fix
     expect(mockDetailModal.methods.show).toHaveBeenCalled()
   })
 })

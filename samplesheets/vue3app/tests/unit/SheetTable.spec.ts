@@ -5,7 +5,7 @@ import { setActivePinia, createPinia } from 'pinia'
 import { AllCommunityModule, ModuleRegistry } from 'ag-grid-community'
 
 import SheetTable from '@/components/SheetTable.vue'
-import DataCellRenderer from '@/components/renderers/DataCellRenderer.vue'
+// import DataCellRenderer from '@/components/renderers/DataCellRenderer.vue'
 import { useAppStore } from '@/stores/appStore.ts'
 import { useEditStore } from '@/stores/editStore.ts'
 import { useTableStore } from '@/stores/tableStore.ts'
@@ -71,10 +71,7 @@ describe('SheetTable.vue', () => {
       colToggleModalRef: mockModal as unknown as TemplateRef,
       tableUuid: tableUuid
     }
-    // NOTE: Testing with shallowMount() as there are issues with exposing
-    //       DataCellRender for ag-grid
-    return mount(
-      SheetTable, { props: props, expose: { DataCellRenderer } })
+    return mount(SheetTable, { props: props })
   }
 
   beforeEach(() => {
