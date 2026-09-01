@@ -437,15 +437,15 @@ export function buildColDef (params: ColDefBuildParams): Array<ColGroupDef> {
   const colDef: Array<ColGroupDef> = []
 
   // Set up row column header group
-  const rowHeaderGroup = getRowNumHeaderGroup()
+  const rowNumHeaderGroup = getRowNumHeaderGroup()
   // Editing: gray out row column to avoid confusion
   if (appStore.editMode) {
-    const col = rowHeaderGroup.children[0] as ColDef
+    const col = rowNumHeaderGroup.children[0] as ColDef
     if (col.cellClass?.constructor == Array) {
       col.cellClass?.push('bg-light')
     }
   }
-  colDef.push(rowHeaderGroup)
+  colDef.push(rowNumHeaderGroup)
 
   // Set up header
   const topHeaderLength = table.top_header.length

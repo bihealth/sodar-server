@@ -7,18 +7,21 @@ import { copy } from '../testUtils.ts'
 import studyTables from '../data/studyTables.json'
 import { ASSAY_UUID, STUDY_UUID } from '../testConstants.ts'
 
+// Test Data -------------------------------------------------------------------
+
+const studyHeader = {
+  name: 'organism',
+  value: 'Organism'
+} as SheetTableFieldHeader
+const assayHeader = {
+  name: 'Assay Name',
+  value: 'Assay Name'
+} as SheetTableFieldHeader
+let displayConfig: StudyDisplayConfig
+
 // Tests -----------------------------------------------------------------------
 
 describe('getFieldVisibility()', () => {
-  let displayConfig: StudyDisplayConfig
-  const studyHeader = {
-    name: 'organism',
-    value: 'Organism'
-  } as SheetTableFieldHeader
-  const assayHeader = {
-    name: 'Assay Name',
-    value: 'Assay Name'
-  } as SheetTableFieldHeader
   beforeEach(() => {
     displayConfig = copy(studyTables.display_config) as StudyDisplayConfig
   })
