@@ -642,7 +642,6 @@ export function saveRow (params: RowSaveParams) {
         }
 
         // Finalize
-        // TODO: Do we still need to call refreshCells() here? (see vueapp)
         editStore.unsavedRow = null
         editStore.editDataUpdated = true
         editStore.versionSaved = false

@@ -128,28 +128,6 @@ describe('SheetTable.vue', () => {
     expect(wrapper.find(studyGridSel).exists()).toBe(true)
   })
 
-  test('render assay table', async () => {
-    const wrapper = mountComponent(ASSAY_UUID, true)
-    expect(wrapper.find(studyCardSel).exists()).toBe(false)
-    expect(wrapper.find(assayCardSel).exists()).toBe(true)
-    expect(wrapper.find('h4').text()).toBe('Assay Table')
-    expect(wrapper.find(rowBtnSel).exists()).toBe(false)
-    expect(wrapper.find(excelBtnSel).attributes().href).toBe(
-      'export/excel/assay/' + ASSAY_UUID
-    )
-    expect(wrapper.find(
-      '#sodar-ss-data-filter-assay-' + ASSAY_UUID).exists()).toBe(true)
-    expect(wrapper.find(assayGridSel).exists()).toBe(true)
-  })
-
-  test('open column toggle modal on button click', async () => {
-    const wrapper = mountComponent(STUDY_UUID, false)
-    expect(mockModal.show).not.toHaveBeenCalled()
-    const btn = wrapper.find('.sodar-ss-column-toggle-btn')
-    await btn.trigger('click')
-    expect(mockModal.show).toHaveBeenCalled()
-  })
-
   test('render study grid top header', async () => {
     const wrapper = mountComponent(STUDY_UUID, false)
     const grid = wrapper.find(studyGridSel)
@@ -190,14 +168,101 @@ describe('SheetTable.vue', () => {
     expect(headers[11]?.text()).toBe('Study')
   })
 
-  // TODO: Test render study grid rows
-
-  test('display initial filter value', async () => {
-    const tableStore = useTableStore()
-    tableStore.initialFilter = '0814'
+  test('render study grid rows', async () => {
     const wrapper = mountComponent(STUDY_UUID, false)
+    const grid = wrapper.find(studyGridSel)
+
+    // Left pinned cols
+    let cont = grid.find('.ag-pinned-left-cols-container')
+    let rows = cont.findAll('.ag-row')
+    expect(rows.length).toBe(5)
+    let cells = rows[0]!.findAll('.ag-cell')
+    expect(cells.length).toBe(2) // Row number and source name go here
+    expect(cells[0]!.text()).toBe('1')
+    expect(cells[1]!.attributes()['col-id']).toBe('col0')
+    // TODO: How to assert custom renderer content? Cells appear empty..
+    // expect(cells[1]!.text()).toBe('0814')
+
+    // Center cols
+    cont = grid.find('.ag-center-cols-container')
+    rows = cont.findAll('.ag-row')
+    expect(rows.length).toBe(5)
+    cells = rows[0]!.findAll('.ag-cell')
+    expect(cells.length).toBe(9)
+    expect(cells[0]!.attributes()['col-id']).toBe('col1')
+
+    // Right pinned col
+    cont = grid.find('.ag-pinned-right-cols-container')
+    rows = cont.findAll('.ag-row')
+     // No shorctuts = no rows or cells, while container still exists
+    expect(rows.length).toBe(0)
+  })
+
+  test('render study grid rows with study shortcuts', async () => {
+    context.studies[STUDY_UUID]!.plugin_name = STUDY_PLUGIN_NAME
+    tables.tables.study.shortcuts = studyShortcutsGermline as
+      unknown as StudyShortcuts
+
+    const wrapper = mountComponent(STUDY_UUID, false)
+    const grid = wrapper.find(studyGridSel)
+
+    // Right pinned col
+    const cont = grid.find('.ag-pinned-right-cols-container')
+    const rows = cont.findAll('.ag-row')
+    expect(rows.length).toBe(5)
+    const cells = rows[0]!.findAll('.ag-cell')
+    expect(cells.length).toBe(1)
+    expect(cells[0]!.attributes()['col-id']).toBe('shortcutLinks')
+  })
+
+  test('render study table in edit mode', async () => {
+    const appStore = useAppStore()
+    appStore.editMode = true
+    const wrapper = mountComponent(STUDY_UUID, false)
+    // Row insert button should be visible and enabled
+    const rowBtn = wrapper.find(rowBtnSel)
+    expect(rowBtn.exists()).toBe(true)
+    expect(rowBtn.attributes().disabled).not.toBeDefined()
+    expect(rowBtn.attributes().title).toBe('')
+  })
+
+  test('call insertRow() for study on button click', async () => {
+    const appStore = useAppStore()
+    appStore.editMode = true
+    expect(insertRow).not.toHaveBeenCalled()
+
+    const wrapper = mountComponent(STUDY_UUID, false)
+    await wrapper.find(rowBtnSel).trigger('click')
+    expect(insertRow).toHaveBeenCalledWith({
+      assayMode: false,
+      tableUuid: STUDY_UUID
+    }) // TODO: How to get ag-grid to return API here?
+  })
+
+  test('render study table in edit mode with unsaved row', async () => {
+    const appStore = useAppStore()
+    const editStore = useEditStore()
+    appStore.editMode = true
+    editStore.unsavedRow = { id: '0', tableUuid: STUDY_UUID }
+    const wrapper = mountComponent(STUDY_UUID, false)
+    // Row insert button should be disabled with title message
+    const rowBtn = wrapper.find(rowBtnSel)
+    expect(rowBtn.attributes().disabled).toBeDefined()
+    expect(rowBtn.attributes().title).toBe(ROW_INS_MSG_DISABLED)
+  })
+
+  test('render assay table', async () => {
+    const wrapper = mountComponent(ASSAY_UUID, true)
+    expect(wrapper.find(studyCardSel).exists()).toBe(false)
+    expect(wrapper.find(assayCardSel).exists()).toBe(true)
+    expect(wrapper.find('h4').text()).toBe('Assay Table')
+    expect(wrapper.find(rowBtnSel).exists()).toBe(false)
+    expect(wrapper.find(excelBtnSel).attributes().href).toBe(
+      'export/excel/assay/' + ASSAY_UUID
+    )
     expect(wrapper.find(
-      '#sodar-ss-data-filter-study').attributes().value).toBe('0814')
+      '#sodar-ss-data-filter-assay-' + ASSAY_UUID).exists()).toBe(true)
+    expect(wrapper.find(assayGridSel).exists()).toBe(true)
   })
 
   test('render assay grid top header', async () => {
@@ -273,40 +338,45 @@ describe('SheetTable.vue', () => {
     expect(headers[12]?.text()).toBe('Links')
   })
 
-  test('render study table in edit mode', async () => {
-    const appStore = useAppStore()
-    appStore.editMode = true
-    const wrapper = mountComponent(STUDY_UUID, false)
-    // Row insert button should be visible and enabled
-    const rowBtn = wrapper.find(rowBtnSel)
-    expect(rowBtn.exists()).toBe(true)
-    expect(rowBtn.attributes().disabled).not.toBeDefined()
-    expect(rowBtn.attributes().title).toBe('')
+  test('render assay grid rows', async () => {
+    const wrapper = mountComponent(ASSAY_UUID, true)
+    const grid = wrapper.find(assayGridSel)
+
+    // Left pinned cols
+    let cont = grid.find('.ag-pinned-left-cols-container')
+    let rows = cont.findAll('.ag-row')
+    expect(rows.length).toBe(2)
+    let cells = rows[0]!.findAll('.ag-cell')
+    expect(cells.length).toBe(2)
+    expect(cells[0]!.text()).toBe('1')
+    expect(cells[1]!.attributes()['col-id']).toBe('col0')
+
+    // Center cols
+    cont = grid.find('.ag-center-cols-container')
+    rows = cont.findAll('.ag-row')
+    expect(rows.length).toBe(2)
+    cells = rows[0]!.findAll('.ag-cell')
+    expect(cells.length).toBe(10)
+    expect(cells[0]!.attributes()['col-id']).toBe('col3') // Sample name
+
+    // Right pinned col
+    cont = grid.find('.ag-pinned-right-cols-container')
+    rows = cont.findAll('.ag-row')
+    expect(rows.length).toBe(0) // No iRODS links
   })
 
-  test('call insertRow() for study on button click', async () => {
-    const appStore = useAppStore()
-    appStore.editMode = true
-    expect(insertRow).not.toHaveBeenCalled()
+  test('render assay grid rows with row links column', async () => {
+    context.studies[STUDY_UUID]!.assays[ASSAY_UUID]!.display_row_links = true
+    const wrapper = mountComponent(ASSAY_UUID, true)
+    const grid = wrapper.find(assayGridSel)
 
-    const wrapper = mountComponent(STUDY_UUID, false)
-    await wrapper.find(rowBtnSel).trigger('click')
-    expect(insertRow).toHaveBeenCalledWith({
-      assayMode: false,
-      tableUuid: STUDY_UUID
-    }) // TODO: How to get ag-grid to return API here?
-  })
-
-  test('render study table in edit mode with unsaved row', async () => {
-    const appStore = useAppStore()
-    const editStore = useEditStore()
-    appStore.editMode = true
-    editStore.unsavedRow = { id: '0', tableUuid: STUDY_UUID }
-    const wrapper = mountComponent(STUDY_UUID, false)
-    // Row insert button should be disabled with title message
-    const rowBtn = wrapper.find(rowBtnSel)
-    expect(rowBtn.attributes().disabled).toBeDefined()
-    expect(rowBtn.attributes().title).toBe(ROW_INS_MSG_DISABLED)
+    // Right pinned col
+    const cont = grid.find('.ag-pinned-right-cols-container')
+    const rows = cont.findAll('.ag-row')
+    expect(rows.length).toBe(2)
+    const cells = rows[0]!.findAll('.ag-cell')
+    expect(cells.length).toBe(1)
+    expect(cells[0]!.attributes()['col-id']).toBe('irodsLinks')
   })
 
   test('render assay table in edit mode', async () => {
@@ -317,6 +387,14 @@ describe('SheetTable.vue', () => {
     expect(rowBtn.exists()).toBe(true)
     expect(rowBtn.attributes().disabled).not.toBeDefined()
     expect(rowBtn.attributes().title).toBe('')
+  })
+
+  test('open column toggle modal on button click', async () => {
+    const wrapper = mountComponent(STUDY_UUID, false)
+    expect(mockModal.show).not.toHaveBeenCalled()
+    const btn = wrapper.find('.sodar-ss-column-toggle-btn')
+    await btn.trigger('click')
+    expect(mockModal.show).toHaveBeenCalled()
   })
 
   test('call insertRow() for assay on button click', async () => {
@@ -332,6 +410,13 @@ describe('SheetTable.vue', () => {
     })
   })
 
-  // TODO: Test render assay grid rows
+  test('display initial filter value', async () => {
+    const tableStore = useTableStore()
+    tableStore.initialFilter = '0814'
+    const wrapper = mountComponent(STUDY_UUID, false)
+    expect(wrapper.find(
+      '#sodar-ss-data-filter-study').attributes().value).toBe('0814')
+  })
+
   // TODO: Test AgGridDragSelect
 })
