@@ -65,7 +65,7 @@ PROJECT_TYPE_CATEGORY = SODAR_CONSTANTS['PROJECT_TYPE_CATEGORY']
 APP_NAME = 'samplesheets'
 SHEET_PATH = SHEET_DIR + 'i_minimal2.zip'
 MATERIAL_NAME = '0815-N1-DNA1'
-SOURCE_NAME = '0815-N1'
+SAMPLE_NAME = '0815-N1'
 ASSAY_PLUGIN_NAME = 'samplesheets.assayapps.dna_sequencing'
 SHEET_COL_ID = 'sheets'
 FILE_COL_ID = 'files'
@@ -437,6 +437,18 @@ class TestUpdateCacheRows(SamplesheetsPluginTestBase):
 class TestSearch(SamplesheetsPluginTestBase):
     """Tests for plugin search()"""
 
+    def _assert_material_row_contents(self, row, name, type, study, assay=None):
+        self.assertEqual(row[0].value, name)
+        self.assertTrue(row[0].value_url.startswith(study.get_url()))
+        self.assertEqual(row[1].value, type)
+        self.assertIn(study.investigation.project.title, row[2].value)
+        self.assertEqual(row[3].value, study.get_name())
+        self.assertEqual(row[3].value_url, study.get_url())
+        if assay:
+            self.assertIn(str(assay.sodar_uuid), row[4].value)
+        else:
+            self.assertEqual(row[4].value, '')
+
     def setUp(self):
         super().setUp()
         self.plugin = ProjectAppPluginPoint.get_plugin('samplesheets')
@@ -464,22 +476,10 @@ class TestSearch(SamplesheetsPluginTestBase):
             study=self.study2,
         )
 
-    def _test_material_row_contents(self, row, name, type, study, assay=None):
-        self.assertEqual(row[0].value, name)
-        self.assertTrue(row[0].value_url.startswith(study.get_url()))
-        self.assertEqual(row[1].value, type)
-        self.assertIn(study.investigation.project.title, row[2].value)
-        self.assertEqual(row[3].value, study.get_name())
-        self.assertEqual(row[3].value_url, study.get_url())
-        if assay:
-            self.assertIn(str(assay.sodar_uuid), row[4].value)
-        else:
-            self.assertEqual(row[4].value, '')
-
     def test_search_simple(self):
         """Test search() with simple term"""
         ret = self.plugin.search(
-            [SOURCE_NAME],
+            [SAMPLE_NAME],
             self.user_owner,
             Project.objects.all(),
         )
@@ -492,9 +492,9 @@ class TestSearch(SamplesheetsPluginTestBase):
             ['Name', 'Type', 'Project', 'Study', 'Assay(s)'],
         )
         self.assertEqual(len(ret[0].rows), 1)
-        self._test_material_row_contents(
+        self._assert_material_row_contents(
             ret[0].rows[0],
-            SOURCE_NAME,
+            SAMPLE_NAME,
             'Sample',
             self.study,
             assay=self.assay,
@@ -506,7 +506,7 @@ class TestSearch(SamplesheetsPluginTestBase):
         for material in GenericMaterial.objects.all():
             material.delete()
         ret = self.plugin.search(
-            [SOURCE_NAME],
+            [SAMPLE_NAME],
             self.user_owner,
             Project.objects.all(),
         )
@@ -525,19 +525,19 @@ class TestSearch(SamplesheetsPluginTestBase):
         )
         self.assertEqual(len(ret[0].rows), 3)
         rows = sorted(ret[0].rows, key=lambda x: (x[0].value, x[3].value))
-        self._test_material_row_contents(
+        self._assert_material_row_contents(
             rows[0],
             '0815',
             'Source',
             self.study,
         )
-        self._test_material_row_contents(
+        self._assert_material_row_contents(
             rows[1],
             '0816-N1',
             'Sample',
             self.study2,
         )
-        self._test_material_row_contents(
+        self._assert_material_row_contents(
             rows[2],
             '0816-N1',
             'Sample',
@@ -552,7 +552,7 @@ class TestSearch(SamplesheetsPluginTestBase):
             Project.objects.filter(title=self.project2.title),
         )
         self.assertEqual(len(ret[0].rows), 1)
-        self._test_material_row_contents(
+        self._assert_material_row_contents(
             ret[0].rows[0],
             '0816-N1',
             'Sample',
@@ -592,7 +592,7 @@ class TestSearch(SamplesheetsPluginTestBase):
         for a in Assay.objects.all():
             a.delete()
         ret = self.plugin.search(
-            [SOURCE_NAME],
+            [SAMPLE_NAME],
             self.user_owner,
             Project.objects.all(),
             type=ITEM_TYPE_SAMPLE.lower(),
@@ -600,9 +600,9 @@ class TestSearch(SamplesheetsPluginTestBase):
         self.assertEqual(len(ret), 1)
         self.assertEqual(ret[0].category, 'materials')
         self.assertEqual(len(ret[0].rows), 1)
-        self._test_material_row_contents(
+        self._assert_material_row_contents(
             ret[0].rows[0],
-            SOURCE_NAME,
+            SAMPLE_NAME,
             'Sample',
             self.study,
         )
@@ -610,7 +610,7 @@ class TestSearch(SamplesheetsPluginTestBase):
     def test_search_type_invalid(self):
         """Test search() with invalid type"""
         ret = self.plugin.search(
-            [SOURCE_NAME],
+            [SAMPLE_NAME],
             self.user_owner,
             Project.objects.all(),
             type='NOT_A_MATERIAL_TYPE',
@@ -620,7 +620,7 @@ class TestSearch(SamplesheetsPluginTestBase):
     def test_search_no_permission(self):
         """Test search() when user has no permission"""
         ret = self.plugin.search(
-            [SOURCE_NAME],
+            [SAMPLE_NAME],
             self.user_owner,
             Project.objects.filter(title=self.project2.title),
         )

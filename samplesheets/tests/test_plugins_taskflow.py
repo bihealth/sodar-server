@@ -946,6 +946,21 @@ class TestGetCategoryStats(SamplesheetsPluginTaskflowTestBase):
 class TestSearch(SamplesheetsPluginTaskflowTestBase):
     """Tests for ProjectAppPlugin.search()"""
 
+    def _assert_file_row_contents(self, row, name, project, user, assay):
+        project_url = reverse(
+            'projectroles:detail',
+            kwargs={'project': project.sodar_uuid},
+        )
+        self.assertEqual(row[0].value, name)
+        self.assertTrue(
+            row[0].value_url.startswith(get_webdav_url(project, user))
+        )
+        self.assertIn(project_url, row[1].value)
+        if assay:
+            self.assertIn(str(assay.sodar_uuid), row[2].value)
+        else:
+            self.assertEqual(row[2].value, '')
+
     def setUp(self):
         super().setUp()
         self._set_up_investigation()
@@ -976,21 +991,6 @@ class TestSearch(SamplesheetsPluginTaskflowTestBase):
         misc_coll2 = self.irods.collections.get(self.misc_path2)
         self.irods_misc_obj2 = self.make_irods_object(misc_coll2, TEST_OBJ_NAME)
 
-    def _test_file_row_contents(self, row, name, project, user, assay):
-        project_url = reverse(
-            'projectroles:detail',
-            kwargs={'project': project.sodar_uuid},
-        )
-        self.assertEqual(row[0].value, name)
-        self.assertTrue(
-            row[0].value_url.startswith(get_webdav_url(project, user))
-        )
-        self.assertIn(project_url, row[1].value)
-        if assay:
-            self.assertIn(str(assay.sodar_uuid), row[2].value)
-        else:
-            self.assertEqual(row[2].value, '')
-
     def test_search_simple(self):
         """Test search() with simple term"""
         ret = self.plugin.search(
@@ -1017,14 +1017,14 @@ class TestSearch(SamplesheetsPluginTaskflowTestBase):
             first_row, second_row = ret[1].rows[0], ret[1].rows[1]
         else:
             first_row, second_row = ret[1].rows[1], ret[1].rows[0]
-        self._test_file_row_contents(
+        self._assert_file_row_contents(
             first_row,
             TEST_OBJ_NAME,
             self.project,
             self.user,
             assay=self.assay,
         )
-        self._test_file_row_contents(
+        self._assert_file_row_contents(
             second_row,
             TEST_OBJ_NAME,
             self.project2,
@@ -1070,14 +1070,14 @@ class TestSearch(SamplesheetsPluginTaskflowTestBase):
             first_row, second_row = ret[1].rows[0], ret[1].rows[1]
         else:
             first_row, second_row = ret[1].rows[1], ret[1].rows[0]
-        self._test_file_row_contents(
+        self._assert_file_row_contents(
             first_row,
             TEST_OBJ_NAME,
             self.project,
             self.user,
             assay=self.assay,
         )
-        self._test_file_row_contents(
+        self._assert_file_row_contents(
             second_row,
             TEST_OBJ_NAME,
             self.project2,
@@ -1093,7 +1093,7 @@ class TestSearch(SamplesheetsPluginTaskflowTestBase):
             Project.objects.filter(title=self.project2.title),
         )
         self.assertEqual(len(ret[1].rows), 1)
-        self._test_file_row_contents(
+        self._assert_file_row_contents(
             ret[1].rows[0],
             TEST_OBJ_NAME,
             self.project2,
