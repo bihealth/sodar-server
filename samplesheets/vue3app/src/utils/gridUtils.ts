@@ -459,8 +459,7 @@ export function buildColDef (params: ColDefBuildParams): Array<ColGroupDef> {
     // Set up header group
     // NOTE: ColGroupDef no longer has cellRendererParams, set headers in
     //       headerGroupComponentParams instead
-    // TODO: Only add headers if editMode is enabled (need to add editMode in
-    //       params)
+    // TODO: Only add headers if editMode is enabled
     let headerGroup: ColGroupDef = {
       headerName: topHeader?.value,
       headerClass: ['text-white', 'bg-' + topHeader.colour],
@@ -512,7 +511,6 @@ export function buildColDef (params: ColDefBuildParams): Array<ColGroupDef> {
           editConfigField.editable !== undefined) {
         fieldEditable = editConfigField.editable
       }
-      // if (appStore.editMode) fieldEditable = true // DEBUG
 
       // Get field column visibility
       const fieldVisible = getFieldVisibility({
