@@ -11,6 +11,8 @@ Unreleased
 Added
 -----
 
+- **General**
+    - Dependency upgrade issue template (#2534)
 - **Irodsbackend**
     - ``updateCollectionStats()`` error displaying (#2524)
 - **Samplesheets**
