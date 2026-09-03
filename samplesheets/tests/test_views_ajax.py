@@ -37,6 +37,7 @@ from samplesheets.models import (
     ISATab,
     IRODS_REQUEST_STATUS_ACTIVE,
     IRODS_REQUEST_ACTION_DELETE,
+    ITEM_TYPE_SAMPLE,
 )
 from samplesheets.rendering import (
     SampleSheetTableBuilder,
@@ -119,6 +120,22 @@ PLUGIN_TITLE_PEP_MS = (
 )
 
 
+class OtherProjectSetupMixin:
+    """Helpers for second project setup"""
+
+    def setup_other_project(self):
+        """Set up another project with similar sample sheets"""
+        self.project2 = self.make_project(
+            'TestProject2', PROJECT_TYPE_PROJECT, self.category
+        )
+        self.make_assignment(self.project2, self.user_owner, self.role_owner)
+        self.investigation2 = self.import_isa_from_file(
+            SHEET_PATH, self.project2
+        )
+        self.study2 = self.investigation2.studies.first()
+        self.assay2 = self.study2.assays.first()
+
+
 class RowEditMixin:
     """Helpers for row insert/deletion"""
 
@@ -152,10 +169,26 @@ class RowEditMixin:
                 content_type='application/json',
             )
 
-    def delete_row(self, path):
+    def delete_row(
+        self, path: Optional[str] = None, data: Optional[dict] = None
+    ) -> HttpResponse:
+        """
+        Delete row from database, based on file path or dictionary.
+
+        :param path: String
+        :param data: Dict
+        :return: HttpResponse
+        """
+        if not path and not data:
+            raise ValueError('Either path or data required')
+        if path and data:
+            raise ValueError('Provide either path or data')
         values = {'del_row': {}}
-        with open(path) as fp:
-            values['del_row'] = json.load(fp)
+        if path:
+            with open(path) as fp:
+                values['del_row'] = json.load(fp)
+        else:
+            values['del_row'] = data
         with self.login(self.user):
             return self.client.post(
                 reverse(
@@ -824,7 +857,9 @@ class TestSheetWarningsAjaxView(SamplesheetsViewTestBase):
         )
 
 
-class TestSheetCellEditAjaxView(SamplesheetsViewTestBase):
+class TestSheetCellEditAjaxView(
+    OtherProjectSetupMixin, SamplesheetsViewTestBase
+):
     """Tests for SheetCellEditAjaxView"""
 
     @classmethod
@@ -847,19 +882,24 @@ class TestSheetCellEditAjaxView(SamplesheetsViewTestBase):
         self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
         self.study = self.investigation.studies.first()
         # Set up POST data
-        self.values = {'updated_cells': []}
+        self.post_data = {'updated_cells': []}
         # Set up helpers
         self.cache_backend = plugin_api.get_backend_api('sodar_cache')
         self.cache_name = STUDY_TABLE_CACHE_ITEM.format(
             study=self.study.sodar_uuid
         )
         self.cache_args = [APP_NAME, self.cache_name, self.project]
+        self.url = reverse(
+            'samplesheets:ajax_edit_cell',
+            kwargs={'project': self.project.sodar_uuid},
+        )
+        self.post_kw = {'content_type': 'application/json'}
 
     def test_post_material_name(self):
         """Test SheetCellEditAjaxView POST with material name"""
         obj = GenericMaterial.objects.get(study=self.study, name='0816')
         new_name = '0816aaa'
-        self.values['updated_cells'].append(
+        self.post_data['updated_cells'].append(
             {
                 'uuid': str(obj.sodar_uuid),
                 'header_name': 'name',
@@ -870,12 +910,7 @@ class TestSheetCellEditAjaxView(SamplesheetsViewTestBase):
         )
         with self.login(self.user):
             response = self.client.post(
-                reverse(
-                    'samplesheets:ajax_edit_cell',
-                    kwargs={'project': self.project.sodar_uuid},
-                ),
-                json.dumps(self.values),
-                content_type='application/json',
+                self.url, json.dumps(self.post_data), **self.post_kw
             )
         self.assertEqual(response.status_code, 200)
         obj.refresh_from_db()
@@ -884,7 +919,7 @@ class TestSheetCellEditAjaxView(SamplesheetsViewTestBase):
     def test_post_material_name_empty(self):
         """Test POST with empty material name (should fail)"""
         obj = GenericMaterial.objects.get(study=self.study, name='0816')
-        self.values['updated_cells'].append(
+        self.post_data['updated_cells'].append(
             {
                 'uuid': str(obj.sodar_uuid),
                 'header_name': 'name',
@@ -895,12 +930,7 @@ class TestSheetCellEditAjaxView(SamplesheetsViewTestBase):
         )
         with self.login(self.user):
             response = self.client.post(
-                reverse(
-                    'samplesheets:ajax_edit_cell',
-                    kwargs={'project': self.project.sodar_uuid},
-                ),
-                json.dumps(self.values),
-                content_type='application/json',
+                self.url, json.dumps(self.post_data), **self.post_kw
             )
         self.assertEqual(response.status_code, 500)
         obj.refresh_from_db()
@@ -910,7 +940,7 @@ class TestSheetCellEditAjaxView(SamplesheetsViewTestBase):
         """Test POST with process performer"""
         obj = Process.objects.filter(study=self.study, assay=None).first()
         value = 'Alice Example <alice@example.com>'
-        self.values['updated_cells'].append(
+        self.post_data['updated_cells'].append(
             {
                 'uuid': str(obj.sodar_uuid),
                 'header_name': 'Performer',
@@ -921,12 +951,7 @@ class TestSheetCellEditAjaxView(SamplesheetsViewTestBase):
         )
         with self.login(self.user):
             response = self.client.post(
-                reverse(
-                    'samplesheets:ajax_edit_cell',
-                    kwargs={'project': self.project.sodar_uuid},
-                ),
-                json.dumps(self.values),
-                content_type='application/json',
+                self.url, json.dumps(self.post_data), **self.post_kw
             )
         self.assertEqual(response.status_code, 200)
         obj.refresh_from_db()
@@ -939,7 +964,7 @@ class TestSheetCellEditAjaxView(SamplesheetsViewTestBase):
             'Alice Example <alice@example.com>',
             'Bob Example <bob@example.com>',
         ]
-        self.values['updated_cells'].append(
+        self.post_data['updated_cells'].append(
             {
                 'uuid': str(obj.sodar_uuid),
                 'header_name': 'Performer',
@@ -950,12 +975,7 @@ class TestSheetCellEditAjaxView(SamplesheetsViewTestBase):
         )
         with self.login(self.user):
             response = self.client.post(
-                reverse(
-                    'samplesheets:ajax_edit_cell',
-                    kwargs={'project': self.project.sodar_uuid},
-                ),
-                json.dumps(self.values),
-                content_type='application/json',
+                self.url, json.dumps(self.post_data), **self.post_kw
             )
         self.assertEqual(response.status_code, 200)
         obj.refresh_from_db()
@@ -965,7 +985,7 @@ class TestSheetCellEditAjaxView(SamplesheetsViewTestBase):
         """Test POST with process perform date"""
         obj = Process.objects.filter(study=self.study, assay=None).first()
         value = '2020-07-07'
-        self.values['updated_cells'].append(
+        self.post_data['updated_cells'].append(
             {
                 'uuid': str(obj.sodar_uuid),
                 'header_name': 'Perform date',
@@ -976,12 +996,7 @@ class TestSheetCellEditAjaxView(SamplesheetsViewTestBase):
         )
         with self.login(self.user):
             response = self.client.post(
-                reverse(
-                    'samplesheets:ajax_edit_cell',
-                    kwargs={'project': self.project.sodar_uuid},
-                ),
-                json.dumps(self.values),
-                content_type='application/json',
+                self.url, json.dumps(self.post_data), **self.post_kw
             )
         self.assertEqual(response.status_code, 200)
         obj.refresh_from_db()
@@ -991,7 +1006,7 @@ class TestSheetCellEditAjaxView(SamplesheetsViewTestBase):
         """Test POST with empty process perform date"""
         obj = Process.objects.filter(study=self.study, assay=None).first()
         value = ''
-        self.values['updated_cells'].append(
+        self.post_data['updated_cells'].append(
             {
                 'uuid': str(obj.sodar_uuid),
                 'header_name': 'Perform date',
@@ -1002,12 +1017,7 @@ class TestSheetCellEditAjaxView(SamplesheetsViewTestBase):
         )
         with self.login(self.user):
             response = self.client.post(
-                reverse(
-                    'samplesheets:ajax_edit_cell',
-                    kwargs={'project': self.project.sodar_uuid},
-                ),
-                json.dumps(self.values),
-                content_type='application/json',
+                self.url, json.dumps(self.post_data), **self.post_kw
             )
         self.assertEqual(response.status_code, 200)
         obj.refresh_from_db()
@@ -1018,7 +1028,7 @@ class TestSheetCellEditAjaxView(SamplesheetsViewTestBase):
         obj = Process.objects.filter(study=self.study, assay=None).first()
         og_date = obj.perform_date
         value = '2020-11-31'
-        self.values['updated_cells'].append(
+        self.post_data['updated_cells'].append(
             {
                 'uuid': str(obj.sodar_uuid),
                 'header_name': 'Perform date',
@@ -1029,12 +1039,7 @@ class TestSheetCellEditAjaxView(SamplesheetsViewTestBase):
         )
         with self.login(self.user):
             response = self.client.post(
-                reverse(
-                    'samplesheets:ajax_edit_cell',
-                    kwargs={'project': self.project.sodar_uuid},
-                ),
-                json.dumps(self.values),
-                content_type='application/json',
+                self.url, json.dumps(self.post_data), **self.post_kw
             )
         self.assertEqual(response.status_code, 500)  # TODO: Should be 400?
         obj.refresh_from_db()
@@ -1049,7 +1054,7 @@ class TestSheetCellEditAjaxView(SamplesheetsViewTestBase):
         )
 
         # TODO: Add complete set of params once they have been refactored
-        self.values['updated_cells'].append(
+        self.post_data['updated_cells'].append(
             {
                 'uuid': str(obj.sodar_uuid),
                 'header_name': header_name,
@@ -1060,12 +1065,7 @@ class TestSheetCellEditAjaxView(SamplesheetsViewTestBase):
         )
         with self.login(self.user):
             response = self.client.post(
-                reverse(
-                    'samplesheets:ajax_edit_cell',
-                    kwargs={'project': self.project.sodar_uuid},
-                ),
-                json.dumps(self.values),
-                content_type='application/json',
+                self.url, json.dumps(self.post_data), **self.post_kw
             )
         self.assertEqual(response.status_code, 200)
         obj.refresh_from_db()
@@ -1083,7 +1083,7 @@ class TestSheetCellEditAjaxView(SamplesheetsViewTestBase):
         )
 
         # TODO: Add complete set of params once they have been refactored
-        self.values['updated_cells'].append(
+        self.post_data['updated_cells'].append(
             {
                 'uuid': str(obj.sodar_uuid),
                 'header_name': header_name,
@@ -1094,12 +1094,7 @@ class TestSheetCellEditAjaxView(SamplesheetsViewTestBase):
         )
         with self.login(self.user):
             response = self.client.post(
-                reverse(
-                    'samplesheets:ajax_edit_cell',
-                    kwargs={'project': self.project.sodar_uuid},
-                ),
-                json.dumps(self.values),
-                content_type='application/json',
+                self.url, json.dumps(self.post_data), **self.post_kw
             )
         self.assertEqual(response.status_code, 200)
         obj.refresh_from_db()
@@ -1119,7 +1114,7 @@ class TestSheetCellEditAjaxView(SamplesheetsViewTestBase):
         self.assertIsNotNone(new_protocol)
         self.assertNotEqual(obj.protocol, new_protocol)
 
-        self.values['updated_cells'].append(
+        self.post_data['updated_cells'].append(
             {
                 'uuid': str(obj.sodar_uuid),
                 'header_name': 'protocol',
@@ -1131,12 +1126,7 @@ class TestSheetCellEditAjaxView(SamplesheetsViewTestBase):
         )
         with self.login(self.user):
             response = self.client.post(
-                reverse(
-                    'samplesheets:ajax_edit_cell',
-                    kwargs={'project': self.project.sodar_uuid},
-                ),
-                json.dumps(self.values),
-                content_type='application/json',
+                self.url, json.dumps(self.post_data), **self.post_kw
             )
         self.assertEqual(response.status_code, 200)
         obj.refresh_from_db()
@@ -1152,7 +1142,7 @@ class TestSheetCellEditAjaxView(SamplesheetsViewTestBase):
         self.assertNotEqual(obj.name, name)
         self.assertNotEqual(obj.name_type, name_type)
 
-        self.values['updated_cells'].append(
+        self.post_data['updated_cells'].append(
             {
                 'uuid': str(obj.sodar_uuid),
                 'header_name': name_type,
@@ -1164,12 +1154,7 @@ class TestSheetCellEditAjaxView(SamplesheetsViewTestBase):
         )
         with self.login(self.user):
             response = self.client.post(
-                reverse(
-                    'samplesheets:ajax_edit_cell',
-                    kwargs={'project': self.project.sodar_uuid},
-                ),
-                json.dumps(self.values),
-                content_type='application/json',
+                self.url, json.dumps(self.post_data), **self.post_kw
             )
         self.assertEqual(response.status_code, 200)
         obj.refresh_from_db()
@@ -1190,7 +1175,7 @@ class TestSheetCellEditAjaxView(SamplesheetsViewTestBase):
                 'NCBITAXON/9606',
             }
         ]
-        self.values['updated_cells'].append(
+        self.post_data['updated_cells'].append(
             {
                 'uuid': str(obj.sodar_uuid),
                 'header_name': name,
@@ -1203,12 +1188,7 @@ class TestSheetCellEditAjaxView(SamplesheetsViewTestBase):
         )
         with self.login(self.user):
             response = self.client.post(
-                reverse(
-                    'samplesheets:ajax_edit_cell',
-                    kwargs={'project': self.project.sodar_uuid},
-                ),
-                json.dumps(self.values),
-                content_type='application/json',
+                self.url, json.dumps(self.post_data), **self.post_kw
             )
         self.assertEqual(response.status_code, 200)
         obj.refresh_from_db()
@@ -1237,7 +1217,7 @@ class TestSheetCellEditAjaxView(SamplesheetsViewTestBase):
             obj.characteristics[name], {'value': og_value, 'unit': None}
         )
 
-        self.values['updated_cells'].append(
+        self.post_data['updated_cells'].append(
             {
                 'uuid': str(obj.sodar_uuid),
                 'header_name': name,
@@ -1250,12 +1230,7 @@ class TestSheetCellEditAjaxView(SamplesheetsViewTestBase):
         )
         with self.login(self.user):
             response = self.client.post(
-                reverse(
-                    'samplesheets:ajax_edit_cell',
-                    kwargs={'project': self.project.sodar_uuid},
-                ),
-                json.dumps(self.values),
-                content_type='application/json',
+                self.url, json.dumps(self.post_data), **self.post_kw
             )
         self.assertEqual(response.status_code, 200)
         obj.refresh_from_db()
@@ -1283,7 +1258,7 @@ class TestSheetCellEditAjaxView(SamplesheetsViewTestBase):
         ]
         self.assertEqual(obj.characteristics[name], EMPTY_ONTOLOGY_VAL)
 
-        self.values['updated_cells'].append(
+        self.post_data['updated_cells'].append(
             {
                 'uuid': str(obj.sodar_uuid),
                 'header_name': name,
@@ -1296,12 +1271,7 @@ class TestSheetCellEditAjaxView(SamplesheetsViewTestBase):
         )
         with self.login(self.user):
             response = self.client.post(
-                reverse(
-                    'samplesheets:ajax_edit_cell',
-                    kwargs={'project': self.project.sodar_uuid},
-                ),
-                json.dumps(self.values),
-                content_type='application/json',
+                self.url, json.dumps(self.post_data), **self.post_kw
             )
         self.assertEqual(response.status_code, 200)
         obj.refresh_from_db()
@@ -1320,7 +1290,7 @@ class TestSheetCellEditAjaxView(SamplesheetsViewTestBase):
         }
         self.assertNotEqual(obj.characteristics[name], EMPTY_ONTOLOGY_VAL)
 
-        self.values['updated_cells'].append(
+        self.post_data['updated_cells'].append(
             {
                 'uuid': str(obj.sodar_uuid),
                 'header_name': name,
@@ -1333,12 +1303,7 @@ class TestSheetCellEditAjaxView(SamplesheetsViewTestBase):
         )
         with self.login(self.user):
             response = self.client.post(
-                reverse(
-                    'samplesheets:ajax_edit_cell',
-                    kwargs={'project': self.project.sodar_uuid},
-                ),
-                json.dumps(self.values),
-                content_type='application/json',
+                self.url, json.dumps(self.post_data), **self.post_kw
             )
         self.assertEqual(response.status_code, 200)
         obj.refresh_from_db()
@@ -1371,7 +1336,7 @@ class TestSheetCellEditAjaxView(SamplesheetsViewTestBase):
         self.assertEqual(obj.characteristics[name], EMPTY_ONTOLOGY_VAL)
         self.assertEqual(len(self.investigation.ontology_source_refs), 4)
 
-        self.values['updated_cells'].append(
+        self.post_data['updated_cells'].append(
             {
                 'uuid': str(obj.sodar_uuid),
                 'header_name': name,
@@ -1384,12 +1349,7 @@ class TestSheetCellEditAjaxView(SamplesheetsViewTestBase):
         )
         with self.login(self.user):
             response = self.client.post(
-                reverse(
-                    'samplesheets:ajax_edit_cell',
-                    kwargs={'project': self.project.sodar_uuid},
-                ),
-                json.dumps(self.values),
-                content_type='application/json',
+                self.url, json.dumps(self.post_data), **self.post_kw
             )
 
         self.assertEqual(response.status_code, 200)
@@ -1434,7 +1394,7 @@ class TestSheetCellEditAjaxView(SamplesheetsViewTestBase):
 
         obj = GenericMaterial.objects.get(study=self.study, name='0816')
         new_name = '0816aaa'
-        self.values['updated_cells'].append(
+        self.post_data['updated_cells'].append(
             {
                 'uuid': str(obj.sodar_uuid),
                 'header_name': 'name',
@@ -1446,12 +1406,7 @@ class TestSheetCellEditAjaxView(SamplesheetsViewTestBase):
 
         with self.login(self.user):
             response = self.client.post(
-                reverse(
-                    'samplesheets:ajax_edit_cell',
-                    kwargs={'project': self.project.sodar_uuid},
-                ),
-                json.dumps(self.values),
-                content_type='application/json',
+                self.url, json.dumps(self.post_data), **self.post_kw
             )
         self.assertEqual(response.status_code, 200)
         obj.refresh_from_db()
@@ -1461,6 +1416,90 @@ class TestSheetCellEditAjaxView(SamplesheetsViewTestBase):
         cache_item = self.cache_backend.get_cache_item(*self.cache_args)
         self.assertEqual(cache_item.data, {})
         self.assertEqual(JSONCacheItem.objects.count(), 1)
+
+    def test_post_other_project_material(self):
+        """Test POST with material in other project"""
+        self.setup_other_project()
+        obj = GenericMaterial.objects.get(study=self.study2, name='0816')
+        new_name = '0816aaa'
+        self.post_data['updated_cells'].append(
+            {
+                'uuid': str(obj.sodar_uuid),
+                'header_name': 'name',
+                'header_type': 'name',
+                'obj_cls': 'GenericMaterial',
+                'value': new_name,
+            }
+        )
+        with self.login(self.user):
+            response = self.client.post(
+                self.url, json.dumps(self.post_data), **self.post_kw
+            )
+        self.assertEqual(response.status_code, 404)
+        self.assertEqual(
+            response.data['detail'],
+            f'Object not found: {obj.sodar_uuid} ({obj.__class__.__name__})',
+        )
+        obj.refresh_from_db()
+        self.assertEqual(obj.name, '0816')
+        self.assertIsNotNone(
+            GenericMaterial.objects.filter(
+                study=self.study, name='0816'
+            ).first()
+        )
+
+    def test_post_other_project_process(self):
+        """Test POST with process in other project"""
+        self.setup_other_project()
+        obj = Process.objects.filter(study=self.study2, assay=None).first()
+        self.post_data['updated_cells'].append(
+            {
+                'uuid': str(obj.sodar_uuid),
+                'header_name': 'Performer',
+                'header_type': 'performer',
+                'obj_cls': 'Process',
+                'value': 'Alice Example <alice@example.com>',
+            }
+        )
+        with self.login(self.user):
+            response = self.client.post(
+                self.url, json.dumps(self.post_data), **self.post_kw
+            )
+        self.assertEqual(response.status_code, 404)
+        self.assertEqual(
+            response.data['detail'],
+            f'Object not found: {obj.sodar_uuid} ({obj.__class__.__name__})',
+        )
+
+    def test_post_other_project_protocol(self):
+        """Test POST with protocol in other project"""
+        self.setup_other_project()
+        obj = Process.objects.filter(
+            study=self.study, unique_name__icontains='sample collection'
+        ).first()
+        new_protocol = Protocol.objects.filter(study=self.study2).first()
+        self.assertIsNotNone(new_protocol)
+
+        self.post_data['updated_cells'].append(
+            {
+                'uuid': str(obj.sodar_uuid),
+                'header_name': 'protocol',
+                'header_type': 'protocol',
+                'obj_cls': 'Process',
+                'value': new_protocol.name,
+                'uuid_ref': str(new_protocol.sodar_uuid),
+            }
+        )
+        with self.login(self.user):
+            response = self.client.post(
+                self.url, json.dumps(self.post_data), **self.post_kw
+            )
+        self.assertEqual(response.status_code, 500)
+        self.assertEqual(
+            response.data['detail'],
+            f'Exception in cell update: Protocol not found: '
+            f'{new_protocol.name} ({new_protocol.sodar_uuid})',
+        )
 
 
 class TestSheetCellEditAjaxViewSpecial(SamplesheetsViewTestBase):
@@ -1563,9 +1602,24 @@ class TestSheetCellEditAjaxViewSpecial(SamplesheetsViewTestBase):
 
 
 class TestSheetRowInsertAjaxView(
-    RowEditMixin, SheetConfigMixin, SamplesheetsViewTestBase
+    OtherProjectSetupMixin,
+    RowEditMixin,
+    SheetConfigMixin,
+    SamplesheetsViewTestBase,
 ):
     """Tests for SheetRowInsertAjaxView"""
+
+    def _insert_study_row(self):
+        """
+        Helper to insert study row and set up UUIDs before handling assay
+        inserting.
+        """
+        self.insert_row(path=STUDY_INSERT_PATH)
+        sample = GenericMaterial.objects.get(
+            study=self.study, name=EDIT_SAMPLE_NAME
+        )
+        sample.sodar_uuid = EDIT_SAMPLE_UUID
+        sample.save()
 
     def setUp(self):
         super().setUp()
@@ -1703,13 +1757,7 @@ class TestSheetRowInsertAjaxView(
 
     def test_post_assay_row_split(self):
         """Test POST with assay row and splitting"""
-        # Insert study and assay rows
-        self.insert_row(path=STUDY_INSERT_PATH)
-        sample = GenericMaterial.objects.get(
-            study=self.study, name=EDIT_SAMPLE_NAME
-        )
-        sample.sodar_uuid = EDIT_SAMPLE_UUID
-        sample.save()
+        self._insert_study_row()
         self.insert_row(path=ASSAY_INSERT_PATH)
 
         self.update_assay_row_uuids(update_sample=False)
@@ -1731,12 +1779,7 @@ class TestSheetRowInsertAjaxView(
 
     def test_post_assay_row_pool_material(self):
         """Test POST with assay row and pooling by data file material"""
-        self.insert_row(path=STUDY_INSERT_PATH)
-        sample = GenericMaterial.objects.get(
-            study=self.study, name=EDIT_SAMPLE_NAME
-        )
-        sample.sodar_uuid = EDIT_SAMPLE_UUID
-        sample.save()
+        self._insert_study_row()
         self.insert_row(path=ASSAY_INSERT_PATH)
 
         self.update_assay_row_uuids(update_sample=False)
@@ -1758,12 +1801,7 @@ class TestSheetRowInsertAjaxView(
 
     def test_post_assay_row_pool_process(self):
         """Test POST with assay row and pooling by named process"""
-        self.insert_row(path=STUDY_INSERT_PATH)
-        sample = GenericMaterial.objects.get(
-            study=self.study, name=EDIT_SAMPLE_NAME
-        )
-        sample.sodar_uuid = EDIT_SAMPLE_UUID
-        sample.save()
+        self._insert_study_row()
         self.insert_row(path=ASSAY_INSERT_PATH)
 
         self.update_assay_row_uuids(update_sample=False)
@@ -1802,9 +1840,86 @@ class TestSheetRowInsertAjaxView(
         self.assertEqual(cache_item.data, {})
         self.assertEqual(JSONCacheItem.objects.count(), 1)
 
+    def test_post_other_project_study(self):
+        """Test POST with study in other project"""
+        self.setup_other_project()
+        with open(STUDY_INSERT_PATH) as fp:
+            row = json.load(fp)
+        row['study'] = str(self.study2.sodar_uuid)
+        response = self.insert_row(data=row)
+        self.assertEqual(response.status_code, 500)
+        self.assertEqual(
+            response.data['detail'],
+            f'Study not found: {self.study2.sodar_uuid}',
+        )
+
+    def test_post_other_project_assay(self):
+        """Test POST with assay in other project"""
+        self.setup_other_project()
+        with open(ASSAY_INSERT_PATH) as fp:
+            row = json.load(fp)
+        row['assay'] = str(self.assay2.sodar_uuid)
+        response = self.insert_row(data=row)
+        self.assertEqual(response.status_code, 500)
+        self.assertEqual(
+            response.data['detail'],
+            f'Assay not found: {self.assay2.sodar_uuid}',
+        )
+
+    def test_post_other_project_material(self):
+        """Test POST with material in other project"""
+        self.setup_other_project()
+        with open(ASSAY_INSERT_POOL_MATERIAL_PATH) as fp:
+            row = json.load(fp)
+        obj = GenericMaterial.objects.filter(
+            study=self.study2, item_type=ITEM_TYPE_SAMPLE
+        ).first()
+        row['nodes'][0]['cells'][0]['uuid'] = str(obj.sodar_uuid)
+
+        response = self.insert_row(data=row)
+        self.assertEqual(response.status_code, 500)
+        self.assertEqual(
+            response.data['detail'],
+            f'GenericMaterial not found (UUID={obj.sodar_uuid})',
+        )
+
+    def test_post_other_project_process(self):
+        """Test POST with process in other project"""
+        self.setup_other_project()
+        self._insert_study_row()
+        with open(ASSAY_INSERT_PATH) as fp:
+            row = json.load(fp)
+        obj = Process.objects.filter(study=self.study2).first()
+        row['nodes'][3]['cells'][0]['uuid'] = str(obj.sodar_uuid)
+
+        response = self.insert_row(data=row)
+        self.assertEqual(response.status_code, 500)
+        self.assertEqual(
+            response.data['detail'],
+            f'Process not found (UUID={obj.sodar_uuid})',
+        )
+
+    def test_post_other_project_protocol(self):
+        """Test POST with protocol in other project"""
+        self.setup_other_project()
+        with open(STUDY_INSERT_PATH) as fp:
+            row = json.load(fp)
+        obj = Protocol.objects.filter(study=self.study2).first()
+        row['nodes'][1]['cells'][0]['uuid_ref'] = str(obj.sodar_uuid)
+
+        response = self.insert_row(data=row)
+        self.assertEqual(response.status_code, 500)
+        self.assertEqual(
+            response.data['detail'],
+            f'Protocol not found (UUID={obj.sodar_uuid})',
+        )
+
 
 class TestSheetRowDeleteAjaxView(
-    RowEditMixin, SheetConfigMixin, SamplesheetsViewTestBase
+    OtherProjectSetupMixin,
+    RowEditMixin,
+    SheetConfigMixin,
+    SamplesheetsViewTestBase,
 ):
     """Tests for SheetRowDeleteAjaxView"""
 
@@ -1852,7 +1967,7 @@ class TestSheetRowDeleteAjaxView(
 
     def test_post_assay_row(self):
         """Test SheetRowDeleteAjaxView POST with assay row"""
-        response = self.delete_row(ASSAY_DELETE_PATH)
+        response = self.delete_row(path=ASSAY_DELETE_PATH)
         self.assertEqual(response.status_code, 200)
         self.assay.refresh_from_db()
         self.assertIsNotNone(
@@ -1869,10 +1984,10 @@ class TestSheetRowDeleteAjaxView(
     def test_post_study_row(self):
         """Test POST with study row"""
         # First delete the assay row
-        response = self.delete_row(ASSAY_DELETE_PATH)
+        response = self.delete_row(path=ASSAY_DELETE_PATH)
         self.assertEqual(response.status_code, 200)
         # Delete the study row
-        response = self.delete_row(STUDY_DELETE_PATH)
+        response = self.delete_row(path=STUDY_DELETE_PATH)
 
         self.assertEqual(response.status_code, 200)
         self.assertIsNone(
@@ -1893,7 +2008,7 @@ class TestSheetRowDeleteAjaxView(
 
     def test_post_study_row_in_use(self):
         """Test POST with study row containing sample used in asssay (should fail)"""
-        response = self.delete_row(STUDY_DELETE_PATH)
+        response = self.delete_row(path=STUDY_DELETE_PATH)
         self.assertEqual(response.status_code, 500)
         self.assertIsNotNone(
             GenericMaterial.objects.filter(
@@ -1924,11 +2039,65 @@ class TestSheetRowDeleteAjaxView(
             self.cache_backend.get_cache_item(*self.cache_args)
         )
         self.assertEqual(JSONCacheItem.objects.count(), 1)
-        response = self.delete_row(ASSAY_DELETE_PATH)
+        response = self.delete_row(path=ASSAY_DELETE_PATH)
         self.assertEqual(response.status_code, 200)
         cache_item = self.cache_backend.get_cache_item(*self.cache_args)
         self.assertEqual(cache_item.data, {})
         self.assertEqual(JSONCacheItem.objects.count(), 1)
+
+    def test_post_other_project_study(self):
+        """Test POST with study in other project"""
+        self.setup_other_project()
+        with open(ASSAY_DELETE_PATH) as fp:
+            row = json.load(fp)
+        row['study'] = str(self.study2.sodar_uuid)
+        response = self.delete_row(data=row)
+        self.assertEqual(response.status_code, 500)
+        self.assertEqual(
+            response.data['detail'],
+            f'Study not found: {self.study2.sodar_uuid}',
+        )
+
+    def test_post_other_project_assay(self):
+        """Test POST with assay in other project"""
+        self.setup_other_project()
+        with open(ASSAY_DELETE_PATH) as fp:
+            row = json.load(fp)
+        row['assay'] = str(self.assay2.sodar_uuid)
+        response = self.delete_row(data=row)
+        self.assertEqual(response.status_code, 500)
+        self.assertEqual(
+            response.data['detail'],
+            f'Assay not found: {self.assay2.sodar_uuid}',
+        )
+
+    def test_post_other_project_material(self):
+        """Test POST with material in other project"""
+        self.setup_other_project()
+        with open(ASSAY_DELETE_PATH) as fp:
+            row = json.load(fp)
+        obj = GenericMaterial.objects.filter(study=self.study2).first()
+        row['nodes'][0]['uuid'] = str(obj.sodar_uuid)
+        response = self.delete_row(data=row)
+        self.assertEqual(response.status_code, 500)
+        self.assertEqual(
+            response.data['detail'],
+            f'GenericMaterial not found (UUID={obj.sodar_uuid})',
+        )
+
+    def test_post_other_project_process(self):
+        """Test POST with process in other project"""
+        self.setup_other_project()
+        with open(ASSAY_DELETE_PATH) as fp:
+            row = json.load(fp)
+        obj = Process.objects.filter(study=self.study2).first()
+        row['nodes'][1]['uuid'] = str(obj.sodar_uuid)
+        response = self.delete_row(data=row)
+        self.assertEqual(response.status_code, 500)
+        self.assertEqual(
+            response.data['detail'],
+            f'Process not found (UUID={obj.sodar_uuid})',
+        )
 
 
 class TestSheetVersionSaveAjaxView(SamplesheetsViewTestBase):
@@ -2012,7 +2181,7 @@ class TestSheetEditFinishAjaxView(SamplesheetsViewTestBase):
 
 
 class TestSheetEditConfigUpdateAjaxView(
-    SheetConfigMixin, SamplesheetsViewTestBase
+    OtherProjectSetupMixin, SheetConfigMixin, SamplesheetsViewTestBase
 ):
     """Tests for SheetEditConfigUpdateAjaxView"""
 
@@ -2038,7 +2207,7 @@ class TestSheetEditConfigUpdateAjaxView(
         self.study = self.investigation.studies.first()
         self.assay = self.study.assays.first()
 
-        self.post_values = {
+        self.post_data = {
             'fields': [
                 {
                     'action': 'update',
@@ -2066,6 +2235,12 @@ class TestSheetEditConfigUpdateAjaxView(
         )
         self.cache_args = [APP_NAME, self.cache_name, self.project]
 
+        self.url = reverse(
+            'samplesheets:ajax_config_update',
+            kwargs={'project': self.project.sodar_uuid},
+        )
+        self.post_kw = {'content_type': 'application/json'}
+
     def test_post_study_column(self):
         """Test SheetEditConfigUpdateAjaxView POST with study column"""
         sheet_config = app_settings.get(
@@ -2083,12 +2258,7 @@ class TestSheetEditConfigUpdateAjaxView(
 
         with self.login(self.user):
             response = self.client.post(
-                reverse(
-                    'samplesheets:ajax_config_update',
-                    kwargs={'project': self.project.sodar_uuid},
-                ),
-                json.dumps(self.post_values),
-                content_type='application/json',
+                self.url, json.dumps(self.post_data), **self.post_kw
             )
         self.assertEqual(response.status_code, 200)
 
@@ -2122,12 +2292,7 @@ class TestSheetEditConfigUpdateAjaxView(
         """Test POST as inherited owner"""
         with self.login(self.user_cat):
             response = self.client.post(
-                reverse(
-                    'samplesheets:ajax_config_update',
-                    kwargs={'project': self.project.sodar_uuid},
-                ),
-                json.dumps(self.post_values),
-                content_type='application/json',
+                self.url, json.dumps(self.post_data), **self.post_kw
             )
         self.assertEqual(response.status_code, 200)
 
@@ -2145,18 +2310,23 @@ class TestSheetEditConfigUpdateAjaxView(
 
         with self.login(self.user):
             response = self.client.post(
-                reverse(
-                    'samplesheets:ajax_config_update',
-                    kwargs={'project': self.project.sodar_uuid},
-                ),
-                json.dumps(self.post_values),
-                content_type='application/json',
+                self.url, json.dumps(self.post_data), **self.post_kw
             )
         self.assertEqual(response.status_code, 200)
 
         cache_item = self.cache_backend.get_cache_item(*self.cache_args)
         self.assertEqual(cache_item.data, {})
         self.assertEqual(JSONCacheItem.objects.count(), 1)
+
+    def test_post_other_project_study(self):
+        """Test POST with study in other project"""
+        self.setup_other_project()
+        self.post_data['fields'][0]['study'] = str(self.study2.sodar_uuid)
+        with self.login(self.user):
+            response = self.client.post(
+                self.url, json.dumps(self.post_data), **self.post_kw
+            )
+        self.assertEqual(response.status_code, 500)
 
 
 class TestStudyDisplayConfigUpdateAjaxView(
@@ -2172,6 +2342,7 @@ class TestStudyDisplayConfigUpdateAjaxView(
         self.a_uuid = str(
             self.investigation.studies.first().assays.first().sodar_uuid
         )
+
         # Build sheet config and default display config
         inv_tables = table_builder.build_inv_tables(self.investigation)
         self.sheet_config = self.build_sheet_config(self.investigation)
@@ -2192,6 +2363,11 @@ class TestStudyDisplayConfigUpdateAjaxView(
             value=self.display_config,
         )
         self.study_config = self.display_config['studies'][self.s_uuid]
+        self.url = reverse(
+            'samplesheets:ajax_display_update',
+            kwargs={'study': self.study.sodar_uuid},
+        )
+        self.post_kw = {'content_type': 'application/json'}
 
     def test_post(self):
         """Test StudyDisplayConfigUpdateAjaxView POST"""
@@ -2202,14 +2378,11 @@ class TestStudyDisplayConfigUpdateAjaxView(
 
         with self.login(self.user):
             response = self.client.post(
-                reverse(
-                    'samplesheets:ajax_display_update',
-                    kwargs={'study': self.study.sodar_uuid},
-                ),
+                self.url,
                 json.dumps(
                     {'study_config': self.study_config, 'set_default': False}
                 ),
-                content_type='application/json',
+                **self.post_kw,
             )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data['detail'], 'ok')
@@ -2232,14 +2405,11 @@ class TestStudyDisplayConfigUpdateAjaxView(
 
         with self.login(self.user):
             response = self.client.post(
-                reverse(
-                    'samplesheets:ajax_display_update',
-                    kwargs={'study': self.study.sodar_uuid},
-                ),
+                self.url,
                 json.dumps(
                     {'study_config': self.study_config, 'set_default': True}
                 ),
-                content_type='application/json',
+                **self.post_kw,
             )
 
         self.assertEqual(response.status_code, 200)
@@ -2262,24 +2432,18 @@ class TestStudyDisplayConfigUpdateAjaxView(
         """Test POST with no updates"""
         with self.login(self.user):
             response = self.client.post(
-                reverse(
-                    'samplesheets:ajax_display_update',
-                    kwargs={'study': self.study.sodar_uuid},
-                ),
+                self.url,
                 json.dumps(
                     {'study_config': self.study_config, 'set_default': False}
                 ),
-                content_type='application/json',
+                **self.post_kw,
             )
         self.assertEqual(response.status_code, 200)
         self.assertNotEqual(response.data['detail'], 'ok')
         updated_config = app_settings.get(
             APP_NAME, 'display_config', project=self.project, user=self.user
         )
-        self.assertEqual(
-            updated_config,
-            self.display_config,
-        )
+        self.assertEqual(updated_config, self.display_config)
 
 
 class TestPluginSearchResultsAjaxView(SamplesheetsViewTestBase):

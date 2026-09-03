@@ -19,6 +19,7 @@ Release for minor updates, maintenance and bug fixes.
 - Upgrade to SODAR Core v1.4.4
 - Upgrade to irods-docker v4.3.5-2 in CI
 - Fix Markdown previews in production deployments
+- Fix missing edit Ajax view object query project scope checks
 - Minor updates and bug fixes
 
 
