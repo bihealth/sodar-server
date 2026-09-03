@@ -25,7 +25,7 @@ Changed
 
 - **General**
     - Upgrade to django-sodar-core v1.4.4 (#2526)
-    - Upgrade to irods-docker v4.3.5-2 in CI (#2514)
+    - Upgrade to irods-docker v4.3.5-3 in CI (#2514, #2527)
     - Upgrade to djangorestframework v3.17.2 (#2533)
 - **Landingzones**
     - Update ``zone_access_restrict`` validation testing on project create (#2354)
