@@ -9,13 +9,15 @@ import { copy } from '../testUtils.ts'
 import { sodarContext } from '../data/sodarContext.ts'
 import { ASSAY_PATH, ASSAY_UUID, STUDY_UUID } from '../testConstants.ts'
 
+// Test Data -------------------------------------------------------------------
+
+let context: SodarContext
+let assayContext: SodarContextAssay
+const mockModal = {} as TemplateRef
+
 // Tests -----------------------------------------------------------------------
 
 describe('getAssayIrodsHeaderGroup()', () => {
-  let context: SodarContext
-  let assayContext: SodarContextAssay
-  const mockModal = {} as TemplateRef
-
   beforeEach(() => {
     context = copy(sodarContext) as SodarContext
     assayContext = copy(

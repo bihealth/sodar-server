@@ -61,15 +61,19 @@ describe('updateCells()', () => {
       json: () => Promise.resolve(data), status: status} as Response)
     )
   }
+
   function mockFetchOk () {
     mockFetch({ detail: AJAX_RES_OK }, 200)
   }
+
   function mockFetchAlert () {
     mockFetch({ detail: 'alert', alert_msg: 'alert message' }, 200)
   }
+
   function mockFetchError () {
     mockFetch({ detail: 'error' }, 500)
   }
+
   function exceptFetchBody (body: object) {
     const request = copy(defaultRequest) as RequestInit
     request.body = JSON.stringify(body)

@@ -9,12 +9,14 @@ import { copy } from '../testUtils.ts'
 import studyTables from '../data/studyTables.json'
 import studyShortcutsGermline from '../data/studyShortcutsGermline.json'
 
+// Test Data -------------------------------------------------------------------
+
+let table: StudyRenderTable
+const mockModal = {} as TemplateRef
+
 // Tests -----------------------------------------------------------------------
 
 describe('getStudyShortcutHeaderGroup()', () => {
-  let table: StudyRenderTable
-  const mockModal = {} as TemplateRef
-
   beforeEach(() => {
     table = copy(studyTables.tables.study) as StudyRenderTable
     table.shortcuts = copy(studyShortcutsGermline) as unknown as StudyShortcuts
