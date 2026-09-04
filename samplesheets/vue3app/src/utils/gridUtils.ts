@@ -676,9 +676,9 @@ export function buildRowData (
           table.field_header[j]?.col_type === 'ONTOLOGY') {
         for (const term of (cellData.value as Array<SheetTableOntologyRef>)) {
           if (term.accession &&
-              appStore.sodarContext!.ontology_url_skip &&
+            (!appStore.sodarContext!.ontology_url_skip ||
               !appStore.sodarContext!.ontology_url_skip.some(
-                x => term.accession.includes(x))) {
+                x => term.accession.includes(x)))) {
             let ontologyName = term.ontology_name
             // HACK for mislabeled HP terms
             if (ontologyName === 'HPO') ontologyName = 'HP'

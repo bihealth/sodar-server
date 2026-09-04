@@ -131,7 +131,7 @@ export interface SheetTableCellData {
   newRow?: boolean // Only for editing
   tooltip?: string // Only used for file link?
   unit?: string
-  uuid?: string
+  uuid?: string | null
   uuidRef?: string
   value: SheetTableCellDataValue
 }
