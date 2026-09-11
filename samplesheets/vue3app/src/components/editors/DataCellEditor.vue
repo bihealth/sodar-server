@@ -207,7 +207,7 @@ function selectEmptyValue (value: string | null | undefined): boolean {
 }
 
 // Save node names and UUIDs for comparison
-// TODO: We should maintain these in a store instead of building here
+// TODO: Maintain in a store instead of building here (see #2542)
 function setNameData () {
   const fieldId = params.fieldId as string
   // TODO: Do we need to iterate through all grids? (see old implementation)
@@ -277,7 +277,6 @@ onUnmounted(() => {
     if (appStore.notifyCb) {
       appStore.notifyCb('Invalid cell value', VARIANT_DANGER)
     }
-    // TODO: Implement and call finalization func
     return
   }
   // Update cell/node
@@ -292,7 +291,6 @@ onUnmounted(() => {
     cellData.value = ogValue
     // TODO: Fix (see #2518)
     if (appStore.notifyCb) appStore.notifyCb('Renaming cancelled', VARIANT_INFO)
-    // TODO: Implement and call finalization func
   }
 
   if (nameColumn && (!cellData.uuid || cellData.newRow)) { // Update/init node

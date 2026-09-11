@@ -46,7 +46,6 @@ describe('OntologyEditor.vue', () => {
 
   beforeEach(() => {
     vi.resetAllMocks()
-    // setActivePinia(createPinia())
     params = copy(defaultParams) as GridCellEditorParams
     params.ontologyEditModal = mockModal as unknown as TemplateRef
   })

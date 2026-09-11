@@ -18,6 +18,13 @@ import {
   type SheetTableFieldHeader,
   type StudyEditContext,
 } from '@/types.ts'
+import {
+  TERM_PASTE_INVALID_JSON_MSG,
+  TERM_PASTE_LIST_ALLOW_MSG,
+  TERM_PASTE_ONTOLOGY_ALLOW_PREFIX,
+  VARIANT_DANGER,
+  VARIANT_SUCCESS
+} from '@/constants.ts'
 
 import studyTablesEdit from '../data/studyTablesEdit.json'
 import { copy, waitMs, waitSelector } from '../testUtils.ts'
@@ -152,38 +159,11 @@ vi.mock('@vueuse/core', async () => {
   return { ...actual, useClipboard: () => ({ copy: mockCopy }) }
 })
 
+const mockNotifyCb = vi.fn()
+
 // Tests -----------------------------------------------------------------------
 
 describe('OntologyEditModal.vue', () => {
-  beforeEach(() => {
-    // Update mocks
-    vi.resetAllMocks()
-    // Override fetchRes and/or fetchStatus before showModal() to test responses
-    fetchRes = copy(defaultFetchRes)
-    fetchStatus = 200
-
-    // Set up stores
-    setActivePinia(createPinia())
-    const appStore = useAppStore()
-    appStore.projectUuid = PROJECT_UUID
-    const tableStore = useTableStore()
-    tableStore.gridApi.study = mockGridApi as unknown as GridApi
-    tableStore.gridApi.assays[ASSAY_UUID] = mockGridApi as unknown as GridApi
-    const editStore = useEditStore()
-    editStore.editContext = studyTablesEdit.edit_context as
-      unknown as StudyEditContext
-
-    // Set up params
-    params = copy(defaultParams) as GridCellEditorParams
-    params.api = {
-      getColumns: () => { return [] },
-      stopEditing: vi.fn()
-    } as unknown as GridApi
-    params.column = {
-      getOriginalParent: vi.fn()
-    } as unknown as Column
-  })
-
   async function showModal (): Promise<VueWrapper> {
     global.fetch = vi.fn(() => Promise.resolve({
       json: () => Promise.resolve(fetchRes), status: fetchStatus} as Response)
@@ -194,6 +174,38 @@ describe('OntologyEditModal.vue', () => {
     await waitSelector(wrapper, '#sodar-ss-ontology-edit-content', 1)
     return wrapper
   }
+
+  beforeEach(() => {
+    // Update mocks
+    vi.resetAllMocks()
+
+    // Set up stores
+    setActivePinia(createPinia())
+    const appStore = useAppStore()
+    const editStore = useEditStore()
+    const tableStore = useTableStore()
+
+    appStore.notifyCb = mockNotifyCb
+    appStore.projectUuid = PROJECT_UUID
+    editStore.editContext = studyTablesEdit.edit_context as
+      unknown as StudyEditContext
+    tableStore.gridApi.study = mockGridApi as unknown as GridApi
+    tableStore.gridApi.assays[ASSAY_UUID] = mockGridApi as unknown as GridApi
+
+    // Set up params
+    params = copy(defaultParams) as GridCellEditorParams
+    params.api = {
+      getColumns: () => { return [] },
+      stopEditing: vi.fn()
+    } as unknown as GridApi
+    params.column = {
+      getOriginalParent: vi.fn()
+    } as unknown as Column
+
+    // Override fetchRes and/or fetchStatus before showModal() to test responses
+    fetchRes = copy(defaultFetchRes)
+    fetchStatus = 200
+  })
 
   test('render component with default data', async () => {
     const wrapper = await showModal()
@@ -1072,11 +1084,14 @@ describe('OntologyEditModal.vue', () => {
     expect(copyBtn.attributes().disabled).toBeDefined() // Should be disabled
   })
 
-  test('copy ontology terms into clipboard on button click', async () => {
+  test('copy ontology term into clipboard on button click', async () => {
+    expect(mockNotifyCb).not.toHaveBeenCalled()
     const wrapper = await showModal()
     const copyBtn = wrapper.find(clipCopySel)
     await copyBtn.trigger('click')
     expect(mockCopy).toHaveBeenCalledWith(JSON.stringify([inputTerm]))
+    expect(mockNotifyCb).toHaveBeenCalledWith(
+      'Ontology term copied into clipboard', VARIANT_SUCCESS)
   })
 
   test('paste term to replace existing', async () => {
@@ -1112,6 +1127,9 @@ describe('OntologyEditModal.vue', () => {
     expect(term?.find(termNameSel).text()).toBe(inputTerm2.name)
     expect(term?.find(termOboSel).text()).toBe(inputTerm2.ontology_name)
     expect(term?.find(termAccSel).text()).toBe(inputTerm2.accession)
+
+    expect(mockNotifyCb).toHaveBeenCalledWith(
+      'Ontology term replaced', VARIANT_SUCCESS)
   })
 
   test('paste list of terms with allow_list=true', async () => {
@@ -1131,6 +1149,9 @@ describe('OntologyEditModal.vue', () => {
     expect(terms[1]?.find(termNameSel).text()).toBe(inputTerm3.name)
     expect(terms[1]?.find(termOboSel).text()).toBe(inputTerm3.ontology_name)
     expect(terms[1]?.find(termAccSel).text()).toBe(inputTerm3.accession)
+
+    expect(mockNotifyCb).toHaveBeenCalledWith(
+      'Ontology terms replaced', VARIANT_SUCCESS)
   })
 
   test('paste list of terms with allow_list=false', async () => {
@@ -1147,6 +1168,9 @@ describe('OntologyEditModal.vue', () => {
     expect(term?.find(termNameSel).text()).toBe(inputTerm.name)
     expect(term?.find(termOboSel).text()).toBe(inputTerm.ontology_name)
     expect(term?.find(termAccSel).text()).toBe(inputTerm.accession)
+
+    expect(mockNotifyCb).toHaveBeenCalledWith(
+      TERM_PASTE_LIST_ALLOW_MSG, VARIANT_DANGER)
   })
 
   test('paste list of terms with unallowed ontology', async () => {
@@ -1166,9 +1190,45 @@ describe('OntologyEditModal.vue', () => {
     expect(term?.find(termNameSel).text()).toBe(inputTerm.name)
     expect(term?.find(termOboSel).text()).toBe(inputTerm.ontology_name)
     expect(term?.find(termAccSel).text()).toBe(inputTerm.accession)
+
+    expect(mockNotifyCb).toHaveBeenCalledWith(
+      TERM_PASTE_ONTOLOGY_ALLOW_PREFIX + OBO_ID_UBERON, VARIANT_DANGER)
   })
 
-  // TODO: Test state reset on modal reopen
-  // TODO: Test title with node name (needs mocked api or real grid)
-  // TODO: Test notifyCb calls
+  test('paste list of terms with invalid JSON', async () => {
+    // Suppress console logging
+    vi.spyOn(console, 'error').mockImplementation(() => undefined)
+
+    const wrapper = await showModal()
+    expect(wrapper.findAll(termRowSel).length).toBe(1)
+
+    const pasteInput = wrapper.find(clipPasteSel)
+    await pasteInput.setValue('{"invalid: "json')
+    expect(wrapper.findAll(termRowSel).length).toBe(1)
+
+    const term = wrapper.find(termRowSel)
+    expect(term?.find(termNameSel).text()).toBe(inputTerm.name)
+    expect(term?.find(termOboSel).text()).toBe(inputTerm.ontology_name)
+    expect(term?.find(termAccSel).text()).toBe(inputTerm.accession)
+
+    expect(mockNotifyCb).toHaveBeenCalledWith(
+      TERM_PASTE_INVALID_JSON_MSG, VARIANT_DANGER)
+  })
+
+  test('reset UI on modal reopen', async () => {
+    params.editConfigField.allow_list = true
+    let wrapper = await showModal()
+
+    await wrapper.find(searchInputSel).setValue('test')
+    expect(wrapper.find(searchInputSel).attributes().value).toBe('test')
+    const input = wrapper.findAll(termInputSel)[0]!
+    await input.setValue('test')
+    expect(input.attributes().value).toBe('test')
+
+    await wrapper.find('#sodar-ss-ontology-btn-cancel').trigger('click')
+    wrapper = await showModal()
+
+    expect(wrapper.find(searchInputSel).attributes().value).toBe('')
+    expect(wrapper.findAll(termInputSel)[0]!.attributes().value).toBe('')
+  })
 })

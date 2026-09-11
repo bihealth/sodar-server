@@ -51,6 +51,10 @@ import {
   HEADER_NAME_SAMPLE,
   NODE_ID_HEADER_TYPES,
   REQ_POST,
+  ROW_DEL_MSG_DELETED,
+  ROW_DEL_MSG_FAIL,
+  ROW_INS_MSG_OK,
+  ROW_INS_MSG_FAIL_PREFIX,
   URL_CELL_EDIT_PREFIX,
   URL_ROW_DEL_PREFIX,
   URL_ROW_INS_PREFIX,
@@ -148,12 +152,13 @@ export function deleteRow (params: RowDeleteParams) {
         r.setDataValue('rowNum', rowNum)
         rowNum += 1
       })
-      if (appStore.notifyCb) appStore.notifyCb('Row deleted', VARIANT_SUCCESS)
+      if (appStore.notifyCb) {
+        appStore.notifyCb(ROW_DEL_MSG_DELETED, VARIANT_SUCCESS)
+      }
     } else {
-      const msg = 'Row delete failed'
       console.error(
-        `${msg}: ${(res as GenericResponseBody).detail}`)
-      if (appStore.notifyCb) appStore.notifyCb(msg, VARIANT_DANGER)
+        `${ROW_DEL_MSG_FAIL}: ${(res as GenericResponseBody).detail}`)
+      if (appStore.notifyCb) appStore.notifyCb(ROW_DEL_MSG_FAIL, VARIANT_DANGER)
     }
     if (params.finishCb) params.finishCb()
     editStore.updatingRow = false
@@ -637,15 +642,14 @@ export function saveRow (params: RowSaveParams) {
         }
 
         // Finalize
-        // TODO: Do we still need to call refreshCells() here? (see vueapp)
         editStore.unsavedRow = null
         editStore.editDataUpdated = true
         editStore.versionSaved = false
         if (appStore.notifyCb) {
-          appStore.notifyCb('Row inserted', VARIANT_SUCCESS)
+          appStore.notifyCb(ROW_INS_MSG_OK, VARIANT_SUCCESS)
         }
       } else {
-        const msg = 'Row insert failed: ' + data.detail
+        const msg = ROW_INS_MSG_FAIL_PREFIX + data.detail
         console.error(msg)
         if (appStore.notifyCb) appStore.notifyCb(msg, VARIANT_DANGER)
       }

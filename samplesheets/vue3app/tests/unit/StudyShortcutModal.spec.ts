@@ -37,14 +37,6 @@ config.global.plugins = [createBootstrap()]
 // Tests -----------------------------------------------------------------------
 
 describe('StudyShortcutModal.vue', () => {
-  beforeEach(() => {
-    setActivePinia(createPinia())
-    const appStore = useAppStore()
-    appStore.currentStudyUuid = STUDY_UUID
-    cellValue = copy(cellValueDefault) as StudyShortcutCell
-    resBody = copy(studyShortcutResponse) as StudyShortcutResponseBody
-  })
-
   async function showModal (): Promise<VueWrapper> {
     global.fetch = vi.fn(() =>
       Promise.resolve({
@@ -56,6 +48,14 @@ describe('StudyShortcutModal.vue', () => {
     await nextTick() // Must wait for all reactive vals to update
     return wrapper
   }
+
+  beforeEach(() => {
+    setActivePinia(createPinia())
+    const appStore = useAppStore()
+    appStore.currentStudyUuid = STUDY_UUID
+    cellValue = copy(cellValueDefault) as StudyShortcutCell
+    resBody = copy(studyShortcutResponse) as StudyShortcutResponseBody
+  })
 
   test('render component with default data', async () => {
     const wrapper = await showModal()

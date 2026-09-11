@@ -115,6 +115,10 @@ describe('RowEditRenderer.vue', () => {
     } as unknown as GridApi
   }
 
+  function mountComponent (): VueWrapper {
+    return mount(RowEditRenderer, { props: { params: params } })
+  }
+
   function setAssayMode () {
     params.assayMode = true
     params.tableUuid = ASSAY_UUID
@@ -126,24 +130,21 @@ describe('RowEditRenderer.vue', () => {
     editStore.unsavedRow = { id: id, tableUuid: tableUuid }
   }
 
-  function mountComponent (): VueWrapper {
-    return mount(RowEditRenderer, { props: { params: params } })
-  }
-
   beforeEach(() => {
     vi.resetAllMocks()
-    setActivePinia(createPinia())
 
+    setActivePinia(createPinia())
     const appStore = useAppStore()
-    appStore.notifyCb = mockNotifyCb
     const editStore = useEditStore()
+    const tableStore = useTableStore()
+
+    appStore.notifyCb = mockNotifyCb
     editStore.unsavedRow = null
     editStore.updatingRow = false
     editStore.editContext = copy(
       studyTablesEdit.edit_context) as StudyEditContext
     editStore.editContext.samples = {
       [sampleUuid]: { name: '0814-N1', assays: [] } }
-    const tableStore = useTableStore()
     tableStore.sampleColId = sampleColId
 
     params = copy(defaultParams) as RowEditRendererParams

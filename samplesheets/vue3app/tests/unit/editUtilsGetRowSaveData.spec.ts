@@ -142,10 +142,12 @@ describe('getRowSaveData()', () => {
 
   beforeEach(() => {
     vi.resetAllMocks()
+
     setActivePinia(createPinia())
     const appStore = useAppStore()
-    appStore.currentStudyUuid = STUDY_UUID
     const tableStore = useTableStore()
+
+    appStore.currentStudyUuid = STUDY_UUID
     tableStore.sampleColId = 'col2'
     tableStore.sourceColSpan = 1
     tableStore.sampleIdx = 3 // NOTE: Must count rowNum here

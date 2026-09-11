@@ -51,10 +51,11 @@ describe('VersionSaveModal.vue', () => {
 
     setActivePinia(createPinia())
     const appStore = useAppStore()
+    const editStore = useEditStore()
+
     appStore.notifyCb = mockNotifyCb
     appStore.projectUuid = PROJECT_UUID
     appStore.sodarContext = { csrf_token: 'DummyToken' } as SodarContext
-    const editStore = useEditStore()
     editStore.versionSaved = false
 
     fetchDetail = AJAX_RES_OK

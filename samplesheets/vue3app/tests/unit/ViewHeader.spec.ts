@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, test, vi } from 'vitest'
-import { flushPromises, mount, type VueWrapper } from '@vue/test-utils'
+import { config, flushPromises, mount, type VueWrapper } from '@vue/test-utils'
 import { setActivePinia, createPinia } from 'pinia'
 import { createRouter, createWebHashHistory, type Router } from 'vue-router'
 import { createBootstrap } from 'bootstrap-vue-next/plugins/createBootstrap'
@@ -43,6 +43,15 @@ let router: Router
 
 // Global Setup ----------------------------------------------------------------
 
+// Mock modals
+const mockVersionSaveModal = { template: '<div />', methods: {show: vi.fn() } }
+const mockWinExportModal = { template: '<div />', methods: {show: vi.fn() } }
+
+config.global.stubs = {
+  VersionSaveModal: mockVersionSaveModal,
+  WinExportModal: mockWinExportModal
+}
+
 // Replace useToast with mock
 const mockCreate = vi.fn()
 vi.mock('bootstrap-vue-next', async () => {
@@ -59,8 +68,7 @@ describe('ViewHeader.vue', () => {
   ) {
     for (const [k, v] of Object.entries(items)) {
       expect(
-        wrapper.find('#sodar-ss-op-item-' + k).exists(),
-        'Key = ' + k).toBe(v)
+        wrapper.find('#sodar-ss-op-item-' + k).exists(), 'Key = ' + k).toBe(v)
     }
   }
 
@@ -68,13 +76,14 @@ describe('ViewHeader.vue', () => {
     if (!detail) detail = 'ok'
     if (!status) status = 200
     global.fetch = vi.fn(() => Promise.resolve({
-      json: () => Promise.resolve({ detail: detail }), status: status} as Response)
+      json: () => Promise.resolve(
+        { detail: detail }), status: status} as Response)
     )
   }
 
   function mountComponent (): VueWrapper {
     return mount(ViewHeader, {
-      global: {plugins: [router, createBootstrap()]} })
+      global: { plugins: [router, createBootstrap()] } })
   }
 
   beforeEach(async () => {
@@ -84,9 +93,12 @@ describe('ViewHeader.vue', () => {
     router = createRouter({history: createWebHashHistory(), routes: routes})
     await router.push('/')
     await router.isReady()
+
     // Setup stores
     setActivePinia(createPinia())
     const appStore = useAppStore()
+    const tableStore = useTableStore()
+
     appStore.currentStudyUuid = STUDY_UUID
     appStore.editMode = false
     appStore.gridsBusy = false
@@ -95,7 +107,7 @@ describe('ViewHeader.vue', () => {
     appStore.projectUuid = PROJECT_UUID
     appStore.sodarContext = copy(sodarContext) as SodarContext
     appStore.windowsOs = false
-    const tableStore = useTableStore()
+
     tableStore.renderError = null
   })
 
@@ -188,14 +200,16 @@ describe('ViewHeader.vue', () => {
   test('navigate to overview with nav tabs', async () => {
     const appStore = useAppStore()
     expect(appStore.viewActive).toBe(VIEW_STUDY)
+
     const wrapper = mountComponent()
     const studyBtn = wrapper.find('.sodar-ss-nav-tab-study')
     const overBtn = wrapper.find('#sodar-ss-nav-tab-overview')
+
     await overBtn.trigger('click')
     expect(appStore.viewActive).toBe(VIEW_OVERVIEW)
-    // TODO: The following does not seem to work, fix?
-    // await router.isReady()
-    // expect(router.currentRoute.value.name).toBe('overview')
+    await flushPromises() // Need to wait before checking router update
+    await router.isReady()
+    expect(router.currentRoute.value.name).toBe('overview')
     expect(studyBtn.classes()).not.toContain('active')
     expect(overBtn.classes()).toContain('active')
   })
@@ -208,6 +222,9 @@ describe('ViewHeader.vue', () => {
     const overBtn = wrapper.find('#sodar-ss-nav-tab-overview')
     await studyBtn.trigger('click')
     expect(appStore.viewActive).toBe(VIEW_STUDY)
+    await flushPromises()
+    await router.isReady()
+    expect(router.currentRoute.value.name).toBe('study')
     expect(studyBtn.classes()).toContain('active')
     expect(overBtn.classes()).not.toContain('active')
   })
@@ -368,7 +385,17 @@ describe('ViewHeader.vue', () => {
       '#sodar-ss-btn-version-save').attributes().disabled).not.toBeDefined()
   })
 
-  // TODO: Test version save modal opening
+  test('open version save modal on button click', async () => {
+    const appStore = useAppStore()
+    const editStore = useEditStore()
+    appStore.editMode = true
+    editStore.versionSaved = false
+    expect(mockVersionSaveModal.methods.show).not.toHaveBeenCalled()
+
+    const wrapper = mountComponent()
+    await wrapper.find('#sodar-ss-btn-version-save').trigger('click')
+    expect(mockVersionSaveModal.methods.show).toHaveBeenCalled()
+  })
 
   test('render ops dropdown with default settings', async () => {
     const wrapper = mountComponent()
@@ -583,6 +610,16 @@ describe('ViewHeader.vue', () => {
       'export-win': true,
     }
     expectDropdownItems(wrapper, expected)
+  })
+
+  test('open windows export modal with button click', async () => {
+    const appStore = useAppStore()
+    appStore.windowsOs = true
+    expect(mockWinExportModal.methods.show).not.toHaveBeenCalled()
+
+    const wrapper = mountComponent()
+    await wrapper.find('#sodar-ss-op-item-export-win').trigger('click')
+    expect(mockWinExportModal.methods.show).toHaveBeenCalled()
   })
 
   test('hide ops dropdown and show exit button with editMode',  async () => {

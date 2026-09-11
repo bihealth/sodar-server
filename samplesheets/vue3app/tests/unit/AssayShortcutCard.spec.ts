@@ -40,11 +40,13 @@ describe('AssayShortcutCard.vue', () => {
 
   beforeEach(() => {
     vi.resetAllMocks()
+
     setActivePinia(createPinia())
     const appStore = useAppStore()
+    const tableStore = useTableStore()
+
     appStore.notifyCb = mockNotifyCb
     appStore.sodarContext = copy(sodarContext) as SodarContext
-    const tableStore = useTableStore()
     tableStore.assayShortcuts = {
       [ASSAY_UUID]: copy(assayShortcuts)
     } as SheetAssayShortcuts

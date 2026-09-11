@@ -34,6 +34,14 @@ import {
   type StudyEditConfigNodeField
 } from '@/types.ts'
 import {
+  CONFIG_COPY_MSG,
+  CONFIG_PASTE_DEFAULT_OK_MSG,
+  CONFIG_PASTE_INVALID_DATA_MSG,
+  CONFIG_PASTE_INVALID_FORMAT_MSG,
+  CONFIG_PASTE_INVALID_JSON_MSG,
+  CONFIG_PASTE_LIST_ALLOW_MSG,
+  CONFIG_PASTE_INVALID_TERM_MSG,
+  CONFIG_PASTE_OK_MSG,
   EDIT_CONFIG_ACTION_UPDATE,
   EDIT_COL_TYPE_CONTACT,
   EDIT_COL_TYPE_DATE,
@@ -199,7 +207,7 @@ function copyConfig () {
   cleanupConfig(copyConfig)
   clipboard.copy(JSON.stringify(copyConfig))
   if (appStore.notifyCb) {
-    appStore.notifyCb('Configuration copied into clipboard', VARIANT_SUCCESS)
+    appStore.notifyCb(CONFIG_COPY_MSG, VARIANT_SUCCESS)
   }
 }
 
@@ -244,25 +252,34 @@ function onConfigPaste () {
   try {
     c = JSON.parse(configPasteInput.value)
   } catch (error) {
-    if (appStore.notifyCb) appStore.notifyCb('Invalid JSON', VARIANT_DANGER)
+    if (appStore.notifyCb) {
+      appStore.notifyCb(CONFIG_PASTE_INVALID_JSON_MSG, VARIANT_DANGER)
+    }
     console.error('Invalid JSON: ' + error)
     valid = false
   }
 
-  // Reject paste if invalid data or incompatible format
+  // Reject paste if invalid data
   if (valid && (!('format' in c) || !('editable' in c))) {
-    if (appStore.notifyCb) appStore.notifyCb('Invalid data', VARIANT_DANGER)
+    if (appStore.notifyCb) {
+      appStore.notifyCb(CONFIG_PASTE_INVALID_DATA_MSG, VARIANT_DANGER)
+    }
     console.error('Invalid data: ' + configPasteInput.value)
     valid = false
-  } else if (
+  }
+
+  // Reject paste if incompatible format
+  if (valid && (
       (colType.value === EDIT_COL_TYPE_ONTOLOGY &&
         c.format !== EDIT_FORMAT_ONTOLOGY) ||
       (colType.value !== EDIT_COL_TYPE_ONTOLOGY &&
         c.format === EDIT_FORMAT_ONTOLOGY) ||
       (colType.value === EDIT_COL_TYPE_UNIT &&
         (!NUM_FORMATS.includes(c.format))) ||
-      (colType.value !== EDIT_COL_TYPE_UNIT && c.format.unit)) {
-    if (appStore.notifyCb) appStore.notifyCb('Invalid data', VARIANT_DANGER)
+      (colType.value !== EDIT_COL_TYPE_UNIT && c.format.unit))) {
+    if (appStore.notifyCb) {
+      appStore.notifyCb(CONFIG_PASTE_INVALID_FORMAT_MSG, VARIANT_DANGER)
+    }
     console.error(
       `Invalid format for column type "${colType.value}": ${c.format}`)
     valid = false
@@ -290,11 +307,11 @@ function onConfigPaste () {
       rangeMin.value = c.range[0]
       rangeMax.value = c.range[1]
     }
+    if (appStore.notifyCb) {
+      appStore.notifyCb(CONFIG_PASTE_OK_MSG, VARIANT_SUCCESS)
+    }
+    validate() // Validate after paste
   }
-  if (appStore.notifyCb) {
-    appStore.notifyCb('Configuration pasted', VARIANT_SUCCESS)
-  }
-  validate() // Validate after paste
   // Clear input
   nextTick().then(() => {
     configPasteInput.value = ''
@@ -310,7 +327,9 @@ function onOntologyDefaultInput () {
   try {
     p = JSON.parse(ontologyDefaultInput.value)
   } catch (error) {
-    if (appStore.notifyCb) appStore.notifyCb('Invalid JSON', VARIANT_DANGER)
+    if (appStore.notifyCb) {
+      appStore.notifyCb(CONFIG_PASTE_INVALID_JSON_MSG, VARIANT_DANGER)
+    }
     console.error('Invalid JSON: ' + error)
     valid = false
   }
@@ -325,7 +344,7 @@ function onOntologyDefaultInput () {
           !('accession' in t)) {
         valid = false
         if (appStore.notifyCb) {
-          appStore.notifyCb('Invalid format', VARIANT_DANGER)
+          appStore.notifyCb(CONFIG_PASTE_INVALID_TERM_MSG, VARIANT_DANGER)
         }
         console.error('Invalid term: ' + JSON.stringify(t))
         valid = false
@@ -335,7 +354,7 @@ function onOntologyDefaultInput () {
   if (valid) {
     if (p.length > 1 && !config.value?.allow_list) {
       if (appStore.notifyCb) {
-        appStore.notifyCb('List not allowed', VARIANT_DANGER)
+        appStore.notifyCb(CONFIG_PASTE_LIST_ALLOW_MSG, VARIANT_DANGER)
       }
       valid = false
     }
@@ -343,7 +362,9 @@ function onOntologyDefaultInput () {
   // Update config if valid
   if (valid) {
     config.value!.default = p
-    if (appStore.notifyCb) appStore.notifyCb('Default updated', VARIANT_SUCCESS)
+    if (appStore.notifyCb) {
+      appStore.notifyCb(CONFIG_PASTE_DEFAULT_OK_MSG, VARIANT_SUCCESS)
+    }
   }
   // Clear input
   nextTick().then(() => {

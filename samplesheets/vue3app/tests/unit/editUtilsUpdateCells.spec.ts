@@ -56,24 +56,28 @@ const mockNotifyCb = vi.fn()
 // Tests for updateCells() -----------------------------------------------------
 
 describe('updateCells()', () => {
+  function exceptFetchBody (body: object) {
+    const request = copy(defaultRequest) as RequestInit
+    request.body = JSON.stringify(body)
+    expect(fetch).toHaveBeenCalledWith(editCellUrl, request)
+  }
+
   function mockFetch (data: object, status: number) {
     global.fetch = vi.fn(() => Promise.resolve({
       json: () => Promise.resolve(data), status: status} as Response)
     )
   }
-  function mockFetchOk () {
-    mockFetch({ detail: AJAX_RES_OK }, 200)
-  }
+
   function mockFetchAlert () {
     mockFetch({ detail: 'alert', alert_msg: 'alert message' }, 200)
   }
+
   function mockFetchError () {
     mockFetch({ detail: 'error' }, 500)
   }
-  function exceptFetchBody (body: object) {
-    const request = copy(defaultRequest) as RequestInit
-    request.body = JSON.stringify(body)
-    expect(fetch).toHaveBeenCalledWith(editCellUrl, request)
+
+  function mockFetchOk () {
+    mockFetch({ detail: AJAX_RES_OK }, 200)
   }
 
   beforeEach(() => {
@@ -86,15 +90,16 @@ describe('updateCells()', () => {
     // Set up stores
     setActivePinia(createPinia())
     const appStore = useAppStore()
+    const editStore = useEditStore()
+    const tableStore = useTableStore()
+
     appStore.notifyCb = mockNotifyCb
     appStore.projectUuid = PROJECT_UUID
     appStore.sodarContext = copy(sodarContext) as SodarContext
 
-    const editStore = useEditStore()
     editStore.editDataUpdated = false
     editStore.versionSaved = true
 
-    const tableStore = useTableStore()
     tableStore.gridApi.study = mockGridApi as unknown as GridApi
     tableStore.gridApi.assays[ASSAY_UUID] = mockGridApi as unknown as GridApi
 

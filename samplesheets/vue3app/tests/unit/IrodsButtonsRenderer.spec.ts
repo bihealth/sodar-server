@@ -110,6 +110,4 @@ describe('IrodsButtonsRenderer.vue', () => {
     expect(params.notifyCb).toHaveBeenCalledWith(
       IRODS_PATH_COPY_MSG, VARIANT_INFO)
   })
-
-  // TODO: Test with edit mode
 })

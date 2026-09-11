@@ -21,6 +21,9 @@ import {
   type StudyDisplayConfigNode,
 } from '@/types.ts'
 import {
+  AJAX_RES_OK,
+  DISPLAY_SAVE_MSG,
+  DISPLAY_SAVE_DEFAULT_SUFFIX,
   REQ_POST,
   URL_DISPLAY_CONFIG_PREFIX,
   VARIANT_DANGER,
@@ -157,10 +160,10 @@ function postUpdate (setDefault: boolean) {
     })
   ).then(data => data.json())
     .then(data => {
-      if (data.detail === 'ok') {
-        let toastBody = 'Display configuration saved'
-        if (setDefault) toastBody += ' as default'
-        if (appStore.notifyCb) appStore.notifyCb(toastBody, VARIANT_SUCCESS)
+      if (data.detail === AJAX_RES_OK) {
+        let msg = DISPLAY_SAVE_MSG
+        if (setDefault) msg += DISPLAY_SAVE_DEFAULT_SUFFIX
+        if (appStore.notifyCb) appStore.notifyCb(msg, VARIANT_SUCCESS)
       }
     }).catch(function (error) {
       const msg = 'Error saving display config: ' + error.detail

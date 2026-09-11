@@ -89,7 +89,6 @@ function onGridReady (params: GridReadyEvent) {
 }
 
 function onRowInsert () {
-  // TODO: Provide notifyCb
   insertRow({
     api: gridApi,
     assayMode: props.assayMode,

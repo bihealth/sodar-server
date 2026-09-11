@@ -55,8 +55,9 @@ describe('insertRow()', () => {
 
     setActivePinia(createPinia())
     const editStore = useEditStore()
-    editStore.unsavedRow = null
     const tableStore = useTableStore()
+
+    editStore.unsavedRow = null
     tableStore.sampleColId = sampleColId
 
     // Set up default data and mocks

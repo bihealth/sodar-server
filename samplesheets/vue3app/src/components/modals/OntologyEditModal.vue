@@ -32,6 +32,9 @@ import {
 } from '@/types.ts'
 import {
   EDIT_TERM_QUERY_MIN_LEN,
+  TERM_PASTE_INVALID_JSON_MSG,
+  TERM_PASTE_LIST_ALLOW_MSG,
+  TERM_PASTE_ONTOLOGY_ALLOW_PREFIX,
   VARIANT_DANGER,
   VARIANT_SUCCESS,
 } from '@/constants.ts'
@@ -250,7 +253,8 @@ function onPasteInput () {
     val = JSON.parse(pasteData.value)
   } catch (error) {
     if (appStore.notifyCb) {
-      appStore.notifyCb('Error parsing pasted terms: ' + error, VARIANT_DANGER)
+      appStore.notifyCb(TERM_PASTE_INVALID_JSON_MSG, VARIANT_DANGER)
+      console.error(TERM_PASTE_INVALID_JSON_MSG + ': ' + error)
       pasteOk = false
     }
   }
@@ -261,7 +265,8 @@ function onPasteInput () {
           val[i]?.ontology_name as string)) {
         if (appStore.notifyCb) {
           appStore.notifyCb(
-            'Ontology not allowed: ' + (val[i]?.ontology_name as string),
+            TERM_PASTE_ONTOLOGY_ALLOW_PREFIX +
+              (val[i]?.ontology_name as string),
             VARIANT_DANGER)
         }
         pasteOk = false
@@ -271,7 +276,7 @@ function onPasteInput () {
   }
   if (val && pasteOk && !editConfig.value?.allow_list && val.length > 1) {
     if (appStore.notifyCb) {
-      appStore.notifyCb('List of terms not allowed', VARIANT_DANGER)
+      appStore.notifyCb(TERM_PASTE_LIST_ALLOW_MSG, VARIANT_DANGER)
     }
     pasteOk = false
   }
@@ -506,7 +511,7 @@ function hideModal (save: boolean) {
       itemType: params.fieldHeader.item_type || '',
       objCls: params.fieldHeader.obj_cls,
       ogValue: params.value?.value,
-      uuid: cellData.value?.uuid,
+      uuid: cellData.value?.uuid || undefined,
       value: cellData.value?.value as SheetTableCellDataValue
     }
     updateCells(cellEditData, true)

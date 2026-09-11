@@ -437,15 +437,15 @@ export function buildColDef (params: ColDefBuildParams): Array<ColGroupDef> {
   const colDef: Array<ColGroupDef> = []
 
   // Set up row column header group
-  const rowHeaderGroup = getRowNumHeaderGroup()
+  const rowNumHeaderGroup = getRowNumHeaderGroup()
   // Editing: gray out row column to avoid confusion
   if (appStore.editMode) {
-    const col = rowHeaderGroup.children[0] as ColDef
+    const col = rowNumHeaderGroup.children[0] as ColDef
     if (col.cellClass?.constructor == Array) {
       col.cellClass?.push('bg-light')
     }
   }
-  colDef.push(rowHeaderGroup)
+  colDef.push(rowNumHeaderGroup)
 
   // Set up header
   const topHeaderLength = table.top_header.length
@@ -459,8 +459,7 @@ export function buildColDef (params: ColDefBuildParams): Array<ColGroupDef> {
     // Set up header group
     // NOTE: ColGroupDef no longer has cellRendererParams, set headers in
     //       headerGroupComponentParams instead
-    // TODO: Only add headers if editMode is enabled (need to add editMode in
-    //       params)
+    // TODO: Only add headers if editMode is enabled
     let headerGroup: ColGroupDef = {
       headerName: topHeader?.value,
       headerClass: ['text-white', 'bg-' + topHeader.colour],
@@ -512,7 +511,6 @@ export function buildColDef (params: ColDefBuildParams): Array<ColGroupDef> {
           editConfigField.editable !== undefined) {
         fieldEditable = editConfigField.editable
       }
-      // if (appStore.editMode) fieldEditable = true // DEBUG
 
       // Get field column visibility
       const fieldVisible = getFieldVisibility({
@@ -678,9 +676,9 @@ export function buildRowData (
           table.field_header[j]?.col_type === 'ONTOLOGY') {
         for (const term of (cellData.value as Array<SheetTableOntologyRef>)) {
           if (term.accession &&
-              appStore.sodarContext!.ontology_url_skip &&
+            (!appStore.sodarContext!.ontology_url_skip ||
               !appStore.sodarContext!.ontology_url_skip.some(
-                x => term.accession.includes(x))) {
+                x => term.accession.includes(x)))) {
             let ontologyName = term.ontology_name
             // HACK for mislabeled HP terms
             if (ontologyName === 'HPO') ontologyName = 'HP'

@@ -125,6 +125,12 @@ vi.mock('@/utils/editUtils.ts', async () => {
 // Tests -----------------------------------------------------------------------
 
 describe('ObjectSelectEditor.vue', () => {
+  async function mountComponent (): Promise<VueWrapper> {
+    const wrapper = mount(ObjectSelectEditor, { props: { params: params } })
+    await waitSelector(wrapper, '.sodar-ss-data-object-select', 1)
+    return wrapper
+  }
+
   function setSampleParams () {
     params.assayMode = true
     params.editConfigField = copy(sampleEditConfig) as StudyEditConfigNodeField
@@ -143,27 +149,22 @@ describe('ObjectSelectEditor.vue', () => {
     // Set up stores
     setActivePinia(createPinia())
     const appStore = useAppStore()
-    // NOTE: appStore and tableStore are needed by editUtils
-    appStore.projectUuid = PROJECT_UUID
-    const tableStore = useTableStore()
-    tableStore.gridApi.study = mockGridApi as unknown as GridApi
-    tableStore.gridApi.assays[ASSAY_UUID] = mockGridApi as unknown as GridApi
     const editStore = useEditStore()
+    const tableStore = useTableStore()
+
+    appStore.projectUuid = PROJECT_UUID
     editStore.editContext = {
       protocols: copy(protocols) as Array<StudyEditContextProtocol>,
       samples: copy(samples) as { [key: string]: StudyEditContextSample },
       sodar_ontologies: {}
     }
+    tableStore.gridApi.study = mockGridApi as unknown as GridApi
+    tableStore.gridApi.assays[ASSAY_UUID] = mockGridApi as unknown as GridApi
 
     // Set up params
     params = copy(defaultParams) as GridCellEditorParams
   })
 
-  async function mountComponent (): Promise<VueWrapper> {
-    const wrapper = mount(ObjectSelectEditor, { props: { params: params } })
-    await waitSelector(wrapper, '.sodar-ss-data-object-select', 1)
-    return wrapper
-  }
 
   test('render component for protocol', async () => {
     const wrapper = await mountComponent()
