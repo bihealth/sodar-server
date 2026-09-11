@@ -19,6 +19,7 @@ Added
     - Vue3app ``IrodsButtons`` WebDAV URL copy notification display (#2519)
     - Vue3app ``IrodsButtons`` missing ``notifyCb`` props (#2520)
     - Study navigation disabling in edit mode (#2529)
+    - ``ProjectAppPlugin.search()`` tests (#2510)
 
 Changed
 -------
@@ -35,6 +36,8 @@ Changed
     - Refactor vue3app ``gridUtils`` storage and params (#2448)
     - Update vue3app new row save enabling (#2490)
     - Refactor vue3app store reset (#2511)
+    - Update and refactor vue3app tests (#2497)
+    - Optimize vue3app ag-grid module importing (#2531)
 
 Fixed
 -----
