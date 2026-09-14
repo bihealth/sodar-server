@@ -25,13 +25,14 @@ export function initGridOptions (app, editMode) {
 
 // Helper to get flat value for comparator
 function getFlatValue (value) {
-  if (Array.isArray(value) && value.length > 0) {
+  if (value === null) {
+    value = '' // Fix for unexpected null value (see #2544, #2545)
+  } else if (Array.isArray(value) && value.length > 0) {
     if (typeof value[0] === 'object' && 'name' in value[0]) {
       return value.map(d => d.name).join(';')
     } else return value.join(';')
-  } else {
-    return value
   }
+  return value
 }
 
 // Custom comparator for data cells

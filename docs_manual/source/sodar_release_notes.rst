@@ -20,6 +20,7 @@ Release for minor updates, maintenance and bug fixes.
 - Upgrade to irods-docker v4.3.5-3 in CI
 - Fix Markdown previews in production deployments
 - Fix missing edit Ajax view object query project scope checks
+- Fix sheet date column sorting with empty values
 - Upgrade critical dependencies
 - Minor updates and bug fixes
 

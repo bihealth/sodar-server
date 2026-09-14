@@ -717,9 +717,11 @@ export function buildRowData (
 
 // Get flat value for comparator
 export function getFlatValue (
-    value: Array<never> | number | object | string
+    value: Array<never> | number | object | string | null
 ): number | object | string {
-  if (Array.isArray(value) && value.length > 0) {
+  if (value === null) {
+    value = '' // Fix for unexpected null value (see #2544, #2545)
+  } else if (Array.isArray(value) && value.length > 0) {
     if (typeof value[0] === 'object' && 'name' in value[0]) {
       return value.map(d => d.name).join(';')
     } else return value.join(';')

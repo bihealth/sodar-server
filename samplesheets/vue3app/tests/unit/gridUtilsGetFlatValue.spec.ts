@@ -22,4 +22,9 @@ describe('getFlatValue()', () => {
     const res = getFlatValue('xxxyyy') as string
     expect(res).toBe('xxxyyy')
   })
+
+  test('get flat value with null', async () => {
+    const res = getFlatValue(null)
+    expect(res).toBe('')
+  })
 })
