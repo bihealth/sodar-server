@@ -20,6 +20,7 @@ Added
     - Vue3app ``IrodsButtons`` missing ``notifyCb`` props (#2520)
     - Study navigation disabling in edit mode (#2529)
     - ``ProjectAppPlugin.search()`` tests (#2510)
+    - ``SHEETS_ONTOLOGY_URL_TEMPLATE`` env var in siteinfo (#2546)
 
 Changed
 -------
