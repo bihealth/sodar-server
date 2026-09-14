@@ -54,7 +54,7 @@ Differences in edit mode compared to browsing mode:
 
     Currently, SODAR allows editing a single study at a time. When in edit mode,
     study navigation is disabled. To switch to editing a different study in a
-    multi-study project, you need to first click on :ref:`Finish Editing` and
+    multi-study project, you need to first click on :guilabel:`Finish Editing`,
     then navigate to the desired study.
 
 

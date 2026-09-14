@@ -5,8 +5,8 @@ Changelog for the SODAR project. Loosely follows the
 `Keep a Changelog <http://keepachangelog.com/en/1.0.0/>`_ guidelines.
 
 
-Unreleased
-==========
+v1.3.1 (2026-09-14)
+===================
 
 Added
 -----
@@ -48,8 +48,8 @@ Fixed
 - **Landingzones**
     - ``test_render_validate_limit_update()`` sporadic CI failure (#2521)
 - **Samplesheets**
-    - ``IrodsAccessTicketViewTestMixin.get_ticket_hosts()`` result order not guaranteed (#2445)
-    - ``TestUpdateProjectCacheTask.test_update_cache()`` query order not enforced (#2402)
+    - Testing ``get_ticket_hosts()`` result order not guaranteed (#2445)
+    - Testing ``test_update_cache()`` query order not enforced (#2402)
     - Vue3app missing grid viewport background color (#2530)
     - Missing edit Ajax view object query project scope checks (#2536)
     - Date column sorting fails with empty values in column (#2544)

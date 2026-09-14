@@ -118,6 +118,7 @@ PLUGIN_TITLE_PEP_MS = (
     'Sample Sheets Protein Expression Profiling / Mass Spectrometry Assay '
     'Plugin'
 )
+POST_KW = {'content_type': 'application/json'}
 
 
 class OtherProjectSetupMixin:
@@ -153,20 +154,20 @@ class RowEditMixin:
             raise ValueError('Either path or data required')
         if path and data:
             raise ValueError('Provide either path or data')
-        values = {'new_row': {}}
+        post_data = {'new_row': {}}
         if path:
             with open(path) as fp:
-                values['new_row'] = json.load(fp)
+                post_data['new_row'] = json.load(fp)
         else:
-            values['new_row'] = data
+            post_data['new_row'] = data
         with self.login(self.user):
             return self.client.post(
                 reverse(
                     'samplesheets:ajax_edit_row_insert',
                     kwargs={'project': self.project.sodar_uuid},
                 ),
-                json.dumps(values),
-                content_type='application/json',
+                json.dumps(post_data),
+                **POST_KW,
             )
 
     def delete_row(
@@ -183,20 +184,20 @@ class RowEditMixin:
             raise ValueError('Either path or data required')
         if path and data:
             raise ValueError('Provide either path or data')
-        values = {'del_row': {}}
+        post_data = {'del_row': {}}
         if path:
             with open(path) as fp:
-                values['del_row'] = json.load(fp)
+                post_data['del_row'] = json.load(fp)
         else:
-            values['del_row'] = data
+            post_data['del_row'] = data
         with self.login(self.user):
             return self.client.post(
                 reverse(
                     'samplesheets:ajax_edit_row_delete',
                     kwargs={'project': self.project.sodar_uuid},
                 ),
-                json.dumps(values),
-                content_type='application/json',
+                json.dumps(post_data),
+                **POST_KW,
             )
 
     def update_assay_row_uuids(self, update_sample: bool = True):
@@ -893,7 +894,6 @@ class TestSheetCellEditAjaxView(
             'samplesheets:ajax_edit_cell',
             kwargs={'project': self.project.sodar_uuid},
         )
-        self.post_kw = {'content_type': 'application/json'}
 
     def test_post_material_name(self):
         """Test SheetCellEditAjaxView POST with material name"""
@@ -910,7 +910,7 @@ class TestSheetCellEditAjaxView(
         )
         with self.login(self.user):
             response = self.client.post(
-                self.url, json.dumps(self.post_data), **self.post_kw
+                self.url, json.dumps(self.post_data), **POST_KW
             )
         self.assertEqual(response.status_code, 200)
         obj.refresh_from_db()
@@ -930,7 +930,7 @@ class TestSheetCellEditAjaxView(
         )
         with self.login(self.user):
             response = self.client.post(
-                self.url, json.dumps(self.post_data), **self.post_kw
+                self.url, json.dumps(self.post_data), **POST_KW
             )
         self.assertEqual(response.status_code, 500)
         obj.refresh_from_db()
@@ -951,7 +951,7 @@ class TestSheetCellEditAjaxView(
         )
         with self.login(self.user):
             response = self.client.post(
-                self.url, json.dumps(self.post_data), **self.post_kw
+                self.url, json.dumps(self.post_data), **POST_KW
             )
         self.assertEqual(response.status_code, 200)
         obj.refresh_from_db()
@@ -975,7 +975,7 @@ class TestSheetCellEditAjaxView(
         )
         with self.login(self.user):
             response = self.client.post(
-                self.url, json.dumps(self.post_data), **self.post_kw
+                self.url, json.dumps(self.post_data), **POST_KW
             )
         self.assertEqual(response.status_code, 200)
         obj.refresh_from_db()
@@ -996,7 +996,7 @@ class TestSheetCellEditAjaxView(
         )
         with self.login(self.user):
             response = self.client.post(
-                self.url, json.dumps(self.post_data), **self.post_kw
+                self.url, json.dumps(self.post_data), **POST_KW
             )
         self.assertEqual(response.status_code, 200)
         obj.refresh_from_db()
@@ -1017,7 +1017,7 @@ class TestSheetCellEditAjaxView(
         )
         with self.login(self.user):
             response = self.client.post(
-                self.url, json.dumps(self.post_data), **self.post_kw
+                self.url, json.dumps(self.post_data), **POST_KW
             )
         self.assertEqual(response.status_code, 200)
         obj.refresh_from_db()
@@ -1039,7 +1039,7 @@ class TestSheetCellEditAjaxView(
         )
         with self.login(self.user):
             response = self.client.post(
-                self.url, json.dumps(self.post_data), **self.post_kw
+                self.url, json.dumps(self.post_data), **POST_KW
             )
         self.assertEqual(response.status_code, 500)  # TODO: Should be 400?
         obj.refresh_from_db()
@@ -1065,7 +1065,7 @@ class TestSheetCellEditAjaxView(
         )
         with self.login(self.user):
             response = self.client.post(
-                self.url, json.dumps(self.post_data), **self.post_kw
+                self.url, json.dumps(self.post_data), **POST_KW
             )
         self.assertEqual(response.status_code, 200)
         obj.refresh_from_db()
@@ -1094,7 +1094,7 @@ class TestSheetCellEditAjaxView(
         )
         with self.login(self.user):
             response = self.client.post(
-                self.url, json.dumps(self.post_data), **self.post_kw
+                self.url, json.dumps(self.post_data), **POST_KW
             )
         self.assertEqual(response.status_code, 200)
         obj.refresh_from_db()
@@ -1126,7 +1126,7 @@ class TestSheetCellEditAjaxView(
         )
         with self.login(self.user):
             response = self.client.post(
-                self.url, json.dumps(self.post_data), **self.post_kw
+                self.url, json.dumps(self.post_data), **POST_KW
             )
         self.assertEqual(response.status_code, 200)
         obj.refresh_from_db()
@@ -1154,7 +1154,7 @@ class TestSheetCellEditAjaxView(
         )
         with self.login(self.user):
             response = self.client.post(
-                self.url, json.dumps(self.post_data), **self.post_kw
+                self.url, json.dumps(self.post_data), **POST_KW
             )
         self.assertEqual(response.status_code, 200)
         obj.refresh_from_db()
@@ -1188,7 +1188,7 @@ class TestSheetCellEditAjaxView(
         )
         with self.login(self.user):
             response = self.client.post(
-                self.url, json.dumps(self.post_data), **self.post_kw
+                self.url, json.dumps(self.post_data), **POST_KW
             )
         self.assertEqual(response.status_code, 200)
         obj.refresh_from_db()
@@ -1230,7 +1230,7 @@ class TestSheetCellEditAjaxView(
         )
         with self.login(self.user):
             response = self.client.post(
-                self.url, json.dumps(self.post_data), **self.post_kw
+                self.url, json.dumps(self.post_data), **POST_KW
             )
         self.assertEqual(response.status_code, 200)
         obj.refresh_from_db()
@@ -1271,7 +1271,7 @@ class TestSheetCellEditAjaxView(
         )
         with self.login(self.user):
             response = self.client.post(
-                self.url, json.dumps(self.post_data), **self.post_kw
+                self.url, json.dumps(self.post_data), **POST_KW
             )
         self.assertEqual(response.status_code, 200)
         obj.refresh_from_db()
@@ -1303,7 +1303,7 @@ class TestSheetCellEditAjaxView(
         )
         with self.login(self.user):
             response = self.client.post(
-                self.url, json.dumps(self.post_data), **self.post_kw
+                self.url, json.dumps(self.post_data), **POST_KW
             )
         self.assertEqual(response.status_code, 200)
         obj.refresh_from_db()
@@ -1349,7 +1349,7 @@ class TestSheetCellEditAjaxView(
         )
         with self.login(self.user):
             response = self.client.post(
-                self.url, json.dumps(self.post_data), **self.post_kw
+                self.url, json.dumps(self.post_data), **POST_KW
             )
 
         self.assertEqual(response.status_code, 200)
@@ -1406,7 +1406,7 @@ class TestSheetCellEditAjaxView(
 
         with self.login(self.user):
             response = self.client.post(
-                self.url, json.dumps(self.post_data), **self.post_kw
+                self.url, json.dumps(self.post_data), **POST_KW
             )
         self.assertEqual(response.status_code, 200)
         obj.refresh_from_db()
@@ -1433,7 +1433,7 @@ class TestSheetCellEditAjaxView(
         )
         with self.login(self.user):
             response = self.client.post(
-                self.url, json.dumps(self.post_data), **self.post_kw
+                self.url, json.dumps(self.post_data), **POST_KW
             )
         self.assertEqual(response.status_code, 404)
         self.assertEqual(
@@ -1463,7 +1463,7 @@ class TestSheetCellEditAjaxView(
         )
         with self.login(self.user):
             response = self.client.post(
-                self.url, json.dumps(self.post_data), **self.post_kw
+                self.url, json.dumps(self.post_data), **POST_KW
             )
         self.assertEqual(response.status_code, 404)
         self.assertEqual(
@@ -1492,7 +1492,7 @@ class TestSheetCellEditAjaxView(
         )
         with self.login(self.user):
             response = self.client.post(
-                self.url, json.dumps(self.post_data), **self.post_kw
+                self.url, json.dumps(self.post_data), **POST_KW
             )
         self.assertEqual(response.status_code, 500)
         self.assertEqual(
@@ -1511,7 +1511,7 @@ class TestSheetCellEditAjaxViewSpecial(SamplesheetsViewTestBase):
             SHEET_PATH_SMALL2, self.project
         )
         self.study = self.investigation.studies.first()
-        self.values = {'updated_cells': []}
+        self.post_data = {'updated_cells': []}
         self.url = reverse(
             'samplesheets:ajax_edit_cell',
             kwargs={'project': self.project.sodar_uuid},
@@ -1526,7 +1526,7 @@ class TestSheetCellEditAjaxViewSpecial(SamplesheetsViewTestBase):
         )
         self.assertEqual(obj.extract_label, 'iTRAQ reagent 114')
 
-        self.values['updated_cells'].append(
+        self.post_data['updated_cells'].append(
             {
                 'uuid': str(obj.sodar_uuid),
                 'header_name': name_type,
@@ -1538,9 +1538,7 @@ class TestSheetCellEditAjaxViewSpecial(SamplesheetsViewTestBase):
         )
         with self.login(self.user):
             response = self.client.post(
-                self.url,
-                json.dumps(self.values),
-                content_type='application/json',
+                self.url, json.dumps(self.post_data), **POST_KW
             )
         self.assertEqual(response.status_code, 200)
         obj.refresh_from_db()
@@ -1553,7 +1551,7 @@ class TestSheetCellEditAjaxViewSpecial(SamplesheetsViewTestBase):
             study=self.study, name='0815-N1-Pro1-A-114'
         )
         self.assertEqual(obj.comments, {name: 'A'})
-        self.values['updated_cells'].append(
+        self.post_data['updated_cells'].append(
             {
                 'uuid': str(obj.sodar_uuid),
                 'header_name': name,
@@ -1565,9 +1563,7 @@ class TestSheetCellEditAjaxViewSpecial(SamplesheetsViewTestBase):
         )
         with self.login(self.user):
             response = self.client.post(
-                self.url,
-                json.dumps(self.values),
-                content_type='application/json',
+                self.url, json.dumps(self.post_data), **POST_KW
             )
         self.assertEqual(response.status_code, 200)
         obj.refresh_from_db()
@@ -1580,7 +1576,7 @@ class TestSheetCellEditAjaxViewSpecial(SamplesheetsViewTestBase):
             study=self.study, name='0815-N1-Pro1-A-114'
         )
         self.assertEqual(obj.comments, {name: 'A'})
-        self.values['updated_cells'].append(
+        self.post_data['updated_cells'].append(
             {
                 'uuid': str(obj.sodar_uuid),
                 'header_name': name,
@@ -1592,9 +1588,7 @@ class TestSheetCellEditAjaxViewSpecial(SamplesheetsViewTestBase):
         )
         with self.login(self.user):
             response = self.client.post(
-                self.url,
-                json.dumps(self.values),
-                content_type='application/json',
+                self.url, json.dumps(self.post_data), **POST_KW
             )
         self.assertEqual(response.status_code, 200)
         obj.refresh_from_db()
@@ -2118,7 +2112,7 @@ class TestSheetVersionSaveAjaxView(SamplesheetsViewTestBase):
                     kwargs={'project': self.project.sodar_uuid},
                 ),
                 json.dumps({'save': True, 'description': VERSION_DESC}),
-                content_type='application/json',
+                **POST_KW,
             )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(ISATab.objects.count(), 2)
@@ -2133,18 +2127,19 @@ class TestSheetEditFinishAjaxView(SamplesheetsViewTestBase):
         super().setUp()
         self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
         self.study = self.investigation.studies.first()
+        self.url = reverse(
+            'samplesheets:ajax_edit_finish',
+            kwargs={'project': self.project.sodar_uuid},
+        )
 
     def test_post(self):
         """Test POST with updates=True"""
         self.assertEqual(ISATab.objects.count(), 1)
         with self.login(self.user):
             response = self.client.post(
-                reverse(
-                    'samplesheets:ajax_edit_finish',
-                    kwargs={'project': self.project.sodar_uuid},
-                ),
+                self.url,
                 json.dumps({'updated': True, 'version_saved': False}),
-                content_type='application/json',
+                **POST_KW,
             )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(ISATab.objects.count(), 2)
@@ -2154,12 +2149,9 @@ class TestSheetEditFinishAjaxView(SamplesheetsViewTestBase):
         self.assertEqual(ISATab.objects.count(), 1)
         with self.login(self.user):
             response = self.client.post(
-                reverse(
-                    'samplesheets:ajax_edit_finish',
-                    kwargs={'project': self.project.sodar_uuid},
-                ),
+                self.url,
                 json.dumps({'updated': True, 'version_saved': True}),
-                content_type='application/json',
+                **POST_KW,
             )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(ISATab.objects.count(), 1)  # No new version
@@ -2169,12 +2161,9 @@ class TestSheetEditFinishAjaxView(SamplesheetsViewTestBase):
         self.assertEqual(ISATab.objects.count(), 1)
         with self.login(self.user):
             response = self.client.post(
-                reverse(
-                    'samplesheets:ajax_edit_finish',
-                    kwargs={'project': self.project.sodar_uuid},
-                ),
+                self.url,
                 json.dumps({'updated': False, 'version_saved': True}),
-                content_type='application/json',
+                **POST_KW,
             )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(ISATab.objects.count(), 1)
@@ -2239,7 +2228,6 @@ class TestSheetEditConfigUpdateAjaxView(
             'samplesheets:ajax_config_update',
             kwargs={'project': self.project.sodar_uuid},
         )
-        self.post_kw = {'content_type': 'application/json'}
 
     def test_post_study_column(self):
         """Test SheetEditConfigUpdateAjaxView POST with study column"""
@@ -2258,7 +2246,7 @@ class TestSheetEditConfigUpdateAjaxView(
 
         with self.login(self.user):
             response = self.client.post(
-                self.url, json.dumps(self.post_data), **self.post_kw
+                self.url, json.dumps(self.post_data), **POST_KW
             )
         self.assertEqual(response.status_code, 200)
 
@@ -2292,7 +2280,7 @@ class TestSheetEditConfigUpdateAjaxView(
         """Test POST as inherited owner"""
         with self.login(self.user_cat):
             response = self.client.post(
-                self.url, json.dumps(self.post_data), **self.post_kw
+                self.url, json.dumps(self.post_data), **POST_KW
             )
         self.assertEqual(response.status_code, 200)
 
@@ -2310,7 +2298,7 @@ class TestSheetEditConfigUpdateAjaxView(
 
         with self.login(self.user):
             response = self.client.post(
-                self.url, json.dumps(self.post_data), **self.post_kw
+                self.url, json.dumps(self.post_data), **POST_KW
             )
         self.assertEqual(response.status_code, 200)
 
@@ -2324,7 +2312,7 @@ class TestSheetEditConfigUpdateAjaxView(
         self.post_data['fields'][0]['study'] = str(self.study2.sodar_uuid)
         with self.login(self.user):
             response = self.client.post(
-                self.url, json.dumps(self.post_data), **self.post_kw
+                self.url, json.dumps(self.post_data), **POST_KW
             )
         self.assertEqual(response.status_code, 500)
 
@@ -2367,7 +2355,6 @@ class TestStudyDisplayConfigUpdateAjaxView(
             'samplesheets:ajax_display_update',
             kwargs={'study': self.study.sodar_uuid},
         )
-        self.post_kw = {'content_type': 'application/json'}
 
     def test_post(self):
         """Test StudyDisplayConfigUpdateAjaxView POST"""
@@ -2382,7 +2369,7 @@ class TestStudyDisplayConfigUpdateAjaxView(
                 json.dumps(
                     {'study_config': self.study_config, 'set_default': False}
                 ),
-                **self.post_kw,
+                **POST_KW,
             )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data['detail'], 'ok')
@@ -2409,7 +2396,7 @@ class TestStudyDisplayConfigUpdateAjaxView(
                 json.dumps(
                     {'study_config': self.study_config, 'set_default': True}
                 ),
-                **self.post_kw,
+                **POST_KW,
             )
 
         self.assertEqual(response.status_code, 200)
@@ -2436,7 +2423,7 @@ class TestStudyDisplayConfigUpdateAjaxView(
                 json.dumps(
                     {'study_config': self.study_config, 'set_default': False}
                 ),
-                **self.post_kw,
+                **POST_KW,
             )
         self.assertEqual(response.status_code, 200)
         self.assertNotEqual(response.data['detail'], 'ok')
@@ -2467,14 +2454,15 @@ class TestPluginSearchResultsAjaxView(SamplesheetsViewTestBase):
             .exclude(name='')
             .first()
         )
+        self.url = reverse('projectroles:ajax_search')
 
     def test_search_source(self):
         """Test simple search with source"""
         with self.login(self.user):
             response = self.client.post(
-                reverse('projectroles:ajax_search'),
+                self.url,
                 {
-                    'plugin': 'samplesheets',
+                    'plugin': APP_NAME,
                     'terms': f'["{self.source.name}"]',
                     'keywords': '{}',
                 },
@@ -2487,9 +2475,9 @@ class TestPluginSearchResultsAjaxView(SamplesheetsViewTestBase):
         """Test simple search with source and source type"""
         with self.login(self.user):
             response = self.client.post(
-                reverse('projectroles:ajax_search'),
+                self.url,
                 {
-                    'plugin': 'samplesheets',
+                    'plugin': APP_NAME,
                     'terms': f'["{self.source.name}"]',
                     'keywords': '{"type": "source"}',
                 },
@@ -2502,9 +2490,9 @@ class TestPluginSearchResultsAjaxView(SamplesheetsViewTestBase):
         """Test simple search with source and sample type (should fail)"""
         with self.login(self.user):
             response = self.client.post(
-                reverse('projectroles:ajax_search'),
+                self.url,
                 {
-                    'plugin': 'samplesheets',
+                    'plugin': APP_NAME,
                     'terms': f'["{self.source.name}"]',
                     'keywords': '{"type": "sample"}',
                 },
@@ -2516,9 +2504,9 @@ class TestPluginSearchResultsAjaxView(SamplesheetsViewTestBase):
         """Test simple search with sample"""
         with self.login(self.user):
             response = self.client.post(
-                reverse('projectroles:ajax_search'),
+                self.url,
                 {
-                    'plugin': 'samplesheets',
+                    'plugin': APP_NAME,
                     'terms': f'["{self.sample.name}"]',
                     'keywords': '{}',
                 },
@@ -2531,9 +2519,9 @@ class TestPluginSearchResultsAjaxView(SamplesheetsViewTestBase):
         """Test simple search with sample and sample type"""
         with self.login(self.user):
             response = self.client.post(
-                reverse('projectroles:ajax_search'),
+                self.url,
                 {
-                    'plugin': 'samplesheets',
+                    'plugin': APP_NAME,
                     'terms': f'["{self.sample.name}"]',
                     'keywords': '{"type": "sample"}',
                 },
@@ -2546,9 +2534,9 @@ class TestPluginSearchResultsAjaxView(SamplesheetsViewTestBase):
         """Test simple search with sample and source type (should fail)"""
         with self.login(self.user):
             response = self.client.post(
-                reverse('projectroles:ajax_search'),
+                self.url,
                 {
-                    'plugin': 'samplesheets',
+                    'plugin': APP_NAME,
                     'terms': f'["{self.sample.name}"]',
                     'keywords': '{"type": "source"}',
                 },
@@ -2560,9 +2548,9 @@ class TestPluginSearchResultsAjaxView(SamplesheetsViewTestBase):
         """Test simple search with multiple terms"""
         with self.login(self.user):
             response = self.client.post(
-                reverse('projectroles:ajax_search'),
+                self.url,
                 {
-                    'plugin': 'samplesheets',
+                    'plugin': APP_NAME,
                     'terms': f'["{self.source.name}", "{self.sample.name}"]',
                     'keywords': '{}',
                 },
@@ -2597,6 +2585,10 @@ class TestSheetVersionCompareAjaxView(
             'a_small2_alt.txt'
         )
         self.isa2.save()
+        self.url = reverse(
+            'samplesheets:ajax_version_compare',
+            kwargs={'project': self.project.sodar_uuid},
+        )
 
     def test_get(self):
         """Test SheetVersionCompareAjaxView GET returning diff data"""
@@ -2638,10 +2630,7 @@ class TestSheetVersionCompareAjaxView(
         with self.login(self.user):
             response = self.client.get(
                 '{}?source={}&target={}'.format(
-                    reverse(
-                        'samplesheets:ajax_version_compare',
-                        kwargs={'project': self.project.sodar_uuid},
-                    ),
+                    self.url,
                     str(self.isa1.sodar_uuid),
                     str(self.isa2.sodar_uuid),
                 )
@@ -2655,10 +2644,7 @@ class TestSheetVersionCompareAjaxView(
         with self.login(self.user):
             response = self.client.get(
                 '{}?source={}&target={}'.format(
-                    reverse(
-                        'samplesheets:ajax_version_compare',
-                        kwargs={'project': self.project.sodar_uuid},
-                    ),
+                    self.url,
                     str(self.isa1.sodar_uuid),
                     'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
                 )
@@ -2686,10 +2672,7 @@ class TestSheetVersionCompareAjaxView(
         with self.login(self.user):
             response = self.client.get(
                 '{}?source={}&target={}&filename={}&category={}'.format(
-                    reverse(
-                        'samplesheets:ajax_version_compare',
-                        kwargs={'project': self.project.sodar_uuid},
-                    ),
+                    self.url,
                     str(self.isa1.sodar_uuid),
                     str(self.isa2.sodar_uuid),
                     's_small2.txt',
@@ -2719,10 +2702,7 @@ class TestSheetVersionCompareAjaxView(
         with self.login(self.user):
             response = self.client.get(
                 '{}?source={}&target={}&filename={}&category={}'.format(
-                    reverse(
-                        'samplesheets:ajax_version_compare',
-                        kwargs={'project': self.project.sodar_uuid},
-                    ),
+                    self.url,
                     str(self.isa1.sodar_uuid),
                     str(self.isa2.sodar_uuid),
                     'a_small2.txt',

@@ -13,13 +13,7 @@ import {
   type IRowNode
 } from 'ag-grid-community'
 
-/* Types -------------------------------------------------------------------- */
-
-export type SheetTableCellDataValue = string |
-  Array<string> |
-  Array<SheetTableOntologyRef>
-
-/* SODAR Context ------------------------------------------------------------ */
+// SODAR Context ---------------------------------------------------------------
 
 export interface SodarContextLinkLabel {
   label: string
@@ -94,7 +88,7 @@ export interface SodarContext {
   user_uuid: string
 }
 
-/* Common render table interfaces ------------------------------------------- */
+// Render Tables ---------------------------------------------------------------
 
 // Render table top header
 export interface SheetTableTopHeader {
@@ -136,6 +130,10 @@ export interface SheetTableCellData {
   value: SheetTableCellDataValue
 }
 
+export type SheetTableCellDataValue = string |
+  Array<string> |
+  Array<SheetTableOntologyRef>
+
 // Render table row
 export interface SheetTableRowData {
   [key: string]: number |
@@ -153,7 +151,7 @@ export interface SheetRenderTable {
   top_header: Array<SheetTableTopHeader>
 }
 
-/* Study render table ------------------------------------------------------- */
+// Study Render Table ----------------------------------------------------------
 
 // Study shortcut query
 export interface StudyShortcutQuery {
@@ -194,7 +192,7 @@ export interface StudyRenderTable extends SheetRenderTable {
   shortcuts?: StudyShortcuts
 }
 
-/* Assay render table ------------------------------------------------------- */
+// Assay Render Table ----------------------------------------------------------
 
 // Assay iRODS path
 export interface AssayIrodsPath {
@@ -235,7 +233,7 @@ export interface AssayRenderTable extends SheetRenderTable {
   shortcuts: AssayShortcuts
 }
 
-/* Display configuration ---------------------------------------------------- */
+// Display Configuration -------------------------------------------------------
 
 // Display configuration node
 export interface StudyDisplayConfigNode {
@@ -247,7 +245,7 @@ export interface StudyDisplayConfig {
   nodes: [StudyDisplayConfigNode]
 }
 
-/* Edit configuration ------------------------------------------------------- */
+// Edit Configuration ----------------------------------------------------------
 
 // Edit configuration node field
 export interface StudyEditConfigNodeField {
@@ -277,7 +275,7 @@ export interface StudyEditConfig {
   nodes: [StudyEditConfigNode]
 }
 
-/* Edit context ------------------------------------------------------------- */
+// Edit Context ----------------------------------------------------------------
 
 // Edit context ontology
 export interface StudyEditContextOntology {
@@ -309,7 +307,7 @@ export interface StudyEditContext {
   sodar_ontologies: { [key: string]: StudyEditContextOntology }
 }
 
-/* Render table data structure ---------------------------------------------- */
+// Render Table Data Structure -------------------------------------------------
 
 // Render table response data
 export interface RenderTableData {
@@ -327,7 +325,7 @@ export interface RenderTableData {
   }
 }
 
-/* Table Store -------------------------------------------------------------- */
+// Table Store -----------------------------------------------------------------
 
 export interface SheetAssayShortcuts {
   [key: string]: AssayShortcuts
@@ -359,7 +357,7 @@ export interface TableHeights {
   study: number | null
 }
 
-/* Grid building ------------------------------------------------------------ */
+// Grid Building ---------------------------------------------------------------
 
 export interface ColDefBuildParams {
   assayMode: boolean
@@ -451,7 +449,7 @@ export interface StudyShortcutsRendererParams {
   value: StudyShortcutCell
 }
 
-/* SODAR ajax view data ----------------------------------------------------- */
+// SODAR Ajax View Data --------------------------------------------------------
 
 export interface IrodsDirFile {
   displayPath?: string
@@ -531,7 +529,7 @@ export interface GenericResponseBody {
   detail: string
 }
 
-/* Edit mode data ----------------------------------------------------------- */
+// Edit Mode Data --------------------------------------------------------------
 
 export interface EditUnsavedRow {
   id: string
@@ -741,7 +739,7 @@ export interface RowSaveParams {
   saveData: RowSaveData
 }
 
-/* Function callbacks ------------------------------------------------------- */
+// Function Callbacks ----------------------------------------------------------
 
 export interface RowEditFinishCb {
   (): void

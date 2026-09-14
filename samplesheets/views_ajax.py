@@ -124,7 +124,7 @@ class BaseSheetEditAjaxView(SODARBaseProjectAjaxView):
     class SheetEditException(Exception):
         pass
 
-    def _raise_ex(self, msg: Union[Exception, str]):
+    def raise_ex(self, msg: Union[Exception, str]):
         """
         Raise SheetEditException and log the error.
 
@@ -135,7 +135,7 @@ class BaseSheetEditAjaxView(SODARBaseProjectAjaxView):
         raise self.SheetEditException(msg)
 
     @classmethod
-    def _get_attr_value(
+    def get_attr_value(
         cls,
         node_obj: Union[GenericMaterial, Process],
         cell: dict,
@@ -167,7 +167,7 @@ class BaseSheetEditAjaxView(SODARBaseProjectAjaxView):
         return val
 
     @classmethod
-    def _get_ontology_names(
+    def get_ontology_names(
         cls, cells: Optional[list] = None, nodes: Optional[list] = None
     ) -> list:
         """
@@ -200,7 +200,7 @@ class BaseSheetEditAjaxView(SODARBaseProjectAjaxView):
 
     @classmethod
     @transaction.atomic
-    def _update_ontology_refs(
+    def update_ontology_refs(
         cls, investigation: Investigation, edit_names: list[str]
     ):
         """
@@ -966,7 +966,7 @@ class SheetCellEditAjaxView(BaseSheetEditAjaxView):
         # Name field (special case)
         elif header_type == 'name':
             if len(cell['value']) == 0 and cell.get('item_type') != 'DATA':
-                self._raise_ex('Empty name not allowed for non-data node')
+                self.raise_ex('Empty name not allowed for non-data node')
             node_obj.name = cell['value']
             # TODO: Update unique name here if needed
             ok_msg = 'Edited node name: {}'.format(cell['value'])
@@ -991,7 +991,7 @@ class SheetCellEditAjaxView(BaseSheetEditAjaxView):
                 sodar_uuid=cell['uuid_ref'], study=node_obj.study
             ).first()
             if not protocol:
-                self._raise_ex(
+                self.raise_ex(
                     'Protocol not found: {} ({})'.format(
                         cell['value'], cell['uuid_ref']
                     )
@@ -1016,7 +1016,7 @@ class SheetCellEditAjaxView(BaseSheetEditAjaxView):
                         cell['value'], '%Y-%m-%d'
                     )
                 except ValueError as ex:
-                    self._raise_ex(ex)
+                    self.raise_ex(ex)
             else:
                 node_obj.perform_date = None
 
@@ -1031,7 +1031,7 @@ class SheetCellEditAjaxView(BaseSheetEditAjaxView):
             if isinstance(attr[header_name], str):
                 attr[header_name] = cell['value']
             else:
-                attr[header_name]['value'] = self._get_attr_value(
+                attr[header_name]['value'] = self.get_attr_value(
                     node_obj, cell, header_name, header_type
                 )
                 # TODO: Support ontology ref in unit
@@ -1044,7 +1044,7 @@ class SheetCellEditAjaxView(BaseSheetEditAjaxView):
             ok_msg = f'Edited JSON attribute: {header_type}[{header_name}]'
 
         else:
-            self._raise_ex(
+            self.raise_ex(
                 f'Editing not implemented (header_type={header_type}; '
                 f'header_name={header_name})'
             )
@@ -1101,8 +1101,8 @@ class SheetCellEditAjaxView(BaseSheetEditAjaxView):
         # Update investigation ontology refs
         if updated_cells:
             try:
-                self._update_ontology_refs(
-                    inv, self._get_ontology_names(cells=updated_cells)
+                self.update_ontology_refs(
+                    inv, self.get_ontology_names(cells=updated_cells)
                 )
             except Exception as ex:
                 return Response({'detail': str(ex)}, status=500)
@@ -1150,7 +1150,7 @@ class SheetRowInsertAjaxView(BaseSheetEditAjaxView):
             attr = getattr(node_obj, header_type)
             # Check if we have ontology refs and alter value
             attr[header_name] = {
-                'value': cls._get_attr_value(
+                'value': cls.get_attr_value(
                     node_obj, cell, header_name, header_type
                 )
             }
@@ -1312,7 +1312,7 @@ class SheetRowInsertAjaxView(BaseSheetEditAjaxView):
             investigation__project=project, sodar_uuid=row['study']
         ).first()
         if not study:
-            self._raise_ex(f'Study not found: {row["study"]}')
+            self.raise_ex(f'Study not found: {row["study"]}')
         assay = None
         row_arcs = []
         parent = study
@@ -1321,7 +1321,7 @@ class SheetRowInsertAjaxView(BaseSheetEditAjaxView):
                 sodar_uuid=row['assay'], study=study
             ).first()
             if not assay:
-                self._raise_ex(f'Assay not found: {row["assay"]}')
+                self.raise_ex(f'Assay not found: {row["assay"]}')
             parent = assay
         node_objects = []
         node_count = 0
@@ -1351,7 +1351,7 @@ class SheetRowInsertAjaxView(BaseSheetEditAjaxView):
                     ).first()
                 )
             except Exception as ex:
-                self._raise_ex(f'Error building tables for collapsing: {ex}')
+                self.raise_ex(f'Error building tables for collapsing: {ex}')
             if not assay:
                 comp_table = comp_study['study']
             else:
@@ -1370,7 +1370,7 @@ class SheetRowInsertAjaxView(BaseSheetEditAjaxView):
             if uuid:
                 node_obj = get_node_obj(sodar_uuid=uuid, study=study)
                 if not node_obj:
-                    self._raise_ex(f'{obj_cls} not found (UUID={uuid})')
+                    self.raise_ex(f'{obj_cls} not found (UUID={uuid})')
             # Named process is a special case
             # TODO: Also check column!
             elif obj_cls == 'Process' and name:
@@ -1396,16 +1396,14 @@ class SheetRowInsertAjaxView(BaseSheetEditAjaxView):
                         sodar_uuid=node['cells'][0]['uuid_ref'], study=study
                     ).first()
                     if not protocol:
-                        self._raise_ex(
+                        self.raise_ex(
                             'Protocol not found (UUID={})'.format(
                                 node['cells'][0]['uuid_ref']
                             )
                         )
                     unique_name = get_unique_name(study, assay, protocol.name)
                 if not name and not protocol:
-                    self._raise_ex(
-                        'Protocol and name both missing from process'
-                    )
+                    self.raise_ex('Protocol and name both missing from process')
 
                 # NOTE: We create the object in memory regardless of collapse
                 obj_kwargs = {
@@ -1502,7 +1500,7 @@ class SheetRowInsertAjaxView(BaseSheetEditAjaxView):
         try:
             sheet_io.export_isa(study.investigation)
         except Exception as ex:
-            self._raise_ex(f'altamISA Error: {ex}')
+            self.raise_ex(f'altamISA Error: {ex}')
         logger.debug('Inserting row OK')
         # Clear cached study tables
         table_builder.clear_study_cache(study)
@@ -1521,8 +1519,8 @@ class SheetRowInsertAjaxView(BaseSheetEditAjaxView):
                 logger.debug('node_uuids={}'.format(self.ok_data['node_uuids']))
                 # Update investigation ontology refs
                 try:
-                    self._update_ontology_refs(
-                        inv, self._get_ontology_names(nodes=new_row['nodes'])
+                    self.update_ontology_refs(
+                        inv, self.get_ontology_names(nodes=new_row['nodes'])
                     )
                 except Exception as ex:
                     return Response({'detail': str(ex)}, status=500)
@@ -1567,14 +1565,14 @@ class SheetRowDeleteAjaxView(BaseSheetEditAjaxView):
             investigation__project=project, sodar_uuid=row['study']
         ).first()
         if not study:
-            self._raise_ex(f'Study not found: {row["study"]}')
+            self.raise_ex(f'Study not found: {row["study"]}')
         parent = study
         if row['assay']:
             assay = Assay.objects.filter(
                 sodar_uuid=row['assay'], study=study
             ).first()
             if not assay:
-                self._raise_ex(f'Assay not found: {row["assay"]}')
+                self.raise_ex(f'Assay not found: {row["assay"]}')
             parent = assay
         ui_nodes = row['nodes']
         sample_obj = None
@@ -1582,7 +1580,7 @@ class SheetRowDeleteAjaxView(BaseSheetEditAjaxView):
         for node in ui_nodes:
             node_obj = get_node_obj(sodar_uuid=node['uuid'], study=study)
             if not node_obj:
-                self._raise_ex(
+                self.raise_ex(
                     '{} not found (UUID={})'.format(
                         node['obj_cls'], node['uuid']
                     )
@@ -1599,7 +1597,7 @@ class SheetRowDeleteAjaxView(BaseSheetEditAjaxView):
         if parent == study:
             for s_assay in study.assays.all():
                 if sample_obj.unique_name in [a[0] for a in s_assay.arcs]:
-                    self._raise_ex(
+                    self.raise_ex(
                         'Sample used in assay(s), can not delete row from study'
                     )
         logger.debug(
@@ -1657,14 +1655,14 @@ class SheetRowDeleteAjaxView(BaseSheetEditAjaxView):
                 arc_del_count += 1
 
         if arc_del_count == 0:
-            self._raise_ex('Did not find arcs to remove')
+            self.raise_ex('Did not find arcs to remove')
         study.investigation.save()
 
         # Attempt to export investigation with altamISA
         try:
             sheet_io.export_isa(study.investigation)
         except Exception as ex:
-            self._raise_ex(f'altamISA Error: {ex}')
+            self.raise_ex(f'altamISA Error: {ex}')
         # Clear cached study tables
         table_builder.clear_study_cache(study)
         logger.debug('Deleting row OK')
