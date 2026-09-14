@@ -21,6 +21,7 @@ Release for minor updates, maintenance and bug fixes.
 - Fix Markdown previews in production deployments
 - Fix missing edit Ajax view object query project scope checks
 - Fix sheet date column sorting with empty values
+- Fix sheet ontology term template applying
 - Upgrade critical dependencies
 - Minor updates and bug fixes
 

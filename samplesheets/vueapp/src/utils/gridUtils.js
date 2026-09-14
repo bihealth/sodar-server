@@ -509,8 +509,9 @@ export function buildRowData (params) {
           cellVal.colType === 'ONTOLOGY') {
         for (const term of cellVal.value) {
           if (term.accession &&
+              (!params.sodarContext.ontology_url_skip ||
               !params.sodarContext.ontology_url_skip.some(
-                x => term.accession.includes(x))) {
+                x => term.accession.includes(x)))) {
             let ontologyName = term.ontology_name
             // HACK for mislabeled HP terms
             if (ontologyName === 'HPO') ontologyName = 'HP'

@@ -52,6 +52,7 @@ Fixed
     - Vue3app missing grid viewport background color (#2530)
     - Missing edit Ajax view object query project scope checks (#2536)
     - Date column sorting fails with empty values in column (#2544)
+    - Legacy vueapp ontology term template only applied if skip is set (#2538)
 
 Removed
 -------
