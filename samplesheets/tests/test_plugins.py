@@ -14,8 +14,12 @@ from test_plus.test import TestCase
 
 # Projectroles dependency
 from projectroles.app_settings import AppSettingAPI
-from projectroles.models import SODAR_CONSTANTS
-from projectroles.plugins import ProjectAppPluginPoint, PluginAPI
+from projectroles.models import SODAR_CONSTANTS, Project
+from projectroles.plugins import (
+    ProjectAppPluginPoint,
+    PluginAPI,
+    PluginSearchResult,
+)
 from projectroles.tests.test_models import (
     ProjectMixin,
     RoleMixin,
@@ -23,9 +27,11 @@ from projectroles.tests.test_models import (
 )
 
 from samplesheets.models import (
+    Assay,
     GenericMaterial,
     ITEM_TYPE_MATERIAL,
     ITEM_TYPE_SAMPLE,
+    ITEM_TYPE_SOURCE,
 )
 from samplesheets.plugins import (
     get_irods_content,
@@ -41,7 +47,10 @@ from samplesheets.assayapps.dna_sequencing.plugins import (
     SampleSheetAssayPlugin as DnaSequencingPlugin,
 )
 from samplesheets.rendering import SampleSheetTableBuilder
-from samplesheets.tests.test_io import SampleSheetIOMixin, SHEET_DIR
+from samplesheets.tests.test_io import (
+    SampleSheetIOMixin,
+    SHEET_DIR,
+)
 
 
 app_settings = AppSettingAPI()
@@ -56,6 +65,7 @@ PROJECT_TYPE_CATEGORY = SODAR_CONSTANTS['PROJECT_TYPE_CATEGORY']
 APP_NAME = 'samplesheets'
 SHEET_PATH = SHEET_DIR + 'i_minimal2.zip'
 MATERIAL_NAME = '0815-N1-DNA1'
+SAMPLE_NAME = '0815-N1'
 ASSAY_PLUGIN_NAME = 'samplesheets.assayapps.dna_sequencing'
 SHEET_COL_ID = 'sheets'
 FILE_COL_ID = 'files'
@@ -422,3 +432,198 @@ class TestUpdateCacheRows(SamplesheetsPluginTestBase):
             self.plugin.update_cache_rows(
                 ASSAY_PLUGIN_NAME, project=self.project
             )
+
+
+class TestSearch(SamplesheetsPluginTestBase):
+    """Tests for plugin search()"""
+
+    def _assert_material_row_contents(self, row, name, type, study, assay=None):
+        self.assertEqual(row[0].value, name)
+        self.assertTrue(row[0].value_url.startswith(study.get_url()))
+        self.assertEqual(row[1].value, type)
+        self.assertIn(study.investigation.project.title, row[2].value)
+        self.assertEqual(row[3].value, study.get_name())
+        self.assertEqual(row[3].value_url, study.get_url())
+        if assay:
+            self.assertIn(str(assay.sodar_uuid), row[4].value)
+        else:
+            self.assertEqual(row[4].value, '')
+
+    def setUp(self):
+        super().setUp()
+        self.plugin = ProjectAppPluginPoint.get_plugin('samplesheets')
+        GenericMaterial.objects.create(
+            name='0816-N1',
+            unique_name='0816-N1-1-1',
+            item_type=ITEM_TYPE_SAMPLE,
+            study=self.study,
+        )
+        self.project2 = self.make_project(
+            'TestProject2', PROJECT_TYPE_PROJECT, self.category
+        )
+        self.investigation2 = self.import_isa_from_file(
+            SHEET_DIR + 'bih_cancer.zip', self.project2
+        )
+        self.investigation2.irods_status = True
+        self.investigation2.save()
+        self.study2 = self.investigation2.studies.first()
+        self.assay2 = self.study2.assays.first()
+        # Create the same sample in the project2
+        GenericMaterial.objects.create(
+            name='0816-N1',
+            unique_name='0816-N1-1-1',
+            item_type=ITEM_TYPE_SAMPLE,
+            study=self.study2,
+        )
+
+    def test_search_simple(self):
+        """Test search() with simple term"""
+        ret = self.plugin.search(
+            [SAMPLE_NAME],
+            self.user_owner,
+            Project.objects.all(),
+        )
+        self.assertEqual(len(ret), 2)
+        self.assertIsInstance(ret[0], PluginSearchResult)
+        self.assertIsInstance(ret[1], PluginSearchResult)
+        self.assertEqual(ret[0].category, 'materials')
+        self.assertEqual(
+            [col.title for col in ret[0].columns],
+            ['Name', 'Type', 'Project', 'Study', 'Assay(s)'],
+        )
+        self.assertEqual(len(ret[0].rows), 1)
+        self._assert_material_row_contents(
+            ret[0].rows[0],
+            SAMPLE_NAME,
+            'Sample',
+            self.study,
+            assay=self.assay,
+        )
+        self.assertEqual(len(ret[1].rows), 0)
+
+    def test_search_empty(self):
+        """Test search() with no data"""
+        for material in GenericMaterial.objects.all():
+            material.delete()
+        ret = self.plugin.search(
+            [SAMPLE_NAME],
+            self.user_owner,
+            Project.objects.all(),
+        )
+        self.assertEqual(len(ret), 2)
+        self.assertIsInstance(ret[0], PluginSearchResult)
+        self.assertIsInstance(ret[1], PluginSearchResult)
+        self.assertEqual(ret[0].rows, [])
+        self.assertEqual(ret[1].rows, [])
+
+    def test_search_multiple_terms(self):
+        """Test search() with multiple terms"""
+        ret = self.plugin.search(
+            ['0815', '0816-N1', 'fictitious-sample-0x123'],
+            self.user_owner,
+            Project.objects.all(),
+        )
+        self.assertEqual(len(ret[0].rows), 3)
+        rows = sorted(ret[0].rows, key=lambda x: (x[0].value, x[3].value))
+        self._assert_material_row_contents(
+            rows[0],
+            '0815',
+            'Source',
+            self.study,
+        )
+        self._assert_material_row_contents(
+            rows[1],
+            '0816-N1',
+            'Sample',
+            self.study2,
+        )
+        self._assert_material_row_contents(
+            rows[2],
+            '0816-N1',
+            'Sample',
+            self.study,
+        )
+
+    def test_search_within_project(self):
+        """Test search() with project keyword"""
+        ret = self.plugin.search(
+            ['0816-N1', 'test1.txt'],
+            self.user_owner,
+            Project.objects.filter(title=self.project2.title),
+        )
+        self.assertEqual(len(ret[0].rows), 1)
+        self._assert_material_row_contents(
+            ret[0].rows[0],
+            '0816-N1',
+            'Sample',
+            self.study2,
+        )
+
+    def test_search_type_source(self):
+        """Test search() with type source"""
+        ret = self.plugin.search(
+            ['0815', '0815-N1'],
+            self.user_owner,
+            Project.objects.all(),
+            type=ITEM_TYPE_SOURCE.lower(),
+        )
+        self.assertEqual(len(ret), 1)
+        self.assertEqual(ret[0].category, 'materials')
+        self.assertEqual(len(ret[0].rows), 1)
+        # 0815-N1 (the sample) is not found
+        self.assertEqual(ret[0].rows[0][0].value, '0815')
+
+    def test_search_type_sample(self):
+        """Test search() with type sample"""
+        ret = self.plugin.search(
+            ['0815', '0815-N1'],
+            self.user_owner,
+            Project.objects.all(),
+            type=ITEM_TYPE_SAMPLE.lower(),
+        )
+        self.assertEqual(len(ret), 1)
+        self.assertEqual(ret[0].category, 'materials')
+        self.assertEqual(len(ret[0].rows), 1)
+        # 0815 (the source) is not found
+        self.assertEqual(ret[0].rows[0][0].value, '0815-N1')
+
+    def test_search_no_assays(self):
+        """Test search() with type sample and no assays"""
+        for a in Assay.objects.all():
+            a.delete()
+        ret = self.plugin.search(
+            [SAMPLE_NAME],
+            self.user_owner,
+            Project.objects.all(),
+            type=ITEM_TYPE_SAMPLE.lower(),
+        )
+        self.assertEqual(len(ret), 1)
+        self.assertEqual(ret[0].category, 'materials')
+        self.assertEqual(len(ret[0].rows), 1)
+        self._assert_material_row_contents(
+            ret[0].rows[0],
+            SAMPLE_NAME,
+            'Sample',
+            self.study,
+        )
+
+    def test_search_type_invalid(self):
+        """Test search() with invalid type"""
+        ret = self.plugin.search(
+            [SAMPLE_NAME],
+            self.user_owner,
+            Project.objects.all(),
+            type='NOT_A_MATERIAL_TYPE',
+        )
+        self.assertEqual(len(ret), 0)
+
+    def test_search_no_permission(self):
+        """Test search() when user has no permission"""
+        ret = self.plugin.search(
+            [SAMPLE_NAME],
+            self.user_owner,
+            Project.objects.filter(title=self.project2.title),
+        )
+        self.assertEqual(len(ret), 2)
+        self.assertEqual(len(ret[0].rows), 0)
+        self.assertEqual(len(ret[1].rows), 0)

@@ -10,6 +10,10 @@ export const SEL_APP_CONTAINER = 'div#sodar-app-container'
 export const SEL_APP_CONTENT = 'div#sodar-app-content'
 export const SEL_CONTENT_LEFT = 'div#sodar-content-left'
 
+// Requests
+export const REQ_GET = 'GET'
+export const REQ_POST = 'POST'
+
 // URLs
 export const URL_CELL_EDIT_PREFIX = '/samplesheets/ajax/edit/cell/'
 export const URL_DATA_REQUEST_CREATE_PREFIX =
@@ -19,8 +23,11 @@ export const URL_DATA_REQUEST_DELETE_PREFIX =
 export const URL_DISPLAY_CONFIG_PREFIX = '/samplesheets/ajax/display/update/'
 export const URL_EDIT_FINISH_PREFIX = '/samplesheets/ajax/edit/finish/'
 export const URL_IRODS_LIST_PREFIX = '/samplesheets/ajax/irods/objects/'
+export const URL_IRODS_STATS_PREFIX = '/irodsbackend/ajax/stats/'
+export const URL_PARSER_WARNING_PREFIX = '/samplesheets/ajax/warnings/'
 export const URL_ROW_DEL_PREFIX = '/samplesheets/ajax/edit/row/delete/'
 export const URL_ROW_INS_PREFIX = '/samplesheets/ajax/edit/row/insert/'
+export const URL_STUDY_LINKS_PREFIX = '/samplesheets/ajax/study/links/'
 export const URL_VERSION_SAVE_PREFIX = '/samplesheets/ajax/version/save/'
 
 // Color variants
@@ -152,24 +159,41 @@ export const EDIT_REGEX: { [key: string]: RegExp } = {
 
 // Browse mode text labels
 export const COPY_MSG_SUFFIX = ' copied into clipboard'
+export const DISPLAY_SAVE_MSG = 'Display configuration saved'
+export const DISPLAY_SAVE_DEFAULT_SUFFIX = ' as default'
 export const IRODS_PATH_COPY_MSG = 'iRODS path copied into clipboard'
+export const WEBDAV_URL_COPY_MSG = 'WebDAV URL copied into clipboard'
 
 // Edit mode text labels
 export const CELL_NODE_NAME_NEW = 'Enter name of new or existing node'
 export const CELL_NODE_NAME_RENAME = 'Rename node'
 export const CELL_UPDATE_ERR_PREFIX = 'Cell update error: '
 export const CELL_UPDATE_FAIL_PREFIX = 'Cell update failed: '
+
+export const CONFIG_COPY_MSG = 'Configuration copied into clipboard'
+export const CONFIG_PASTE_DEFAULT_OK_MSG = 'Default updated'
+export const CONFIG_PASTE_INVALID_DATA_MSG = 'Invalid data'
+export const CONFIG_PASTE_INVALID_FORMAT_MSG = 'Invalid format'
+export const CONFIG_PASTE_INVALID_JSON_MSG = 'Invalid JSON'
+export const CONFIG_PASTE_INVALID_TERM_MSG = 'Invalid term'
+export const CONFIG_PASTE_LIST_ALLOW_MSG = 'List not allowed'
+export const CONFIG_PASTE_OK_MSG = 'Configuration pasted'
+
 export const EDIT_MSG_FINISH = 'Finished editing'
 export const EDIT_MSG_SAVE = 'Sheet version saved'
 export const EDIT_MSG_SAVE_ERR_PREFIX = 'Error saving version: '
 export const EDIT_MSG_SAVE_FAIL_PREFIX = 'Saving version failed: '
+
 export const NODE_RENAME_MSG = 'A node with the same name already exists in ' +
   'this column. Renaming will replace all values in the fields of the ' +
   'material or process. Proceed?'
+
 export const ROW_DEL_MSG_ALL = 'Deleting all rows of a table is currently ' +
   'not supported'
 export const ROW_DEL_MSG_ASSAY = 'Assay rows containing the sample must be ' +
   'first deleted'
+export const ROW_DEL_MSG_DELETED = 'Row deleted'
+export const ROW_DEL_MSG_FAIL = 'Row delete failed'
 export const ROW_DEL_MSG_CANCEL = 'Cancel row insertion'
 export const ROW_DEL_MSG_CONFIRM = 'Delete row? This can not be undone.'
 export const ROW_DEL_MSG_CONFIRM_CANCEL = 'Cancel row insert?'
@@ -179,7 +203,13 @@ export const ROW_DEL_MSG_OK = 'Delete row'
 export const ROW_DEL_MSG_UNSAVED = 'New row needs to be saved or cancelled'
 export const ROW_INS_MSG_DISABLED = 'Please save or discard your unsaved row ' +
   'before inserting a new one'
+export const ROW_INS_MSG_FAIL_PREFIX = 'Row insert failed: '
+export const ROW_INS_MSG_OK = 'Row inserted'
 export const ROW_SAVE_MSG_IDENTICAL = 'Identical row exists, unable to save'
+
+export const TERM_PASTE_INVALID_JSON_MSG = 'Invalid JSON, unable to parse terms'
+export const TERM_PASTE_LIST_ALLOW_MSG = 'List of terms not allowed'
+export const TERM_PASTE_ONTOLOGY_ALLOW_PREFIX = 'Ontology not allowed: '
 
 // Misc edit mode constants
 export const EDIT_TERM_QUERY_MIN_LEN = 3

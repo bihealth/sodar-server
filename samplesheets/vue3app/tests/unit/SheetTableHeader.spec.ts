@@ -6,6 +6,7 @@ import { createBootstrap } from 'bootstrap-vue-next/plugins/createBootstrap'
 import SheetTableHeader from '@/components/SheetTableHeader.vue'
 import { useAppStore } from '@/stores/appStore.ts'
 import { type SodarContext } from '@/types.ts'
+import { IRODS_PATH_COPY_MSG, VARIANT_INFO } from '@/constants.ts'
 
 import { copy } from '../testUtils.ts'
 import { sodarContext } from '../data/sodarContext.ts'
@@ -15,9 +16,10 @@ import {
   ASSAY_PLUGIN_TITLE,
   ASSAY_UUID,
   PROJECT_UUID,
+  STUDY_PATH,
   STUDY_PLUGIN_NAME,
   STUDY_PLUGIN_TITLE,
-  STUDY_UUID
+  STUDY_UUID,
 } from '../testConstants.ts'
 
 // Test Data -------------------------------------------------------------------
@@ -34,17 +36,28 @@ const statsBadgeClass = 'mock-irods-stats-badge'
 
 // Global Setup ----------------------------------------------------------------
 
+const mockDetailModal = { template: '<div />', methods: {show: vi.fn() } }
+const mockNotifyCb = vi.fn()
+
 config.global.plugins = [createBootstrap()]
 config.global.stubs = {
-  IrodsStatsBadge: { template: '<span class="' + statsBadgeClass + '" />'}
+  IrodsStatsBadge: { template: '<span class="' + statsBadgeClass + '" />'},
+  TableDetailModal: mockDetailModal
 }
+
+// Mock clipboard (NOTE: has to be done in module root)
+const mockCopy = vi.fn()
+vi.mock('@vueuse/core', async () => {
+  const actual = await vi.importActual('@vueuse/core')
+  return { ...actual, useClipboard: () => ({ copy: mockCopy }) }
+})
+
 
 // Tests -----------------------------------------------------------------------
 
 describe('SheetTableHeader.vue', () => {
   function mountComponent (propVals: SheetTableHeaderProps): VueWrapper {
     const props = copy(propVals) as SheetTableHeaderProps
-    props.notifyCb = vi.fn()
     return mount(SheetTableHeader, { props: props })
   }
 
@@ -53,6 +66,7 @@ describe('SheetTableHeader.vue', () => {
     setActivePinia(createPinia())
     const appStore = useAppStore()
     appStore.currentStudyUuid = STUDY_UUID
+    appStore.notifyCb = mockNotifyCb
     appStore.projectUuid = PROJECT_UUID
     appStore.sodarContext = copy(sodarContext) as SodarContext
   })
@@ -186,5 +200,19 @@ describe('SheetTableHeader.vue', () => {
     expect(wrapper.find('.sodar-ss-irods-not-created').exists()).toBe(true)
   })
 
-  // TODO: Test modal opening
+  test('copy iRODS path to clipboard on button click', async () => {
+    expect(mockNotifyCb).not.toHaveBeenCalled()
+    const wrapper = mountComponent(studyProps)
+    await wrapper.find('.sodar-ss-irods-copy-btn').trigger('click')
+    expect(mockCopy).toHaveBeenCalledWith(STUDY_PATH)
+    expect(mockNotifyCb).toHaveBeenCalledWith(
+      IRODS_PATH_COPY_MSG, VARIANT_INFO)
+  })
+
+  test('open table detail modal on button click', async () => {
+    expect(mockDetailModal.methods.show).not.toHaveBeenCalled()
+    const wrapper = mountComponent(studyProps)
+    await wrapper.find('.sodar-ss-btn-table-detail').trigger('click')
+    expect(mockDetailModal.methods.show).toHaveBeenCalled()
+  })
 })

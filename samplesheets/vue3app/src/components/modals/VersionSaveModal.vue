@@ -10,11 +10,13 @@ import {
 import ModalHeader from '@/components/modals/ModalHeader.vue'
 import { useAppStore } from '@/stores/appStore.ts'
 import { useEditStore } from '@/stores/editStore.ts'
-import { type NotifyCb } from '@/types.ts'
+
+import { getAjaxRequestInit } from '@/utils/appUtils.ts'
 import {
   EDIT_MSG_SAVE,
   EDIT_MSG_SAVE_ERR_PREFIX,
   EDIT_MSG_SAVE_FAIL_PREFIX,
+  REQ_POST,
   URL_VERSION_SAVE_PREFIX,
   VARIANT_DANGER,
   VARIANT_SUCCESS,
@@ -29,7 +31,6 @@ const editStore = useEditStore()
 
 const description = ref<string>('')
 const modalRef = useTemplateRef('versionSaveModal')
-let notifyCb: NotifyCb | undefined = undefined
 const showModal = ref<boolean>(false)
 
 // Internal Vars ---------------------------------------------------------------
@@ -39,35 +40,30 @@ const url = URL_VERSION_SAVE_PREFIX + appStore.projectUuid
 // Helpers ---------------------------------------------------------------------
 
 function postSave () {
-  fetch(url, {
-    method: 'POST',
-    body: JSON.stringify({ save: true, description: description.value }),
-    headers: {
-      Accept: 'application/json',
-      'Content-Type': 'application/json',
-      'X-CSRFToken': appStore.sodarContext!.csrf_token
-    }
-  }).then(data => data.json())
+  fetch(url, getAjaxRequestInit(
+      REQ_POST, { save: true, description: description.value })
+  ).then(data => data.json())
     .then(data => {
       if (data.detail === 'ok') {
         editStore.versionSaved = true
-        if (notifyCb) notifyCb(EDIT_MSG_SAVE, VARIANT_SUCCESS)
+        if (appStore.notifyCb) {
+          appStore.notifyCb(EDIT_MSG_SAVE, VARIANT_SUCCESS)
+        }
       } else {
         const msg = EDIT_MSG_SAVE_FAIL_PREFIX + data.detail
         console.error(msg)
-        if (notifyCb) notifyCb(msg, VARIANT_DANGER)
+        if (appStore.notifyCb) appStore.notifyCb(msg, VARIANT_DANGER)
       }
     }).catch(function (error) {
       const msg = EDIT_MSG_SAVE_ERR_PREFIX + error
       console.error(msg)
-      if (notifyCb) notifyCb(msg, VARIANT_DANGER)
+      if (appStore.notifyCb) appStore.notifyCb(msg, VARIANT_DANGER)
   })
 }
 
 // API and Life Cycle ----------------------------------------------------------
 
-function show (modalNotifyCb?: NotifyCb) {
-  notifyCb = modalNotifyCb
+function show () {
   showModal.value = true
 }
 

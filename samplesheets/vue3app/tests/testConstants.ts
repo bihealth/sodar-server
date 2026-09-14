@@ -14,6 +14,7 @@ export const TMP_UUID3: string =   '99999999-aaaa-bbbb-cccc-ffffffffffff'
 /* iRODS Collections and Paths ---------------------------------------------- */
 
 export const MISC_FILES_DIR: string = 'MiscFiles'
+export const RESULTS_REPORTS_DIR: string = 'ResultsReports'
 
 export const PROJECT_SAMPLE_PATH: string = '/sodarZone/projects/00/' +
   PROJECT_UUID + '/sample_data'
@@ -35,3 +36,5 @@ export const ASSAY_PLUGIN_TITLE: string = 'DNA Sequencing Assay Plugin'
 export const OBO_ID_NCBITAXON: string = 'NCBITAXON'
 export const OBO_ID_UBERON: string = 'UBERON'
 export const OBO_ID_UNKNOWN: string = 'NOT_A_REAL_ONTOLOGY'
+
+export const ONTOLOGY_URL_TPL = 'https://example.com/{ontology_name}/{accession}'

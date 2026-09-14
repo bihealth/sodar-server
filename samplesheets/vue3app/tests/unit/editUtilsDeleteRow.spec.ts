@@ -11,7 +11,11 @@ import { type RowDeleteParams, type StudyEditContext } from '@/types.ts'
 import {
   AJAX_RES_OK,
   DB_OBJ_CLASS_MATERIAL,
-  URL_ROW_DEL_PREFIX
+  ROW_DEL_MSG_DELETED,
+  ROW_DEL_MSG_FAIL,
+  URL_ROW_DEL_PREFIX,
+  VARIANT_DANGER,
+  VARIANT_SUCCESS,
 } from '@/constants.ts'
 
 import studyTablesEdit from '../data/studyTablesEdit.json'
@@ -44,6 +48,7 @@ function mockForEachNode (nodes: Array<object>) {
     nodes.forEach(node => callback(node))
   })
 }
+const mockNotifyCb = vi.fn()
 
 // Tests -----------------------------------------------------------------------
 
@@ -110,10 +115,14 @@ describe('editUtils deleteRow()', () => {
     // Set up stores
     setActivePinia(createPinia())
     const appStore = useAppStore()
+    const editStore = useEditStore()
+    const tableStore = useTableStore()
+
     appStore.currentStudyUuid = STUDY_UUID
+    appStore.notifyCb = mockNotifyCb
     appStore.projectUuid = PROJECT_UUID
 
-    const editStore = useEditStore()
+
     editStore.editContext = copy(
       studyTablesEdit.edit_context) as StudyEditContext
     editStore.editContext.samples = {
@@ -122,7 +131,6 @@ describe('editUtils deleteRow()', () => {
     editStore.unsavedRow = null
     editStore.updatingRow = false
 
-    const tableStore = useTableStore()
     tableStore.sampleColId = sampleColId
     tableStore.sampleIdx = 2
 
@@ -164,6 +172,8 @@ describe('editUtils deleteRow()', () => {
     expect(fetch).toHaveBeenCalledWith(
       rowDelUrl, expect.objectContaining({ body: JSON.stringify(resBody) }))
     expect(rowDelParams.finishCb).toHaveBeenCalled()
+    expect(mockNotifyCb).toHaveBeenCalledWith(
+      ROW_DEL_MSG_DELETED, VARIANT_SUCCESS)
   })
 
   test('update row numbers on row delete', async () => {
@@ -284,7 +294,7 @@ describe('editUtils deleteRow()', () => {
     expect(mockGridApi.applyTransaction).not.toHaveBeenCalled()
     expect(fetch).toHaveBeenCalled()
     expect(rowDelParams.finishCb).toHaveBeenCalled()
+    expect(mockNotifyCb).toHaveBeenCalledWith(
+      ROW_DEL_MSG_FAIL, VARIANT_DANGER)
   })
-
-  // TODO: Test with extra nodes to ensure they get added to ajax request
 })

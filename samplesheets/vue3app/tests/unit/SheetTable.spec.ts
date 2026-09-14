@@ -1,14 +1,22 @@
 import { type TemplateRef } from 'vue'
 import { beforeEach, describe, expect, test, vi } from 'vitest'
-import { mount, type VueWrapper } from '@vue/test-utils'
+import { config, mount, type VueWrapper } from '@vue/test-utils'
 import { setActivePinia, createPinia } from 'pinia'
 import { AllCommunityModule, ModuleRegistry } from 'ag-grid-community'
 
 import SheetTable from '@/components/SheetTable.vue'
+import DataCellEditor from '@/components/editors/DataCellEditor.vue'
 import DataCellRenderer from '@/components/renderers/DataCellRenderer.vue'
+import HeaderEditRenderer from '@/components/renderers/HeaderEditRenderer.vue'
+import IrodsButtonsRenderer from '@/components/renderers/IrodsButtonsRenderer.vue'
+import RowEditRenderer from '@/components/renderers/RowEditRenderer.vue'
+import StudyShortcutsRenderer from '@/components/renderers/StudyShortcutsRenderer.vue'
+
 import { useAppStore } from '@/stores/appStore.ts'
 import { useEditStore } from '@/stores/editStore.ts'
 import { useTableStore } from '@/stores/tableStore.ts'
+
+import { insertRow } from '@/utils/editUtils.ts'
 import {
   type RenderTableData,
   type SodarContext,
@@ -43,7 +51,6 @@ const exTopHeaderAssay = [
   ['Derived Data File', 'success'],
 ]
 
-const mockModal = { show: vi.fn() }
 let props: SheetTableProps
 let context: SodarContext
 let tables: RenderTableData
@@ -58,10 +65,27 @@ const excelBtnSel = '.sodar-ss-excel-export-btn'
 
 // Global Setup ----------------------------------------------------------------
 
-ModuleRegistry.registerModules([AllCommunityModule])
-// TODO: How to expose renderers globally for ag-grid? (see warnings)
+const mockModal = { show: vi.fn() }
 
-const mockNotifyCb = vi.fn()
+// Expose renderers and editors for ag-grid
+config.global.components = {
+  DataCellEditor,
+  DataCellRenderer,
+  HeaderEditRenderer,
+  IrodsButtonsRenderer,
+  RowEditRenderer,
+  StudyShortcutsRenderer
+}
+// Register ag-grid modules
+ModuleRegistry.registerModules([AllCommunityModule])
+// Mock relevant editUtils functions
+vi.mock('@/utils/editUtils.ts', async () => {
+  const actual = await vi.importActual('@/utils/editUtils.ts')
+  return {
+    ...actual,
+    insertRow: vi.fn(),
+  }
+})
 
 // Tests -----------------------------------------------------------------------
 
@@ -71,25 +95,20 @@ describe('SheetTable.vue', () => {
     props = {
       assayMode: assayMode,
       colToggleModalRef: mockModal as unknown as TemplateRef,
-      notifyCb: mockNotifyCb,
       tableUuid: tableUuid
     }
-    // NOTE: Testing with shallowMount() as there are issues with exposing
-    //       DataCellRender for ag-grid
-    return mount(
-      SheetTable, { props: props, expose: { DataCellRenderer } })
+    return mount(SheetTable, { props: props })
   }
 
   beforeEach(() => {
+    vi.resetAllMocks()
+
     setActivePinia(createPinia())
     const appStore = useAppStore()
     appStore.editMode = false
 
     context = copy(sodarContext) as SodarContext
     tables = copy(studyTables) as RenderTableData
-
-    // Suppress ag-grid warnings
-    vi.spyOn(console, 'warn').mockImplementation(() => undefined)
   })
 
   test('render study table', async () => {
@@ -105,28 +124,6 @@ describe('SheetTable.vue', () => {
     expect(filterInput.exists()).toBe(true)
     expect(filterInput.attributes().value).toBe('')
     expect(wrapper.find(studyGridSel).exists()).toBe(true)
-  })
-
-  test('render assay table', async () => {
-    const wrapper = mountComponent(ASSAY_UUID, true)
-    expect(wrapper.find(studyCardSel).exists()).toBe(false)
-    expect(wrapper.find(assayCardSel).exists()).toBe(true)
-    expect(wrapper.find('h4').text()).toBe('Assay Table')
-    expect(wrapper.find(rowBtnSel).exists()).toBe(false)
-    expect(wrapper.find(excelBtnSel).attributes().href).toBe(
-      'export/excel/assay/' + ASSAY_UUID
-    )
-    expect(wrapper.find(
-      '#sodar-ss-data-filter-assay-' + ASSAY_UUID).exists()).toBe(true)
-    expect(wrapper.find(assayGridSel).exists()).toBe(true)
-  })
-
-  test('open column toggle modal on button click', async () => {
-    const wrapper = mountComponent(STUDY_UUID, false)
-    expect(mockModal.show).not.toHaveBeenCalled()
-    const btn = wrapper.find('.sodar-ss-column-toggle-btn')
-    await btn.trigger('click')
-    expect(mockModal.show).toHaveBeenCalled()
   })
 
   test('render study grid top header', async () => {
@@ -169,7 +166,102 @@ describe('SheetTable.vue', () => {
     expect(headers[11]?.text()).toBe('Study')
   })
 
-  // TODO: Test render study grid rows once expose issue is solved
+  test('render study grid rows', async () => {
+    const wrapper = mountComponent(STUDY_UUID, false)
+    const grid = wrapper.find(studyGridSel)
+
+    // Left pinned cols
+    let cont = grid.find('.ag-pinned-left-cols-container')
+    let rows = cont.findAll('.ag-row')
+    expect(rows.length).toBe(5)
+    let cells = rows[0]!.findAll('.ag-cell')
+    expect(cells.length).toBe(2) // Row number and source name go here
+    expect(cells[0]!.text()).toBe('1')
+    expect(cells[1]!.attributes()['col-id']).toBe('col0')
+    // TODO: How to assert custom renderer content? Cells appear empty..
+    // expect(cells[1]!.text()).toBe('0814')
+
+    // Center cols
+    cont = grid.find('.ag-center-cols-container')
+    rows = cont.findAll('.ag-row')
+    expect(rows.length).toBe(5)
+    cells = rows[0]!.findAll('.ag-cell')
+    expect(cells.length).toBe(9)
+    expect(cells[0]!.attributes()['col-id']).toBe('col1')
+
+    // Right pinned col
+    cont = grid.find('.ag-pinned-right-cols-container')
+    rows = cont.findAll('.ag-row')
+     // No shorctuts = no rows or cells, while container still exists
+    expect(rows.length).toBe(0)
+  })
+
+  test('render study grid rows with study shortcuts', async () => {
+    context.studies[STUDY_UUID]!.plugin_name = STUDY_PLUGIN_NAME
+    tables.tables.study.shortcuts = studyShortcutsGermline as
+      unknown as StudyShortcuts
+
+    const wrapper = mountComponent(STUDY_UUID, false)
+    const grid = wrapper.find(studyGridSel)
+
+    // Right pinned col
+    const cont = grid.find('.ag-pinned-right-cols-container')
+    const rows = cont.findAll('.ag-row')
+    expect(rows.length).toBe(5)
+    const cells = rows[0]!.findAll('.ag-cell')
+    expect(cells.length).toBe(1)
+    expect(cells[0]!.attributes()['col-id']).toBe('shortcutLinks')
+  })
+
+  test('render study table in edit mode', async () => {
+    const appStore = useAppStore()
+    appStore.editMode = true
+    const wrapper = mountComponent(STUDY_UUID, false)
+    // Row insert button should be visible and enabled
+    const rowBtn = wrapper.find(rowBtnSel)
+    expect(rowBtn.exists()).toBe(true)
+    expect(rowBtn.attributes().disabled).not.toBeDefined()
+    expect(rowBtn.attributes().title).toBe('')
+  })
+
+  test('call insertRow() for study on button click', async () => {
+    const appStore = useAppStore()
+    appStore.editMode = true
+    expect(insertRow).not.toHaveBeenCalled()
+
+    const wrapper = mountComponent(STUDY_UUID, false)
+    await wrapper.find(rowBtnSel).trigger('click')
+    expect(insertRow).toHaveBeenCalledWith({
+      assayMode: false,
+      tableUuid: STUDY_UUID
+    }) // TODO: How to get ag-grid to return API here?
+  })
+
+  test('render study table in edit mode with unsaved row', async () => {
+    const appStore = useAppStore()
+    const editStore = useEditStore()
+    appStore.editMode = true
+    editStore.unsavedRow = { id: '0', tableUuid: STUDY_UUID }
+    const wrapper = mountComponent(STUDY_UUID, false)
+    // Row insert button should be disabled with title message
+    const rowBtn = wrapper.find(rowBtnSel)
+    expect(rowBtn.attributes().disabled).toBeDefined()
+    expect(rowBtn.attributes().title).toBe(ROW_INS_MSG_DISABLED)
+  })
+
+  test('render assay table', async () => {
+    const wrapper = mountComponent(ASSAY_UUID, true)
+    expect(wrapper.find(studyCardSel).exists()).toBe(false)
+    expect(wrapper.find(assayCardSel).exists()).toBe(true)
+    expect(wrapper.find('h4').text()).toBe('Assay Table')
+    expect(wrapper.find(rowBtnSel).exists()).toBe(false)
+    expect(wrapper.find(excelBtnSel).attributes().href).toBe(
+      'export/excel/assay/' + ASSAY_UUID
+    )
+    expect(wrapper.find(
+      '#sodar-ss-data-filter-assay-' + ASSAY_UUID).exists()).toBe(true)
+    expect(wrapper.find(assayGridSel).exists()).toBe(true)
+  })
 
   test('render assay grid top header', async () => {
     let exTopHeader = copy(exTopHeaderStudy) as Array<Array<string>>
@@ -244,15 +336,45 @@ describe('SheetTable.vue', () => {
     expect(headers[12]?.text()).toBe('Links')
   })
 
-  test('render study table in edit mode', async () => {
-    const appStore = useAppStore()
-    appStore.editMode = true
-    const wrapper = mountComponent(STUDY_UUID, false)
-    // Row insert button should be visible and enabled
-    const rowBtn = wrapper.find(rowBtnSel)
-    expect(rowBtn.exists()).toBe(true)
-    expect(rowBtn.attributes().disabled).not.toBeDefined()
-    expect(rowBtn.attributes().title).toBe('')
+  test('render assay grid rows', async () => {
+    const wrapper = mountComponent(ASSAY_UUID, true)
+    const grid = wrapper.find(assayGridSel)
+
+    // Left pinned cols
+    let cont = grid.find('.ag-pinned-left-cols-container')
+    let rows = cont.findAll('.ag-row')
+    expect(rows.length).toBe(2)
+    let cells = rows[0]!.findAll('.ag-cell')
+    expect(cells.length).toBe(2)
+    expect(cells[0]!.text()).toBe('1')
+    expect(cells[1]!.attributes()['col-id']).toBe('col0')
+
+    // Center cols
+    cont = grid.find('.ag-center-cols-container')
+    rows = cont.findAll('.ag-row')
+    expect(rows.length).toBe(2)
+    cells = rows[0]!.findAll('.ag-cell')
+    expect(cells.length).toBe(10)
+    expect(cells[0]!.attributes()['col-id']).toBe('col3') // Sample name
+
+    // Right pinned col
+    cont = grid.find('.ag-pinned-right-cols-container')
+    rows = cont.findAll('.ag-row')
+    expect(rows.length).toBe(0) // No iRODS links
+  })
+
+  test('render assay grid rows with row links column', async () => {
+    context.studies[STUDY_UUID]!.assays[ASSAY_UUID]!.display_row_links = true
+    const wrapper = mountComponent(ASSAY_UUID, true)
+    const grid = wrapper.find(assayGridSel)
+
+    // Right pinned col
+    const cont = grid.find('.ag-pinned-right-cols-container')
+    const rows = cont.findAll('.ag-row')
+    expect(rows.length).toBe(2)
+    const cells = rows[0]!.findAll('.ag-cell')
+    expect(cells.length).toBe(1)
+    expect(cells[0]!.attributes()['col-id']).toBe('irodsLinks')
   })
 
   test('render assay table in edit mode', async () => {
@@ -265,16 +387,25 @@ describe('SheetTable.vue', () => {
     expect(rowBtn.attributes().title).toBe('')
   })
 
-  test('render study table in edit mode with unsaved row', async () => {
-    const appStore = useAppStore()
-    const editStore = useEditStore()
-    appStore.editMode = true
-    editStore.unsavedRow = { id: '0', tableUuid: STUDY_UUID }
+  test('open column toggle modal on button click', async () => {
     const wrapper = mountComponent(STUDY_UUID, false)
-    // Row insert button should be disabled with title message
-    const rowBtn = wrapper.find(rowBtnSel)
-    expect(rowBtn.attributes().disabled).toBeDefined()
-    expect(rowBtn.attributes().title).toBe(ROW_INS_MSG_DISABLED)
+    expect(mockModal.show).not.toHaveBeenCalled()
+    const btn = wrapper.find('.sodar-ss-column-toggle-btn')
+    await btn.trigger('click')
+    expect(mockModal.show).toHaveBeenCalled()
+  })
+
+  test('call insertRow() for assay on button click', async () => {
+    const appStore = useAppStore()
+    appStore.editMode = true
+    expect(insertRow).not.toHaveBeenCalled()
+
+    const wrapper = mountComponent(ASSAY_UUID, true)
+    await wrapper.find(rowBtnSel).trigger('click')
+    expect(insertRow).toHaveBeenCalledWith({
+      assayMode: true,
+      tableUuid: ASSAY_UUID
+    })
   })
 
   test('display initial filter value', async () => {
@@ -285,7 +416,5 @@ describe('SheetTable.vue', () => {
       '#sodar-ss-data-filter-study').attributes().value).toBe('0814')
   })
 
-  // TODO: Test insertRow() call
-  // TODO: Test render assay grid rows once expose issue is solved
-  // TODO: Test AgGridDragSelect once expose issue is solved
+  // TODO: Test AgGridDragSelect
 })

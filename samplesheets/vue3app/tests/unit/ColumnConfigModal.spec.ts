@@ -19,6 +19,14 @@ import {
   type StudyEditContext
 } from '@/types.ts'
 import {
+  CONFIG_COPY_MSG,
+  CONFIG_PASTE_DEFAULT_OK_MSG,
+  CONFIG_PASTE_INVALID_DATA_MSG,
+  CONFIG_PASTE_INVALID_FORMAT_MSG,
+  CONFIG_PASTE_INVALID_JSON_MSG,
+  CONFIG_PASTE_INVALID_TERM_MSG,
+  CONFIG_PASTE_LIST_ALLOW_MSG,
+  CONFIG_PASTE_OK_MSG,
   DB_OBJ_CLASS_MATERIAL,
   DB_OBJ_CLASS_PROCESS,
   EDIT_CONFIG_ACTION_UPDATE,
@@ -55,6 +63,8 @@ import {
   OBO_ID_HP,
   OBO_ID_OMIM,
   OBO_ID_ORDO,
+  VARIANT_DANGER,
+  VARIANT_SUCCESS,
 } from '@/constants.ts'
 
 import { copy } from '../testUtils.ts'
@@ -203,6 +213,8 @@ vi.mock('@vueuse/core', async () => {
   return { ...actual, useClipboard: () => ({ copy: mockCopy }) }
 })
 
+const mockNotifyCb = vi.fn()
+
 // Tests -----------------------------------------------------------------------
 
 describe('ColumnConfigModal.vue', () => {
@@ -254,29 +266,6 @@ describe('ColumnConfigModal.vue', () => {
     params.headerType = EDIT_HEADER_TYPE_CHAR
   }
 
-  beforeEach(() => {
-    vi.resetAllMocks()
-
-    setActivePinia(createPinia())
-    const appStore = useAppStore()
-    appStore.currentStudyUuid = STUDY_UUID
-    appStore.projectUuid = PROJECT_UUID
-    appStore.sodarContext = copy(sodarContext) as SodarContext
-
-    const editStore = useEditStore()
-    editStore.editContext = copy(studyTablesEdit.edit_context) as StudyEditContext
-    editStore.editDataUpdated = false
-
-    const tableStore = useTableStore()
-    tableStore.gridApi.study = getMockGridApi()
-    tableStore.gridApi.assays[ASSAY_UUID] = getMockGridApi()
-
-    params = copy(defaultParams) as HeaderEditRendererParams
-    params.column = { getColId: () => { return 'col0' }} as unknown as Column
-    reqBody = copy(defaultReqBody) as EditConfigRequestBody
-    resBody = copy(defaultResBody) as GenericResponseBody
-  })
-
   async function showModal (): Promise<VueWrapper> {
     global.fetch = vi.fn(() => Promise.resolve({
       json: () => Promise.resolve(resBody), status: 200
@@ -286,6 +275,31 @@ describe('ColumnConfigModal.vue', () => {
     await nextTick() // Must wait for all reactive vals to update
     return wrapper
   }
+
+  beforeEach(() => {
+    vi.resetAllMocks()
+    setActivePinia(createPinia())
+    const appStore = useAppStore()
+    const editStore = useEditStore()
+    const tableStore = useTableStore()
+
+    appStore.currentStudyUuid = STUDY_UUID
+    appStore.notifyCb = mockNotifyCb
+    appStore.projectUuid = PROJECT_UUID
+    appStore.sodarContext = copy(sodarContext) as SodarContext
+
+    editStore.editContext = copy(
+      studyTablesEdit.edit_context) as StudyEditContext
+    editStore.editDataUpdated = false
+
+    tableStore.gridApi.study = getMockGridApi()
+    tableStore.gridApi.assays[ASSAY_UUID] = getMockGridApi()
+
+    params = copy(defaultParams) as HeaderEditRendererParams
+    params.column = { getColId: () => { return 'col0' }} as unknown as Column
+    reqBody = copy(defaultReqBody) as EditConfigRequestBody
+    resBody = copy(defaultResBody) as GenericResponseBody
+  })
 
   test('render source name field', async () => {
     const wrapper = await showModal()
@@ -837,6 +851,8 @@ describe('ColumnConfigModal.vue', () => {
     reqBody.fields[0]!.config.ontologies = []
     reqBody.fields[0]!.config.type = EDIT_HEADER_TYPE_CHAR
     expectFetch()
+    expect(mockNotifyCb).toHaveBeenCalledWith(
+      CONFIG_PASTE_DEFAULT_OK_MSG, VARIANT_SUCCESS)
   })
 
   test('update ontology field default with single term as list', async () => {
@@ -898,9 +914,12 @@ describe('ColumnConfigModal.vue', () => {
     reqBody.fields[0]!.config.ontologies = []
     reqBody.fields[0]!.config.type = EDIT_HEADER_TYPE_CHAR
     expectFetch()
+    expect(mockNotifyCb).toHaveBeenCalledWith(
+      CONFIG_PASTE_LIST_ALLOW_MSG, VARIANT_DANGER)
   })
 
   test('update ontology default with invalid JSON', async () => {
+    // Suppress console logging
     vi.spyOn(console, 'error').mockImplementation(() => undefined)
     setOntologyInput()
     const wrapper = await showModal()
@@ -913,6 +932,8 @@ describe('ColumnConfigModal.vue', () => {
     reqBody.fields[0]!.config.ontologies = []
     reqBody.fields[0]!.config.type = EDIT_HEADER_TYPE_CHAR
     expectFetch()
+    expect(mockNotifyCb).toHaveBeenCalledWith(
+      CONFIG_PASTE_INVALID_JSON_MSG, VARIANT_DANGER)
   })
 
   test('update ontology default with invalid term', async () => {
@@ -929,6 +950,8 @@ describe('ColumnConfigModal.vue', () => {
     reqBody.fields[0]!.config.ontologies = []
     reqBody.fields[0]!.config.type = EDIT_HEADER_TYPE_CHAR
     expectFetch()
+    expect(mockNotifyCb).toHaveBeenCalledWith(
+      CONFIG_PASTE_INVALID_TERM_MSG, VARIANT_DANGER)
   })
 
   test('update ontology field with deleted default', async () => {
@@ -943,6 +966,8 @@ describe('ColumnConfigModal.vue', () => {
     reqBody.fields[0]!.config.ontologies = []
     reqBody.fields[0]!.config.type = EDIT_HEADER_TYPE_CHAR
     expectFetch()
+    expect(mockNotifyCb).toHaveBeenCalledWith(
+      'Updated column "Name"', VARIANT_SUCCESS)
   })
 
   test('render external links field', async () => {
@@ -1590,6 +1615,7 @@ describe('ColumnConfigModal.vue', () => {
   })
 
   test('clipboard copy string config', async () => {
+    expect(mockNotifyCb).not.toHaveBeenCalled()
     setBasicCharInput(EDIT_FORMAT_STRING)
     const wrapper = await showModal()
     await wrapper.find(copyBtnSel).trigger('click')
@@ -1600,6 +1626,7 @@ describe('ColumnConfigModal.vue', () => {
       regex: '',
     }
     expect(mockCopy).toHaveBeenCalledWith(JSON.stringify(res))
+    expect(mockNotifyCb).toHaveBeenCalledWith(CONFIG_COPY_MSG, VARIANT_SUCCESS)
   })
 
   test('clipboard copy string config and default', async () => {
@@ -1762,6 +1789,8 @@ describe('ColumnConfigModal.vue', () => {
     reqBody.fields[0]!.config.regex = '^\\D+$'
     reqBody.fields[0]!.config.type = EDIT_HEADER_TYPE_CHAR
     expectFetch()
+    expect(mockNotifyCb).toHaveBeenCalledWith(
+      CONFIG_PASTE_OK_MSG, VARIANT_SUCCESS)
   })
 
   test('clipboard paste integer config', async () => {
@@ -1892,6 +1921,49 @@ describe('ColumnConfigModal.vue', () => {
     reqBody.fields[0]!.config.type = EDIT_HEADER_TYPE_CHAR
     reqBody.fields[0]!.config.ontologies = [OBO_ID_NCBITAXON, OBO_ID_UBERON]
     expectFetch()
+  })
+
+  test('clipboard paste with invalid JSON', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => undefined)
+    setBasicCharInput(EDIT_FORMAT_STRING)
+    const wrapper = await showModal()
+    await wrapper.find(pasteInputSel).setValue('{"invalid: "json')
+    await clickUpdate(wrapper)
+    expect(mockNotifyCb).toHaveBeenCalledWith(
+      CONFIG_PASTE_INVALID_JSON_MSG, VARIANT_DANGER)
+  })
+
+  test('clipboard paste with invalid data', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => undefined)
+      setBasicCharInput(EDIT_FORMAT_STRING)
+    const wrapper = await showModal()
+    const input = {
+      default: 'default',
+      regex: '^\\D+$'
+    } // No editable or format fields
+    await wrapper.find(pasteInputSel).setValue(JSON.stringify(input))
+    await clickUpdate(wrapper)
+    expect(mockNotifyCb).toHaveBeenCalledWith(
+      CONFIG_PASTE_INVALID_DATA_MSG, VARIANT_DANGER)
+  })
+
+  test('clipboard paste with invalid format', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => undefined)
+      setBasicCharInput(EDIT_FORMAT_STRING)
+    setOntologyInput()
+    const wrapper = await showModal()
+    const input = {
+      allow_list: true,
+      default: [ontologyTerm],
+      editable: true,
+      format: EDIT_FORMAT_STRING, // Not an acceptable format
+      ontologies: [OBO_ID_NCBITAXON, OBO_ID_UBERON],
+      regex: '',
+    }
+    await wrapper.find(pasteInputSel).setValue(JSON.stringify(input))
+    await clickUpdate(wrapper)
+    expect(mockNotifyCb).toHaveBeenCalledWith(
+      CONFIG_PASTE_INVALID_FORMAT_MSG, VARIANT_DANGER)
   })
 
   // TODO: Figure out how to assert checkbox states

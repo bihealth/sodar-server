@@ -56,24 +56,28 @@ const mockNotifyCb = vi.fn()
 // Tests for updateCells() -----------------------------------------------------
 
 describe('updateCells()', () => {
+  function exceptFetchBody (body: object) {
+    const request = copy(defaultRequest) as RequestInit
+    request.body = JSON.stringify(body)
+    expect(fetch).toHaveBeenCalledWith(editCellUrl, request)
+  }
+
   function mockFetch (data: object, status: number) {
     global.fetch = vi.fn(() => Promise.resolve({
       json: () => Promise.resolve(data), status: status} as Response)
     )
   }
-  function mockFetchOk () {
-    mockFetch({ detail: AJAX_RES_OK }, 200)
-  }
+
   function mockFetchAlert () {
     mockFetch({ detail: 'alert', alert_msg: 'alert message' }, 200)
   }
+
   function mockFetchError () {
     mockFetch({ detail: 'error' }, 500)
   }
-  function exceptFetchBody (body: object) {
-    const request = copy(defaultRequest) as RequestInit
-    request.body = JSON.stringify(body)
-    expect(fetch).toHaveBeenCalledWith(editCellUrl, request)
+
+  function mockFetchOk () {
+    mockFetch({ detail: AJAX_RES_OK }, 200)
   }
 
   beforeEach(() => {
@@ -86,14 +90,16 @@ describe('updateCells()', () => {
     // Set up stores
     setActivePinia(createPinia())
     const appStore = useAppStore()
+    const editStore = useEditStore()
+    const tableStore = useTableStore()
+
+    appStore.notifyCb = mockNotifyCb
     appStore.projectUuid = PROJECT_UUID
     appStore.sodarContext = copy(sodarContext) as SodarContext
 
-    const editStore = useEditStore()
     editStore.editDataUpdated = false
     editStore.versionSaved = true
 
-    const tableStore = useTableStore()
     tableStore.gridApi.study = mockGridApi as unknown as GridApi
     tableStore.gridApi.assays[ASSAY_UUID] = mockGridApi as unknown as GridApi
 
@@ -108,7 +114,7 @@ describe('updateCells()', () => {
     mockFetchOk()
     expect(fetch).not.toHaveBeenCalled()
 
-    updateCells(cell, true, mockNotifyCb)
+    updateCells(cell, true)
     const body = {
       updated_cells: [{
         header_name: 'Name',
@@ -131,7 +137,7 @@ describe('updateCells()', () => {
   test('update cell with unit', async () => {
     cell.unit = 'unit' // Not a realistic example but works here
     mockFetchOk()
-    updateCells(cell, true, mockNotifyCb)
+    updateCells(cell, true)
     const body = {
       updated_cells: [{
         header_name: 'Name',
@@ -151,7 +157,7 @@ describe('updateCells()', () => {
   test('update cell with no uuid', async () => {
     delete cell.uuid
     mockFetchOk()
-    updateCells(cell, true, mockNotifyCb)
+    updateCells(cell, true)
     const body = {
       updated_cells: [{
         header_name: 'Name',
@@ -170,7 +176,7 @@ describe('updateCells()', () => {
   test('update cell with uuid_ref', async () => {
     cell.uuidRef = TMP_UUID2 // In reality uuidRef is only for protocols
     mockFetchOk()
-    updateCells(cell, true, mockNotifyCb)
+    updateCells(cell, true)
     const body = {
       updated_cells: [{
         header_name: 'Name',
@@ -190,7 +196,7 @@ describe('updateCells()', () => {
   test('update cell with item_type and non-name header', async () => {
     cell.headerType = 'characteristics'
     mockFetchOk()
-    updateCells(cell, true, mockNotifyCb)
+    updateCells(cell, true)
     const body = {
       updated_cells: [{
         header_name: 'Name',
@@ -213,7 +219,7 @@ describe('updateCells()', () => {
     cell2.headerType = 'characteristics'
     cell2.value = '42'
 
-    updateCells([cell, cell2], true, mockNotifyCb)
+    updateCells([cell, cell2], true)
     const body = {
       updated_cells: [{
         header_name: 'Name',
@@ -242,7 +248,7 @@ describe('updateCells()', () => {
     expect(editStore.editDataUpdated).toBe(false)
     expect(editStore.versionSaved).toBe(true)
     mockFetchAlert() // Mock alert result
-    updateCells(cell, true, mockNotifyCb)
+    updateCells(cell, true)
     await flushPromises()
     // Store values should remain the same
     expect(editStore.editDataUpdated).toBe(false)
@@ -255,7 +261,7 @@ describe('updateCells()', () => {
     vi.spyOn(console, 'error').mockImplementation(() => undefined)
     const editStore = useEditStore()
     mockFetchError()
-    updateCells(cell, true, mockNotifyCb)
+    updateCells(cell, true)
     expect(fetch).toHaveBeenCalled()
     await flushPromises()
     // Edit store data should remain
@@ -264,19 +270,6 @@ describe('updateCells()', () => {
     // Notify callback should be called with failure
     expect(mockNotifyCb).toHaveBeenCalledWith(
       CELL_UPDATE_FAIL_PREFIX + 'error', VARIANT_DANGER)
-  })
-
-  test('update cell with error without notify callback', async () => {
-    // Suppress logging as error message is expected
-    vi.spyOn(console, 'error').mockImplementation(() => undefined)
-    const editStore = useEditStore()
-    mockFetchError()
-    updateCells(cell, true) // No callback
-    expect(fetch).toHaveBeenCalled()
-    await flushPromises()
-    // No error should be raised even if callback is not present
-    expect(editStore.editDataUpdated).toBe(false)
-    expect(editStore.versionSaved).toBe(true)
   })
 
   // TODO: Test with verification and confirm dialog clicked

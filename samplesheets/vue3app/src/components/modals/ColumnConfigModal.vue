@@ -17,9 +17,12 @@ import { useClipboard } from '@vueuse/core'
 import InfoIcon from '@/components/InfoIcon.vue'
 import ModalHeader from '@/components/modals/ModalHeader.vue'
 import ColumnConfigModalSeparator from '@/components/modals/ColumnConfigModalSeparator.vue'
+
 import { useAppStore } from '@/stores/appStore.ts'
 import { useEditStore } from '@/stores/editStore.ts'
 import { useTableStore } from '@/stores/tableStore.ts'
+
+import { getAjaxRequestInit } from '@/utils/appUtils.ts'
 import { updateCells } from '@/utils/editUtils.ts'
 import {
   type CellEditData,
@@ -31,6 +34,14 @@ import {
   type StudyEditConfigNodeField
 } from '@/types.ts'
 import {
+  CONFIG_COPY_MSG,
+  CONFIG_PASTE_DEFAULT_OK_MSG,
+  CONFIG_PASTE_INVALID_DATA_MSG,
+  CONFIG_PASTE_INVALID_FORMAT_MSG,
+  CONFIG_PASTE_INVALID_JSON_MSG,
+  CONFIG_PASTE_LIST_ALLOW_MSG,
+  CONFIG_PASTE_INVALID_TERM_MSG,
+  CONFIG_PASTE_OK_MSG,
   EDIT_CONFIG_ACTION_UPDATE,
   EDIT_COL_TYPE_CONTACT,
   EDIT_COL_TYPE_DATE,
@@ -57,6 +68,7 @@ import {
   OBO_HEADER_HP,
   OBO_HEADER_OMIM,
   OBO_HEADER_ORDO,
+  REQ_POST,
   VARIANT_DANGER,
   VARIANT_SUCCESS,
 } from '@/constants.ts'
@@ -194,8 +206,8 @@ function copyConfig () {
   delete copyConfig.type
   cleanupConfig(copyConfig)
   clipboard.copy(JSON.stringify(copyConfig))
-  if (params.notifyCb) {
-    params.notifyCb('Configuration copied into clipboard', VARIANT_SUCCESS)
+  if (appStore.notifyCb) {
+    appStore.notifyCb(CONFIG_COPY_MSG, VARIANT_SUCCESS)
   }
 }
 
@@ -240,25 +252,34 @@ function onConfigPaste () {
   try {
     c = JSON.parse(configPasteInput.value)
   } catch (error) {
-    if (params.notifyCb) params.notifyCb('Invalid JSON', VARIANT_DANGER)
+    if (appStore.notifyCb) {
+      appStore.notifyCb(CONFIG_PASTE_INVALID_JSON_MSG, VARIANT_DANGER)
+    }
     console.error('Invalid JSON: ' + error)
     valid = false
   }
 
-  // Reject paste if invalid data or incompatible format
+  // Reject paste if invalid data
   if (valid && (!('format' in c) || !('editable' in c))) {
-    if (params.notifyCb) params.notifyCb('Invalid data', VARIANT_DANGER)
+    if (appStore.notifyCb) {
+      appStore.notifyCb(CONFIG_PASTE_INVALID_DATA_MSG, VARIANT_DANGER)
+    }
     console.error('Invalid data: ' + configPasteInput.value)
     valid = false
-  } else if (
+  }
+
+  // Reject paste if incompatible format
+  if (valid && (
       (colType.value === EDIT_COL_TYPE_ONTOLOGY &&
         c.format !== EDIT_FORMAT_ONTOLOGY) ||
       (colType.value !== EDIT_COL_TYPE_ONTOLOGY &&
         c.format === EDIT_FORMAT_ONTOLOGY) ||
       (colType.value === EDIT_COL_TYPE_UNIT &&
         (!NUM_FORMATS.includes(c.format))) ||
-      (colType.value !== EDIT_COL_TYPE_UNIT && c.format.unit)) {
-    if (params.notifyCb) params.notifyCb('Invalid data', VARIANT_DANGER)
+      (colType.value !== EDIT_COL_TYPE_UNIT && c.format.unit))) {
+    if (appStore.notifyCb) {
+      appStore.notifyCb(CONFIG_PASTE_INVALID_FORMAT_MSG, VARIANT_DANGER)
+    }
     console.error(
       `Invalid format for column type "${colType.value}": ${c.format}`)
     valid = false
@@ -286,9 +307,11 @@ function onConfigPaste () {
       rangeMin.value = c.range[0]
       rangeMax.value = c.range[1]
     }
+    if (appStore.notifyCb) {
+      appStore.notifyCb(CONFIG_PASTE_OK_MSG, VARIANT_SUCCESS)
+    }
+    validate() // Validate after paste
   }
-  if (params.notifyCb) params.notifyCb('Configuration pasted', VARIANT_SUCCESS)
-  validate() // Validate after paste
   // Clear input
   nextTick().then(() => {
     configPasteInput.value = ''
@@ -304,7 +327,9 @@ function onOntologyDefaultInput () {
   try {
     p = JSON.parse(ontologyDefaultInput.value)
   } catch (error) {
-    if (params.notifyCb) params.notifyCb('Invalid JSON', VARIANT_DANGER)
+    if (appStore.notifyCb) {
+      appStore.notifyCb(CONFIG_PASTE_INVALID_JSON_MSG, VARIANT_DANGER)
+    }
     console.error('Invalid JSON: ' + error)
     valid = false
   }
@@ -318,7 +343,9 @@ function onOntologyDefaultInput () {
           !('ontology_name' in t) ||
           !('accession' in t)) {
         valid = false
-        if (params.notifyCb) params.notifyCb('Invalid format', VARIANT_DANGER)
+        if (appStore.notifyCb) {
+          appStore.notifyCb(CONFIG_PASTE_INVALID_TERM_MSG, VARIANT_DANGER)
+        }
         console.error('Invalid term: ' + JSON.stringify(t))
         valid = false
       }
@@ -326,14 +353,18 @@ function onOntologyDefaultInput () {
   }
   if (valid) {
     if (p.length > 1 && !config.value?.allow_list) {
-      if (params.notifyCb) params.notifyCb('List not allowed', VARIANT_DANGER)
+      if (appStore.notifyCb) {
+        appStore.notifyCb(CONFIG_PASTE_LIST_ALLOW_MSG, VARIANT_DANGER)
+      }
       valid = false
     }
   }
   // Update config if valid
   if (valid) {
     config.value!.default = p
-    if (params.notifyCb) params.notifyCb('Default updated', VARIANT_SUCCESS)
+    if (appStore.notifyCb) {
+      appStore.notifyCb(CONFIG_PASTE_DEFAULT_OK_MSG, VARIANT_SUCCESS)
+    }
   }
   // Clear input
   nextTick().then(() => {
@@ -572,29 +603,21 @@ async function updateConfig () {
       study: appStore.currentStudyUuid,
     }]
   }
-  const response = await fetch(updateUrl, {
-    method: 'POST',
-    body: JSON.stringify(updateBody),
-    credentials: 'same-origin',
-    headers: {
-      Accept: 'application/json',
-      'Content-type': 'application/json',
-      'X-CSRFToken': appStore.sodarContext!.csrf_token
-    }
-  })
+  const response = await fetch(
+    updateUrl, getAjaxRequestInit(REQ_POST, updateBody))
   const resBody: GenericResponseBody = await response.json()
 
   if (resBody.detail === 'ok') {
     // Update grids to match current updates
     updateGrids()
-    if (params.notifyCb) {
+    if (appStore.notifyCb) {
       const msg: string = `Updated column "${modalTitle.value}"`
-      params.notifyCb(msg, VARIANT_SUCCESS)
+      appStore.notifyCb(msg, VARIANT_SUCCESS)
     }
   } else {
     const msg: string = `Failed to update column "${modalTitle.value}":
                          ${resBody.detail}`
-    if (params.notifyCb) params.notifyCb(msg, VARIANT_DANGER)
+    if (appStore.notifyCb) appStore.notifyCb(msg, VARIANT_DANGER)
     console.error(msg)
   }
 }
@@ -655,7 +678,7 @@ function updateGrids () { // Formerly handleUpdate()
     })
 
     if (cellEditData.length > 0) {
-      updateCells(cellEditData, true, params.notifyCb)
+      updateCells(cellEditData, true)
       refreshCalled = true
     }
   }
@@ -751,7 +774,7 @@ function hide (update: boolean) {
     } catch (error) {
       const msg: string = `Error updating field config: ${error}`
       console.error(msg)
-      if (params.notifyCb) params.notifyCb(msg, VARIANT_DANGER)
+      if (appStore.notifyCb) appStore.notifyCb(msg, VARIANT_DANGER)
     }
   }
   modalRef.value?.hide()

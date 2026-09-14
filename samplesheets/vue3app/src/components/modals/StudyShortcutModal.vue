@@ -12,6 +12,8 @@ import {
   type StudyShortcutResponseData
 } from '@/types.ts'
 import { useAppStore } from '@/stores/appStore.ts'
+import { getAjaxRequestInit } from '@/utils/appUtils.ts'
+import { URL_STUDY_LINKS_PREFIX } from '@/constants.ts'
 
 // External Data ---------------------------------------------------------------
 
@@ -50,9 +52,9 @@ function handleShortcutResponse (response: StudyShortcutResponseBody) {
 }
 
 function getShortcuts (query: StudyShortcutQuery) {
-  const listUrl: string = '/samplesheets/ajax/study/links/' +
+  const listUrl: string = URL_STUDY_LINKS_PREFIX +
     appStore.currentStudyUuid + '?' + query.key + '=' + query.value
-  fetch(listUrl, { credentials: 'same-origin' })
+  fetch(listUrl, getAjaxRequestInit())
     .then(response => response.json())
     .then(response => {
       handleShortcutResponse(response)

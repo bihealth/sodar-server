@@ -110,11 +110,11 @@ onUnmounted(() => {
         itemType: params.fieldHeader.item_type || '',
         objCls: params.fieldHeader.obj_cls,
         ogValue: ogValue,
-        uuid: cellData.uuid,
+        uuid: cellData.uuid || undefined,
         uuidRef: editUuid.value,
         value: newValue,
       }
-      updateCells(cellEditData, true, params.notifyCb)
+      updateCells(cellEditData, true)
     }
   }
 })

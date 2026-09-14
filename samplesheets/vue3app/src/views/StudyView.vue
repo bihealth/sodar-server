@@ -20,9 +20,12 @@ import SheetTableHeader from '@/components/SheetTableHeader.vue'
 import StudyShortcutModal from '@/components/modals/StudyShortcutModal.vue'
 import StudyShortcutsRenderer from '@/components/renderers/StudyShortcutsRenderer.vue'
 import WaitSection from '@/components/WaitSection.vue'
+
 import { useAppStore } from '@/stores/appStore.ts'
 import { useEditStore } from '@/stores/editStore.ts'
 import { useTableStore } from '@/stores/tableStore.ts'
+
+import { getAjaxRequestInit } from '@/utils/appUtils.ts'
 import {
   buildColDef,
   buildRowData,
@@ -34,7 +37,6 @@ import {
   type AssayShortcuts,
   type ColDefBuildParams,
   type RenderTableData,
-  type SodarContext,
   type StudyEditConfig,
   type StudyEditContext
 } from '@/types.ts'
@@ -48,9 +50,9 @@ const appStore = useAppStore()
 const editStore = useEditStore()
 const tableStore = useTableStore()
 
-// Init toasts
+// Init notify callback for bootstrap-vue-next toasts
 const { create } = useToast()
-const notifyCb = getNotifyCb(create)
+appStore.notifyCb = getNotifyCb(create)
 
 // Set up template references
 const colConfigCompRef = useTemplateRef('columnConfigModalComponent')
@@ -87,30 +89,19 @@ function buildStudy (data: RenderTableData) {
   // Build study gridOptions, columnDefs and rowData
   tableStore.gridOptions.study = initGridOptions({}, appStore.editMode)
   const colDefBuildParams: ColDefBuildParams = {
-    editMode: appStore.editMode,
+    assayMode: false,
     irodsDirModal: irodsDirCompRef,
-    notifyCb: notifyCb,
-    sampleColId: tableStore.sampleColId,
-    sodarContext: appStore.sodarContext as SodarContext,
-    studyEditConfig: tableStore.studyEditConfig,
-    studyDisplayConfig: tableStore.studyDisplayConfig,
     studyNodeLen: data.tables.study.top_header.length,
     studyShortcutModal: studyShortcutCompRef,
-    studyUuid: appStore.currentStudyUuid,
+    table: data.tables.study,
+    tableUuid: appStore.currentStudyUuid,
   }
   if (appStore.editMode) {
     colDefBuildParams.colConfigModal = colConfigCompRef
-    colDefBuildParams.editContext = editStore.editContext as StudyEditContext
     colDefBuildParams.ontologyEditModal = ontologyEditCompRef
   }
-  tableStore.columnDefs.study = buildColDef(
-      data.tables.study, appStore.currentStudyUuid, false, colDefBuildParams
-  )
-  tableStore.rowData.study = buildRowData(
-      data.tables.study,
-      false,
-      appStore.editMode,
-      appStore.sodarContext as SodarContext)
+  tableStore.columnDefs.study = buildColDef(colDefBuildParams)
+  tableStore.rowData.study = buildRowData(data.tables.study, false)
 
   for (const assayUuid in data.tables.assays) {
     // Build assay gridOptions, columnDefs and rowData
@@ -118,13 +109,12 @@ function buildStudy (data: RenderTableData) {
       {}, appStore.editMode)
     const assayTable = data.tables.assays[assayUuid] as AssayRenderTable
     tableStore.columnDefs.assays[assayUuid] = buildColDef(
-        assayTable, assayUuid, true, colDefBuildParams)
-    tableStore.rowData.assays[assayUuid] = buildRowData(
-        assayTable,
-        true,
-        appStore.editMode,
-        appStore.sodarContext as SodarContext
-    )
+        Object.assign(colDefBuildParams, {
+          assayMode: true,
+          table: assayTable,
+          tableUuid: assayUuid
+        }))
+    tableStore.rowData.assays[assayUuid] = buildRowData(assayTable, true)
 
     // Get assay shortcuts
     if ('shortcuts' in (data.tables.assays[assayUuid] as AssayRenderTable)) {
@@ -140,8 +130,8 @@ function getStudy (studyUuid: string, editMode: boolean) {
   // Clear existing data
   appStore.gridsBusy = true
   appStore.gridsLoaded = false
-  tableStore.$reset() // TODO: $reset() might not work here, see #2511
-  editStore.$reset()
+  // NOTE: editStore is reset in ViewHeader toggleEditMode()
+  tableStore.$reset()
   // Set filter state
   if (route.query.filter) {
     tableStore.initialFilter = route.query.filter as string
@@ -152,7 +142,7 @@ function getStudy (studyUuid: string, editMode: boolean) {
   let url: string = appStore.sodarContext!.studies[studyUuid]!.table_url
   if (editMode) url += '?edit=1'
   // TODO: Add timeout / retrying / error handling
-  fetch(url, { credentials: 'same-origin' })
+  fetch(url, getAjaxRequestInit())
     .then(data => data.json())
     .then(data => {
       buildStudy(data)
@@ -222,13 +212,11 @@ onMounted(() => {
     <!-- Study -->
     <SheetTableHeader
         :assay-mode="false"
-        :notify-cb="notifyCb"
         :table-uuid="appStore.currentStudyUuid">
     </SheetTableHeader>
     <SheetTable
         :assay-mode="false"
         :col-toggle-modal-ref="colToggleCompRef"
-        :notify-cb="notifyCb"
         :table-uuid="appStore.currentStudyUuid">
     </SheetTable>
     <!-- Assays -->
@@ -240,7 +228,6 @@ onMounted(() => {
          :id="'assay-anchor-' + assayUuid.toString()"></a>
       <SheetTableHeader
           :assay-mode="true"
-          :notify-cb="notifyCb"
           :table-uuid="assayUuid">
       </SheetTableHeader>
       <AssayShortcutCard
@@ -254,7 +241,6 @@ onMounted(() => {
       <SheetTable
           :assay-mode="true"
           :col-toggle-modal-ref="colToggleCompRef"
-          :notify-cb="notifyCb"
           :table-uuid="assayUuid">
       </SheetTable>
     </div>

@@ -4,6 +4,9 @@
 
 /* General ------------------------------------------------------------------ */
 
+.ag-body-viewport {
+  background-color: #eee;
+}
 a.sodar-ss-nav-tabs-item {
   height: 38px !important;
 }

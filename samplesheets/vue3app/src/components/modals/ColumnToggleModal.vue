@@ -13,13 +13,18 @@ import { type ColDef, type ColGroupDef, type GridApi} from 'ag-grid-community'
 import ModalHeader from '@/components/modals/ModalHeader.vue'
 import { useAppStore } from '@/stores/appStore.ts'
 import { useTableStore } from '@/stores/tableStore.ts'
+
+import { getAjaxRequestInit } from '@/utils/appUtils.ts'
 import {
-  type NotifyCb,
   type SheetTableCellData,
   type SheetTableRowData,
   type StudyDisplayConfigNode,
 } from '@/types.ts'
 import {
+  AJAX_RES_OK,
+  DISPLAY_SAVE_MSG,
+  DISPLAY_SAVE_DEFAULT_SUFFIX,
+  REQ_POST,
   URL_DISPLAY_CONFIG_PREFIX,
   VARIANT_DANGER,
   VARIANT_SUCCESS
@@ -55,7 +60,6 @@ let colDefs: Array<ColGroupDef>
 let colsUpdated: boolean = false
 const configUrl = URL_DISPLAY_CONFIG_PREFIX + appStore.currentStudyUuid
 let gridApi: GridApi
-let notifyCb: NotifyCb | undefined = undefined
 let rowData: Array<SheetTableRowData>
 
 // Helpers ---------------------------------------------------------------------
@@ -150,29 +154,21 @@ function onGroupUpdate (topHeader: ColGroupDef, topIdx: number) {
 
 // Post display config update request
 function postUpdate (setDefault: boolean) {
-  fetch(configUrl, {
-    method: 'POST',
-    body: JSON.stringify({
+  fetch(configUrl, getAjaxRequestInit(REQ_POST, {
       study_config: tableStore.studyDisplayConfig,
       set_default: setDefault
-    }),
-    credentials: 'same-origin',
-    headers: {
-      Accept: 'application/json',
-      'Content-Type': 'application/json',
-      'X-CSRFToken': appStore.sodarContext?.csrf_token as string
-    }
-  }).then(data => data.json())
+    })
+  ).then(data => data.json())
     .then(data => {
-      if (data.detail === 'ok') {
-        let toastBody = 'Display configuration saved'
-        if (setDefault) toastBody += ' as default'
-        if (notifyCb) notifyCb(toastBody, VARIANT_SUCCESS)
+      if (data.detail === AJAX_RES_OK) {
+        let msg = DISPLAY_SAVE_MSG
+        if (setDefault) msg += DISPLAY_SAVE_DEFAULT_SUFFIX
+        if (appStore.notifyCb) appStore.notifyCb(msg, VARIANT_SUCCESS)
       }
     }).catch(function (error) {
       const msg = 'Error saving display config: ' + error.detail
       console.error(msg)
-      if (notifyCb) notifyCb(msg, VARIANT_DANGER)
+      if (appStore.notifyCb) appStore.notifyCb(msg, VARIANT_DANGER)
     })
 }
 
@@ -198,14 +194,12 @@ function updateFilter () {
 // Show modal
 function show (
     tableUuid: string,
-    assayMode: boolean,
-    modalNotifyCb?: NotifyCb
+    assayMode: boolean
 ) {
   checkVals.value = []
   colValueStatus = {}
   colsUpdated = false
   displayCols.value = []
-  notifyCb = modalNotifyCb
   const titleType = assayMode ? 'Assay' : 'Study'
   modalTitle.value = 'Toggle ' + titleType + ' Columns'
 

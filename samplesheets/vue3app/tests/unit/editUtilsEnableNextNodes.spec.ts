@@ -140,15 +140,18 @@ describe('enableNextNodes()', () => {
 
   beforeEach(() => {
     vi.clearAllMocks()
+
     setActivePinia(createPinia())
     const appStore = useAppStore()
-    appStore.currentStudyUuid = STUDY_UUID
     const editStore = useEditStore()
+
+    appStore.currentStudyUuid = STUDY_UUID
     editStore.editContext = {
       protocols: copy(protocols) as Array<StudyEditContextProtocol>,
       samples: {},
       sodar_ontologies: {}
     }
+
     mockRowNode = getMockRowNode() as IRowNode
     // NOTE: gridApi and params set up in test after mocking columns
   })

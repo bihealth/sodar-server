@@ -204,9 +204,7 @@ describe('PageHeader.vue', () => {
     expect(wrapper.find('#sodar-ss-tab-overview').find('a').classes()).toContain('disabled')
 
     // Nav dropdown
-    expect(wrapper.find('#sodar-ss-nav-dropdown').find('button').classes()).not.toContain('disabled')
-    expect(wrapper.findAll('.sodar-ss-nav-item').length).toBe(3)
-    expect(wrapper.findAll('.sodar-ss-nav-item').at(2).find('a').classes()).toContain('disabled')
+    expect(wrapper.find('#sodar-ss-nav-dropdown').find('button').classes()).toContain('disabled')
 
     // Edit badge
     expect(wrapper.find('#sodar-ss-badge-edit').exists()).toBe(true)

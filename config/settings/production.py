@@ -43,7 +43,7 @@ SECURE_REDIRECT_EXEMPT = env.list(
     default=['/taskflow/', r'^irodsbackend/api/auth$'],
 )
 CSRF_COOKIE_SECURE = True
-CSRF_COOKIE_HTTPONLY = True
+CSRF_COOKIE_HTTPONLY = False  # Must be False for Martor previews
 CSRF_TRUSTED_ORIGINS = env.list('DJANGO_CSRF_TRUSTED_ORIGINS', default=[])
 CSRF_COOKIE_DOMAIN = env.str('DJANGO_CSRF_COOKIE_DOMAIN', None)
 

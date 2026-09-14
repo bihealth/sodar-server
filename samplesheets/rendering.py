@@ -286,6 +286,7 @@ class SampleSheetTableBuilder:
         # Format date into text
         if isinstance(value, date):
             value = value.strftime('%Y-%m-%d')
+        # TODO: Force possible null value into empty string? (see #2545)
         cell = {'value': value.strip() if isinstance(value, str) else value}
         if unit:
             cell['unit'] = unit.strip() if isinstance(unit, str) else unit

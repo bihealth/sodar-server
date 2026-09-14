@@ -3,7 +3,8 @@ import { ref, watch } from 'vue'
 
 import WaitSection from '@/components/WaitSection.vue'
 import { useAppStore } from '@/stores/appStore.ts'
-import { VIEW_PARSER_WARNING } from '@/constants.ts'
+import { getAjaxRequestInit } from '@/utils/appUtils.ts'
+import { VIEW_PARSER_WARNING, URL_PARSER_WARNING_PREFIX } from '@/constants.ts'
 
 // Interfaces ------------------------------------------------------------------
 
@@ -49,8 +50,7 @@ function buildWarnings (
 }
 
 function getWarnings () {
-  const url = '/samplesheets/ajax/warnings/' + appStore.projectUuid
-  fetch(url, { credentials: 'same-origin' })
+  fetch(URL_PARSER_WARNING_PREFIX + appStore.projectUuid, getAjaxRequestInit())
     .then(response => response.json())
     .then(response => {
       handleWarningsResponse(response)

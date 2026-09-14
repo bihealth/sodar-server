@@ -136,15 +136,17 @@ describe('DataCellEditor.vue', () => {
     // Set up stores
     setActivePinia(createPinia())
     const appStore = useAppStore()
+    const editStore = useEditStore()
+    const tableStore = useTableStore()
+
     appStore.selectEnabled = true
     appStore.projectUuid = PROJECT_UUID
-    const editStore = useEditStore()
+
     editStore.editContext = copy(
       studyTablesEdit.edit_context) as StudyEditContext
     editStore.editContext.samples = {
       [sampleUuid]: { name: '0814-N1', assays: [] } }
-    const tableStore = useTableStore()
-    // Mock tableStore GridApi:s
+
     tableStore.gridApi.study = mockGridApi as unknown as GridApi
     tableStore.gridApi.assays[ASSAY_UUID] = mockGridApi as unknown as GridApi
 
@@ -809,6 +811,6 @@ describe('DataCellEditor.vue', () => {
     })
   })
 
-  // TODO: Test node renaming
-  // TODO: Test validation with sample pooling
+  // TODO: Test node renaming (once refactoring name data saving, see #2542)
+  // TODO: Test validation with sample pooling (see #2542)
 })

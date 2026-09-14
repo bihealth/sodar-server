@@ -2,6 +2,9 @@
 import { ref } from 'vue'
 import prettyBytes from 'pretty-bytes'
 
+import { getAjaxRequestInit } from '@/utils/appUtils.ts'
+import { URL_IRODS_STATS_PREFIX } from '@/constants.ts'
+
 // External Data ---------------------------------------------------------------
 
 const props = defineProps(['irodsPath', 'irodsStatus', 'projectUuid'])
@@ -21,9 +24,9 @@ function setStats (stats: { file_count: number, total_size: number }) {
 }
 
 function updateStats () {
-  const statsUrl = '/irodsbackend/ajax/stats/' +
+  const statsUrl = URL_IRODS_STATS_PREFIX +
     props.projectUuid + '?path=' + encodeURIComponent(props.irodsPath)
-  fetch(statsUrl, { credentials: 'same-origin' })
+  fetch(statsUrl, getAjaxRequestInit())
     .then(response => response.json().then(
       data => ({
         status: response.status,

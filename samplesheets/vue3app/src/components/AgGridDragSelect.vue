@@ -37,7 +37,7 @@ interface RectCoordinate {
 
 // External Data ---------------------------------------------------------------
 
-const props = defineProps(['assayMode', 'notifyCb', 'tableUuid'])
+const props = defineProps(['assayMode', 'tableUuid'])
 const appStore = useAppStore()
 const tableStore = useTableStore()
 const clipboard = useClipboard()
@@ -195,8 +195,8 @@ function onCopy () {
   }
 
   clipboard.copy(copyData)
-  if (props.notifyCb) {
-    props.notifyCb('Cell values copied into clipboard', VARIANT_SUCCESS)
+  if (appStore.notifyCb) {
+    appStore.notifyCb('Cell values copied into clipboard', VARIANT_SUCCESS)
   }
 }
 

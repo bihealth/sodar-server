@@ -24,30 +24,43 @@ let updateCollectionStats = function () {
         paths: paths
       },
       contentType: 'application/x-www-form-urlencoded; charset=UTF-8',
-      traditional: true
-    }).done(function (data) {
-      $('span.sodar-irods-stats').each(function () {
-        let statsSpan = $(this)
-        let path = statsSpan.attr('data-stats-path')
-        let s = 's'
-        if (path in data['irods_stats']) {
-          let status = data['irods_stats'][path]['status']
-          if (status === 200) {
-            let fileCount = data['irods_stats'][path][
-              'file_count'
-            ]
-            let totalSize = data['irods_stats'][path][
-              'total_size'
-            ]
-            if (fileCount === 1) s = ''
-            statsSpan.text(
-              fileCount + ' file' + s +
-              ' (' + humanFileSize(totalSize, true) + ')')
-          } else if (status === 404) statsSpan.text('Not found')
-          else if (status === 403) statsSpan.text('Denied')
-          else statsSpan.text('Error')
-        }
-      })
+      traditional: true,
+      success: function (data) {
+        $('span.sodar-irods-stats').each(function () {
+          let path = $(this).attr('data-stats-path')
+          let s = 's'
+          if (path in data['irods_stats']) {
+            let status = data['irods_stats'][path]['status']
+            if (status === 200) {
+              $(this).removeClass('badge-danger').addClass(
+                'badge-info')
+              let fileCount = data['irods_stats'][path][
+                'file_count'
+              ]
+              let totalSize = data['irods_stats'][path][
+                'total_size'
+              ]
+              if (fileCount === 1) s = ''
+              $(this).text(
+                fileCount + ' file' + s +
+                ' (' + humanFileSize(totalSize, true) + ')')
+            } else {
+              $(this).removeClass('badge-info').addClass(
+                'badge-danger')
+              if (status === 404) $(this).text('Not found')
+              else if (status === 403) $(this).text('Denied')
+              else $(this).text('Error')
+            }
+          }
+        })
+      },
+      error: function () {
+        $('span.sodar-irods-stats').each(function () {
+          $(this).removeClass('badge-info').addClass(
+            'badge-danger')
+          $(this).text('Error')
+        })
+      }
     })
   })
 }

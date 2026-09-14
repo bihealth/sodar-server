@@ -1,7 +1,11 @@
 import { beforeEach, describe, expect, test, vi } from 'vitest'
 import { mount, type VueWrapper } from '@vue/test-utils'
+import { setActivePinia, createPinia } from 'pinia'
 
 import IrodsStatsBadge from '@/components/IrodsStatsBadge.vue'
+import { useAppStore } from '@/stores/appStore.ts'
+import { type SodarContext } from '@/types.ts'
+
 import { copy, waitSelector } from '../testUtils.ts'
 import { PROJECT_UUID, STUDY_PATH } from '../testConstants.ts'
 import {
@@ -41,6 +45,9 @@ describe('IrodsStatsBadge.vue', () => {
   }
 
   beforeEach(() => {
+    setActivePinia(createPinia())
+    const appStore = useAppStore()
+    appStore.sodarContext = { csrf_token: 'DummyToken' } as SodarContext
     props = copy(defaultProps) as IrodsStatsBadgeProps
   })
 

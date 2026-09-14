@@ -8,6 +8,24 @@ list of changes in current and previous releases, see the
 :ref:`full changelog<sodar_changelog>`.
 
 
+v1.3.1 (2026-09-14)
+===================
+
+Release for minor updates, maintenance and bug fixes.
+
+- Add samplesheets study navigation disabling in edit mode
+- Add samplesheets vue3app iRODS buttons clipboard copy notification
+- Add iRODS statistics badge error displaying
+- Fix Markdown previews in production deployments
+- Fix missing edit Ajax view object query project scope checks
+- Fix sheet date column sorting with empty values
+- Fix sheet ontology term template applying
+- Upgrade to SODAR Core v1.4.4
+- Upgrade to irods-docker v4.3.5-3 in CI
+- Upgrade critical dependencies
+- Minor updates and bug fixes
+
+
 v1.3.0 (2026-08-21)
 ===================
 

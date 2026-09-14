@@ -14,7 +14,8 @@ import WinExportModal from '@/components/modals/WinExportModal.vue'
 import { useAppStore } from '@/stores/appStore.ts'
 import { useEditStore } from '@/stores/editStore.ts'
 import { useTableStore } from '@/stores/tableStore.ts'
-import { getNotifyCb } from '@/utils/notifyCb.ts'
+
+import { getAjaxRequestInit } from '@/utils/appUtils.ts'
 import {
   AJAX_RES_OK,
   EDIT_BADGE_DEFAULT_LABEL,
@@ -26,6 +27,7 @@ import {
   EDIT_MSG_FINISH,
   EDIT_MSG_SAVE_ERR_PREFIX,
   EDIT_MSG_SAVE_FAIL_PREFIX,
+  REQ_POST,
   STUDY_NAV_DROPDOWN_LEN,
   STUDY_NAV_TAB_LEN,
   URL_EDIT_FINISH_PREFIX,
@@ -45,7 +47,6 @@ const tableStore = useTableStore()
 // NOTE: This component is outside StudyView and we can't init this in App.vue
 //       outside BApp, hence local init is necessary
 const { create } = useToast()
-const notifyCb = getNotifyCb(create)
 
 // Refs ------------------------------------------------------------------------
 
@@ -124,20 +125,13 @@ function toggleEditMode () {
     }
   } else { // Browsing mode
     // Call finish update on server
-    const url = URL_EDIT_FINISH_PREFIX + appStore.projectUuid
-    fetch(url, {
-      method: 'POST',
-      body: JSON.stringify({
-        updated: editStore.editDataUpdated,
-        version_saved: editStore.versionSaved,
-      }),
-      credentials: 'same-origin',
-      headers: {
-        Accept: 'application/json',
-        'Content-Type': 'application/json',
-        'X-CSRFToken': appStore.sodarContext!.csrf_token
-      }
-    }).then(data => data.json())
+    fetch(
+        URL_EDIT_FINISH_PREFIX + appStore.projectUuid,
+        getAjaxRequestInit(REQ_POST, {
+          updated: editStore.editDataUpdated,
+          version_saved: editStore.versionSaved,
+        })
+    ).then(data => data.json())
       .then(data => {
         if (data.detail === AJAX_RES_OK) {
           create(
@@ -153,18 +147,10 @@ function toggleEditMode () {
         create({ body: msg, variant: 'danger', modelValue: 2000 })
     })
 
-    // Reset selectEnabled just in case
+    // Update stores
     appStore.selectEnabled = true
-    // Reset editStore
-    editStore.editContext = null
-    editStore.editDataUpdated = false
-    editStore.editStudyData = false
-    editStore.unsavedData = false
-    editStore.unsavedRow = null
-    editStore.updatingRow = false
-    editStore.versionSaved = false
+    editStore.$reset()
 
-    // Navigate to current study
     if (appStore.currentStudyUuid) {
       handleStudyNavigation(
         appStore.currentStudyUuid, appStore.currentAssayUuid)
@@ -207,7 +193,7 @@ function truncate (s: string, maxLen: number): string {
             :id="'sodar-ss-nav-tab-study-' + studyUuid"
             @click="handleStudyNavigation(studyUuid as string, null)"
             :active="isStudyActive(studyUuid as string)"
-            :disabled="appStore.gridsBusy">
+            :disabled="appStore.gridsBusy || appStore.editMode">
           <i class="iconify" data-icon="mdi:folder-table"></i>
           {{ truncate(studyInfo.display_name, STUDY_NAV_TAB_LEN) }}
         </BButton>
@@ -250,7 +236,7 @@ function truncate (s: string, maxLen: number): string {
           id="sodar-ss-nav-dropdown"
           placement="bottom-end"
           variant="success"
-          :disabled="appStore.gridsBusy">
+          :disabled="appStore.gridsBusy || appStore.editMode">
         <template #button-content>
           <i class="iconify" data-icon="mdi:menu"></i>
         </template>
@@ -278,8 +264,7 @@ function truncate (s: string, maxLen: number): string {
         <BDropdownItem
             class="sodar-ss-nav-item"
             id="sodar-ss-nav-overview"
-            @click="handleOverviewNavigation()"
-            :disabled="appStore.editMode">
+            @click="handleOverviewNavigation()">
           <i class="iconify" data-icon="mdi:sitemap"></i> Overview
         </BDropdownItem>
       </BDropdown>
@@ -291,7 +276,7 @@ function truncate (s: string, maxLen: number): string {
           class="mr-1"
           title="Save current sheet version as backup"
           :disabled="editStore.versionSaved"
-          @click="versionSaveCompRef!.show(notifyCb)">
+          @click="versionSaveCompRef!.show()">
         <i class="iconify" data-icon="mdi:content-save-all"></i>
       </BButton>
       <!-- Operations dropdown -->

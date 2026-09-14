@@ -1,7 +1,11 @@
 <script setup lang="ts">
 import { BButton } from 'bootstrap-vue-next'
 import { useClipboard } from '@vueuse/core'
-import { IRODS_PATH_COPY_MSG, VARIANT_INFO } from '@/constants.ts'
+import {
+  IRODS_PATH_COPY_MSG,
+  VARIANT_INFO,
+  WEBDAV_URL_COPY_MSG
+} from '@/constants.ts'
 
 // External Data ---------------------------------------------------------------
 
@@ -21,10 +25,10 @@ const clipboard = useClipboard()
 
 // Helpers ---------------------------------------------------------------------
 
-// Copy path and display notification toast
-function copyPath () {
-  clipboard.copy(props.irodsPath)
-  if (props.notifyCb) props.notifyCb(IRODS_PATH_COPY_MSG, VARIANT_INFO)
+// Copy content into clipboard and display notification with message
+function copy (content: string, msg: string) {
+  clipboard.copy(content)
+  if (props.notifyCb) props.notifyCb(msg, VARIANT_INFO)
 }
 
 function getEnabledState (): boolean {
@@ -57,7 +61,7 @@ function getEnabledState (): boolean {
         class="sodar-list-btn sodar-ss-irods-btn sodar-ss-irods-copy-btn
                sodar-irods-copy-path-btn mr-1"
         title="Copy iRODS path into clipboard"
-        @click="copyPath()"
+        @click="copy(irodsPath, IRODS_PATH_COPY_MSG)"
         :disabled="!getEnabledState()">
       <i class="iconify" data-icon="mdi:console-line"></i>
     </BButton>
@@ -66,7 +70,8 @@ function getEnabledState (): boolean {
         class="sodar-list-btn sodar-ss-irods-btn sodar-ss-irods-copy-btn
                sodar-irods-copy-dav-btn mr-1"
         title="Copy WebDAV URL into clipboard"
-        @click="clipboard.copy(props.irodsWebdavUrl + props.irodsPath)"
+        @click="copy(props.irodsWebdavUrl + props.irodsPath,
+                     WEBDAV_URL_COPY_MSG)"
         :disabled="!getEnabledState()">
       <i class="iconify" data-icon="mdi:clipboard-text-multiple"></i>
     </BButton>

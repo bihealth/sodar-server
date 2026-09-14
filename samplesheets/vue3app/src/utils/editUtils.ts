@@ -50,6 +50,11 @@ import {
   EDIT_ITEM_TYPE_SOURCE,
   HEADER_NAME_SAMPLE,
   NODE_ID_HEADER_TYPES,
+  REQ_POST,
+  ROW_DEL_MSG_DELETED,
+  ROW_DEL_MSG_FAIL,
+  ROW_INS_MSG_OK,
+  ROW_INS_MSG_FAIL_PREFIX,
   URL_CELL_EDIT_PREFIX,
   URL_ROW_DEL_PREFIX,
   URL_ROW_INS_PREFIX,
@@ -114,7 +119,7 @@ export function deleteRow (params: RowDeleteParams) {
     }
   }
 
-  fetch(delUrl, getAjaxRequestInit('POST', { del_row: rowData }))
+  fetch(delUrl, getAjaxRequestInit(REQ_POST, { del_row: rowData }))
   .then(res => res.json())
   .then(res => {
     if ((res as GenericResponseBody).detail === AJAX_RES_OK) {
@@ -147,12 +152,13 @@ export function deleteRow (params: RowDeleteParams) {
         r.setDataValue('rowNum', rowNum)
         rowNum += 1
       })
-      if (params.notifyCb) params.notifyCb('Row deleted', VARIANT_SUCCESS)
+      if (appStore.notifyCb) {
+        appStore.notifyCb(ROW_DEL_MSG_DELETED, VARIANT_SUCCESS)
+      }
     } else {
-      const msg = 'Row delete failed'
       console.error(
-        `${msg}: ${(res as GenericResponseBody).detail}`)
-      if (params.notifyCb) params.notifyCb(msg, VARIANT_DANGER)
+        `${ROW_DEL_MSG_FAIL}: ${(res as GenericResponseBody).detail}`)
+      if (appStore.notifyCb) appStore.notifyCb(ROW_DEL_MSG_FAIL, VARIANT_DANGER)
     }
     if (params.finishCb) params.finishCb()
     editStore.updatingRow = false
@@ -163,6 +169,8 @@ export function deleteRow (params: RowDeleteParams) {
 // TODO: Refactor and simplify once fully tested
 export function enableNextNodes (params: NodeEnableParams) {
   const appStore = useAppStore()
+  const editStore = useEditStore()
+
   // TODO: Add assayMode in params?
   const assayMode: boolean = params.tableUuid !== appStore.currentStudyUuid
   const cols: Array<Column> = params.api.getColumns() as Array<Column>
@@ -321,9 +329,8 @@ export function enableNextNodes (params: NodeEnableParams) {
   if (enableNextIdx && enableNextIdx < cols.length - 1) {
     params.startIdx = enableNextIdx
     enableNextNodes(params)
-  } else { // Else refresh cells to enable saving (HACK: see #2490)
-    params.api.refreshCells(
-      {columns: ['rowEdit'], rowNodes: [params.rowNode], force: true})
+  } else { // Enable saving row once end of row is reached
+    editStore.enableRowSave = true
   }
 }
 
@@ -568,16 +575,8 @@ export function saveRow (params: RowSaveParams) {
   editStore.updatingRow = true
   const url = URL_ROW_INS_PREFIX + appStore.projectUuid
 
-  fetch(url, {
-    method: 'POST',
-    body: JSON.stringify({ new_row: params.saveData }),
-    credentials: 'same-origin',
-    headers: {
-      Accept: 'application/json',
-      'Content-Type': 'application/json',
-      'X-CSRFToken': appStore.sodarContext!.csrf_token
-    }
-  }).then(data => data.json())
+  fetch(url, getAjaxRequestInit(REQ_POST, { new_row: params.saveData })
+  ).then(data => data.json())
     .then(data => {
       if (data.detail === 'ok') {
         const cols = params.api.getColumns()!
@@ -643,15 +642,16 @@ export function saveRow (params: RowSaveParams) {
         }
 
         // Finalize
-        // TODO: Do we still need to call refreshCells() here? (see vueapp)
         editStore.unsavedRow = null
         editStore.editDataUpdated = true
         editStore.versionSaved = false
-        if (params.notifyCb) params.notifyCb('Row inserted', VARIANT_SUCCESS)
+        if (appStore.notifyCb) {
+          appStore.notifyCb(ROW_INS_MSG_OK, VARIANT_SUCCESS)
+        }
       } else {
-        const msg = 'Row insert failed: ' + data.detail
+        const msg = ROW_INS_MSG_FAIL_PREFIX + data.detail
         console.error(msg)
-        if (params.notifyCb) params.notifyCb(msg, VARIANT_DANGER)
+        if (appStore.notifyCb) appStore.notifyCb(msg, VARIANT_DANGER)
       }
       if (params.finishCb) params.finishCb()
       editStore.updatingRow = false
@@ -707,8 +707,7 @@ export function getNamePrefix (
 // Update one or multiple cells (formerly handleCellEdit())
 export function updateCells (
     cells: CellEditData | Array<CellEditData>,
-    verify: boolean,
-    notifyCb?: NotifyCb
+    verify: boolean
 ) {
   const appStore = useAppStore()
   const editStore = useEditStore()
@@ -739,55 +738,52 @@ export function updateCells (
   for (const k in tableStore.gridApi.assays) {
     gridApis.push(tableStore.gridApi.assays[k] as GridApi)
   }
-  const url = URL_CELL_EDIT_PREFIX + appStore.projectUuid
-
-  fetch(url, {
-    method: 'POST',
-    body: JSON.stringify({ updated_cells: requestCells, verify: verify }),
-    credentials: 'same-origin',
-    headers: {
-      Accept: 'application/json',
-      'Content-Type': 'application/json',
-      'X-CSRFToken': appStore.sodarContext?.csrf_token as string
-    }
-  }).then(data => data.json())
-    .then(
-      data => {
-        if (data.detail === 'ok') {
-          /*
-          let bodyPrefix: string
-          if (cells.length > 1) bodyPrefix = cells.length.toString() + ' cells '
-          else bodyPrefix = 'Cell '
-          if (notifyCb) notifyCb(bodyPrefix + 'updated', VARIANT_SUCCESS)
-          */
-          editStore.editDataUpdated = true
-          editStore.versionSaved = false
-          // Update other occurrences of cell in UI
-          for (const api of gridApis) {
-            updateCellUIValues(api, cells, true, false)
-          }
-        } else if (data.detail === 'alert') {
-          // Handle verification alert from server
-          if (confirm(data.alert_msg)) {
-            // Call update again
-            updateCells(cells, false, notifyCb)
-          } else {
-            revertCellUpdate(gridApis, cells)
-          }
-        } else {
-          revertCellUpdate(
-            gridApis, cells, CELL_UPDATE_FAIL_PREFIX + data.detail, notifyCb)
+  fetch(URL_CELL_EDIT_PREFIX + appStore.projectUuid,
+    getAjaxRequestInit(
+      REQ_POST, { updated_cells: requestCells, verify: verify })
+  ).then(data => data.json())
+    .then(data => {
+      if (data.detail === 'ok') {
+        /*
+        let bodyPrefix: string
+        if (cells.length > 1) bodyPrefix = cells.length.toString() + ' cells '
+        else bodyPrefix = 'Cell '
+        if (appStore.notifyCb) {
+          appStore.notifyCb(bodyPrefix + 'updated', VARIANT_SUCCESS)
         }
+        */
+        editStore.editDataUpdated = true
+        editStore.versionSaved = false
+        // Update other occurrences of cell in UI
+        for (const api of gridApis) {
+          updateCellUIValues(api, cells, true, false)
+        }
+      } else if (data.detail === 'alert') {
+        // Handle verification alert from server
+        if (confirm(data.alert_msg)) {
+          // Call update again
+          updateCells(cells, false)
+        } else {
+          revertCellUpdate(gridApis, cells)
+        }
+      } else {
+        revertCellUpdate(
+          gridApis,
+          cells,
+          CELL_UPDATE_FAIL_PREFIX + data.detail,
+          appStore.notifyCb)
       }
-    ).catch(function (error) {
-      revertCellUpdate(
-        gridApis, cells, CELL_UPDATE_ERR_PREFIX + error, notifyCb)
-    })
+    }
+  ).catch(function (error) {
+    revertCellUpdate(
+      gridApis, cells, CELL_UPDATE_ERR_PREFIX + error, appStore.notifyCb)
+  })
 }
 
 // Formerly handleNodeUpdate()
 // TODO: Large and complex, split into smaller functions?
 export function updateNode (params: NodeUpdateParams) {
+  const editStore = useEditStore()
   const tableStore = useTableStore()
 
   // Sample node in assay
@@ -896,9 +892,7 @@ export function updateNode (params: NodeUpdateParams) {
       tableUuid: params.tableUuid
     })
   } else {
-    // HACK: Refresh row edit cell to trigger enableSave() in RowEditRenderer
-    // TODO: Better approach (see #2490)
-    params.api.refreshCells(
-      {columns: ['rowEdit'], rowNodes: [params.rowNode], force: true})
+    // Enable row save to set enableSave() in RowEditRenderer
+    editStore.enableRowSave = true
   }
 }

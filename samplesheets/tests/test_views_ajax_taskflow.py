@@ -59,6 +59,7 @@ IRODS_NON_PROJECT_PATH = iRODSPath(
     settings.IRODS_ZONE, 'home', settings.IRODS_USER
 )
 IRODS_FAIL_COLL = 'xeiJ1Vie'
+POST_KW = {'content_type': 'application/json'}
 
 
 class TestStudyLinksAjaxView(
@@ -200,9 +201,7 @@ class TestSheetCellEditAjaxView(
         self.assay_plugin.update_cache(project=self.project, user=self.user)
         with self.login(self.user):
             response = self.client.post(
-                self.url,
-                json.dumps(self.post_data),
-                content_type='application/json',
+                self.url, json.dumps(self.post_data), **POST_KW
             )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data['detail'], 'ok')
@@ -217,9 +216,7 @@ class TestSheetCellEditAjaxView(
         self.assay_plugin.update_cache(project=self.project, user=self.user)
         with self.login(self.user):
             response = self.client.post(
-                self.url,
-                json.dumps(self.post_data),
-                content_type='application/json',
+                self.url, json.dumps(self.post_data), **POST_KW
             )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data['detail'], 'ok')
@@ -237,9 +234,7 @@ class TestSheetCellEditAjaxView(
         self.assay_plugin.update_cache(project=self.project, user=self.user)
         with self.login(self.user):
             response = self.client.post(
-                self.url,
-                json.dumps(self.post_data),
-                content_type='application/json',
+                self.url, json.dumps(self.post_data), **POST_KW
             )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data['detail'], 'alert')
@@ -262,9 +257,7 @@ class TestSheetCellEditAjaxView(
         self.assay_plugin.update_cache(project=self.project, user=self.user)
         with self.login(self.user):
             response = self.client.post(
-                self.url,
-                json.dumps(self.post_data),
-                content_type='application/json',
+                self.url, json.dumps(self.post_data), **POST_KW
             )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data['detail'], 'ok')
@@ -293,9 +286,7 @@ class TestSheetCellEditAjaxView(
         self.assay_plugin.update_cache(project=self.project, user=self.user)
         with self.login(self.user):
             response = self.client.post(
-                self.url,
-                json.dumps(self.post_data),
-                content_type='application/json',
+                self.url, json.dumps(self.post_data), **POST_KW
             )
         self.assertEqual(response.status_code, 200)
         # Not updating name = this is OK
@@ -614,14 +605,16 @@ class TestPluginSearchResultsAjaxView(
         self.file_name = f'{self.sample_id}_test.txt'
         self.file_path = iRODSPath(self.assay_path, self.file_name)
         self.irods.data_objects.create(self.file_path)
+        # Setup helpers
+        self.url = reverse('projectroles:ajax_search')
 
     def test_post(self):
         """Test PluginSearchResultsAjaxView POST without keyword limiting"""
         with self.login(self.user):
             response = self.client.post(
-                reverse('projectroles:ajax_search'),
+                self.url,
                 {
-                    'plugin': 'samplesheets',
+                    'plugin': APP_NAME,
                     'terms': f'["{self.sample_id}"]',
                     'keywords': '{}',
                 },
@@ -645,9 +638,9 @@ class TestPluginSearchResultsAjaxView(
         """Test POST with source type limit"""
         with self.login(self.user):
             response = self.client.post(
-                reverse('projectroles:ajax_search'),
+                self.url,
                 {
-                    'plugin': 'samplesheets',
+                    'plugin': APP_NAME,
                     'terms': f'["{self.source_id}"]',
                     'keywords': '{"type": "source"}',
                 },
@@ -666,9 +659,9 @@ class TestPluginSearchResultsAjaxView(
         """Test POST with sample type limit"""
         with self.login(self.user):
             response = self.client.post(
-                reverse('projectroles:ajax_search'),
+                self.url,
                 {
-                    'plugin': 'samplesheets',
+                    'plugin': APP_NAME,
                     'terms': f'["{self.sample_id}"]',
                     'keywords': '{"type": "sample"}',
                 },
@@ -687,9 +680,9 @@ class TestPluginSearchResultsAjaxView(
         """Test POST with file type limit"""
         with self.login(self.user):
             response = self.client.post(
-                reverse('projectroles:ajax_search'),
+                self.url,
                 {
-                    'plugin': 'samplesheets',
+                    'plugin': APP_NAME,
                     'terms': f'["{self.sample_id}"]',
                     'keywords': '{"type": "file"}',
                 },

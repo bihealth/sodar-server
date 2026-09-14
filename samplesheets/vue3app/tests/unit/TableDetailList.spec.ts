@@ -1,8 +1,10 @@
 import { beforeEach, describe, expect, test, vi } from 'vitest'
 import { config, mount, type VueWrapper } from '@vue/test-utils'
+import { setActivePinia, createPinia } from 'pinia'
 import { createBootstrap } from 'bootstrap-vue-next/plugins/createBootstrap'
 
 import TableDetailList from '@/components/TableDetailList.vue'
+import { useAppStore } from '@/stores/appStore.ts'
 import {
   ASSAY_META_FIELDS,
   ASSAY_SODAR_FIELDS,
@@ -51,12 +53,14 @@ vi.mock('@vueuse/core', async () => {
 describe('TableDetailList.vue', () => {
   function mountComponent (propVals: TableDetailListProps): VueWrapper {
     props = copy(propVals) as TableDetailListProps
-    props.notifyCb = vi.fn()
     return mount(TableDetailList, { props: props })
   }
 
   beforeEach(() => {
     vi.resetAllMocks()
+    setActivePinia(createPinia())
+    const appStore = useAppStore()
+    appStore.notifyCb = vi.fn()
   })
 
   test('render component for study', async () => {
@@ -84,8 +88,9 @@ describe('TableDetailList.vue', () => {
   })
 
   test('copy value into clipboard', async () => {
+    const appStore = useAppStore()
     expect(mockCopy).not.toHaveBeenCalled()
-    expect(props.notifyCb).not.toHaveBeenCalled()
+    expect(appStore.notifyCb).not.toHaveBeenCalled()
 
     const wrapper = mountComponent(studyProps)
     const buttons = wrapper.findAll('.sodar-ss-clip-copy-btn')
@@ -93,7 +98,7 @@ describe('TableDetailList.vue', () => {
     await buttons[0]!.trigger('click')
 
     expect(mockCopy).toHaveBeenCalledWith(STUDY_UUID)
-    expect(props.notifyCb).toHaveBeenCalledWith(
+    expect(appStore.notifyCb).toHaveBeenCalledWith(
       'SODAR UUID' + COPY_MSG_SUFFIX, VARIANT_INFO)
   })
 })

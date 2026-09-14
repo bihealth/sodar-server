@@ -18,7 +18,7 @@
           v-b-tooltip.hover
           :title="getStudyNavTitle(studyInfo.display_name)"
           :active="studyUuid === app.currentStudyUuid && !app.activeSubPage"
-          :disabled="!app.sheetsAvailable || app.gridsBusy">
+          :disabled="!app.sheetsAvailable || app.gridsBusy || app.editMode">
         <i class="iconify" data-icon="mdi:folder-table"></i>
         {{ studyInfo.display_name | truncate(20) }}
       </b-nav-item>
@@ -49,7 +49,7 @@
       <b-dropdown
           v-if="app.sheetsAvailable"
           id="sodar-ss-nav-dropdown"
-          :disabled="app.gridsBusy"
+          :disabled="app.gridsBusy || app.editMode"
           right
           variant="success">
         <template slot="button-content">
@@ -80,7 +80,6 @@
           href="#"
           id="sodar-ss-nav-overview"
           class="sodar-ss-nav-item"
-          :disabled="app.editMode"
           @click="showSubPageCallback('overview')">
           <i class="iconify" data-icon="mdi:sitemap"></i> Overview
         </b-dropdown-item>

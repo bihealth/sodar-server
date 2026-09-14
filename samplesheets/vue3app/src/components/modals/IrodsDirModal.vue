@@ -6,8 +6,10 @@ import prettyBytes from 'pretty-bytes'
 import ModalHeader from '@/components/modals/ModalHeader.vue'
 import WaitSection from '@/components/WaitSection.vue'
 import { useAppStore } from '@/stores/appStore.ts'
+import { getAjaxRequestInit } from '@/utils/appUtils.ts'
 import { type IrodsDirFile, type IrodsDirResponseBody } from '@/types.ts'
 import {
+  REQ_POST,
   URL_DATA_REQUEST_CREATE_PREFIX,
   URL_DATA_REQUEST_DELETE_PREFIX,
   URL_IRODS_LIST_PREFIX,
@@ -79,25 +81,11 @@ function getDataRequestIssueTitle (file: IrodsDirFile): string {
     : 'User not allowed to issue request'
 }
 
-// Get parameters for iRODS data request Ajax view request
-function getDataRequestParams (file: IrodsDirFile): RequestInit {
-  return {
-    method: 'POST',
-      body: JSON.stringify({ path: file.path }),
-      credentials: 'same-origin',
-      headers: {
-        Accept: 'application/json',
-        'Content-Type': 'application/json',
-        'X-CSRFToken': appStore.sodarContext!['csrf_token'] as string
-      }
-  } as RequestInit
-}
-
 // Get file list with Ajax call
 function getFileList (path: string) {
   const listUrl: string = URL_IRODS_LIST_PREFIX + appStore.projectUuid +
       '?path=' + encodeURIComponent(path)
-  fetch(listUrl, { credentials: 'same-origin' })
+  fetch(listUrl,  getAjaxRequestInit())
     .then(response => response.json())
     .then(response => {
       handleFileListResponse(response)
@@ -150,7 +138,7 @@ function submitDataRequest (file: IrodsDirFile, action: 'issue' | 'cancel') {
   if (action === 'cancel' || confirm(
       'Do you really want to request deletion for "' + file.name + '"?')) {
     const url = dataRequestUrls[action] + appStore.projectUuid
-    fetch(url, getDataRequestParams(file))
+    fetch(url, getAjaxRequestInit(REQ_POST, { path: file.path }))
       .then(response => response.json())
       .then(response => {
         handleDataRequestResponse(response, file)

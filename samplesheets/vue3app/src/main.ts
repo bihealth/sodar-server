@@ -7,10 +7,47 @@ import App from './App.vue'
 import router from './router'
 import 'vite/modulepreload-polyfill'
 
-import { AllCommunityModule, ModuleRegistry } from 'ag-grid-community'
-// TODO: Only register modules we actually use, see
-//       https://www.ag-grid.com/vue-data-grid/modules/
-ModuleRegistry.registerModules([AllCommunityModule])
+// import { AllCommunityModule, ModuleRegistry } from 'ag-grid-community'
+// ModuleRegistry.registerModules([AllCommunityModule])
+
+import {
+  ModuleRegistry,
+  ColumnAutoSizeModule,
+  RowStyleModule,
+  CellStyleModule,
+  QuickFilterModule,
+  TextEditorModule,
+  CustomEditorModule,
+  GridStateModule,
+  ColumnApiModule,
+  RowApiModule,
+  CellApiModule,
+  ScrollApiModule,
+  RenderApiModule,
+  EventApiModule,
+  ClientSideRowModelApiModule,
+  ClientSideRowModelModule,
+  // ValidationModule,
+} from 'ag-grid-community'
+
+ModuleRegistry.registerModules([
+  ColumnAutoSizeModule,
+  RowStyleModule,
+  CellStyleModule,
+  QuickFilterModule,
+  TextEditorModule,
+  CustomEditorModule,
+  GridStateModule,
+  ColumnApiModule,
+  RowApiModule,
+  CellApiModule,
+  ScrollApiModule,
+  RenderApiModule,
+  EventApiModule,
+  ClientSideRowModelApiModule,
+  ClientSideRowModelModule,
+  // ValidationModule,
+])
 
 const app = createApp(App)
 app.use(createPinia())

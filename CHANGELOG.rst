@@ -5,6 +5,63 @@ Changelog for the SODAR project. Loosely follows the
 `Keep a Changelog <http://keepachangelog.com/en/1.0.0/>`_ guidelines.
 
 
+v1.3.1 (2026-09-14)
+===================
+
+Added
+-----
+
+- **General**
+    - Dependency upgrade issue template (#2534)
+- **Irodsbackend**
+    - ``updateCollectionStats()`` error displaying (#2524)
+- **Samplesheets**
+    - Vue3app ``IrodsButtons`` WebDAV URL copy notification display (#2519)
+    - Vue3app ``IrodsButtons`` missing ``notifyCb`` props (#2520)
+    - Study navigation disabling in edit mode (#2529)
+    - ``ProjectAppPlugin.search()`` tests (#2510)
+    - ``SHEETS_ONTOLOGY_URL_TEMPLATE`` env var in siteinfo (#2546)
+
+Changed
+-------
+
+- **General**
+    - Upgrade to django-sodar-core v1.4.4 (#2526)
+    - Upgrade to irods-docker v4.3.5-3 in CI (#2514, #2527)
+    - Upgrade to djangorestframework v3.17.2 (#2533)
+- **Landingzones**
+    - Update ``zone_access_restrict`` validation testing on project create (#2354)
+- **Samplesheets**
+    - Refactor vue3app ``fetch()`` calls (#2475)
+    - Refactor vue3app ``notifyCb`` access (#2470)
+    - Refactor vue3app ``gridUtils`` storage and params (#2448)
+    - Update vue3app new row save enabling (#2490)
+    - Refactor vue3app store reset (#2511)
+    - Update and refactor vue3app tests (#2497)
+    - Optimize vue3app ag-grid module importing (#2531)
+
+Fixed
+-----
+
+- **General**
+    - ``CSRF_COOKIE_HTTPONLY=True`` breaking Markdown previews (#2523)
+- **Landingzones**
+    - ``test_render_validate_limit_update()`` sporadic CI failure (#2521)
+- **Samplesheets**
+    - Testing ``get_ticket_hosts()`` result order not guaranteed (#2445)
+    - Testing ``test_update_cache()`` query order not enforced (#2402)
+    - Vue3app missing grid viewport background color (#2530)
+    - Missing edit Ajax view object query project scope checks (#2536)
+    - Date column sorting fails with empty values in column (#2544)
+    - Legacy vueapp ontology term template only applied if skip is set (#2538)
+
+Removed
+-------
+
+- **General**
+    - ``.pylintrc`` file (#2522)
+
+
 v1.3.0 (2026-08-21)
 ===================
 
