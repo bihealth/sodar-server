@@ -14,6 +14,12 @@ Added
 - **General**
     - Full login template overriding (#2551)
 
+Changed
+-------
+
+- **Samplesheets**
+    - Update ``ProjectIrodsFileListAPIView`` docs on uncreated collections (#2552)
+
 Fixed
 -----
 
