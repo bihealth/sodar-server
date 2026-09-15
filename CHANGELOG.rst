@@ -5,6 +5,16 @@ Changelog for the SODAR project. Loosely follows the
 `Keep a Changelog <http://keepachangelog.com/en/1.0.0/>`_ guidelines.
 
 
+Unreleased
+==========
+
+Fixed
+-----
+
+- **Samplesheets**
+    - Vue3app ``ColumnConfigModal`` default format not selected (#2549)
+
+
 v1.3.1 (2026-09-14)
 ===================
 

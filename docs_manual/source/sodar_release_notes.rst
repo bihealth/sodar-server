@@ -8,6 +8,14 @@ list of changes in current and previous releases, see the
 :ref:`full changelog<sodar_changelog>`.
 
 
+v1.3.2 (WIP)
+============
+
+Release for minor updates, maintenance and bug fixes.
+
+- Fix samplesheets vue3app column config modal default format selecting
+
+
 v1.3.1 (2026-09-14)
 ===================
 

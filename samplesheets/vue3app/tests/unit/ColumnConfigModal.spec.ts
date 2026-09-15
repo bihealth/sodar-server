@@ -259,7 +259,7 @@ describe('ColumnConfigModal.vue', () => {
     if (setDefault !== false) params.editConfigField.default = protocolUuid
   }
 
-  function setBasicCharInput (format: string) {
+  function setBasicCharInput (format: string | undefined) {
     params.colType = null
     params.editConfigField.format = format
     params.editConfigField.type = EDIT_HEADER_TYPE_CHAR
@@ -1013,6 +1013,16 @@ describe('ColumnConfigModal.vue', () => {
     expect(wrapper.find(trUnitSel).exists()).toBe(false)
     expect(wrapper.find(trUnitDefaultSel).exists()).toBe(false)
 
+    expect(wrapper.find(formatSelectSel).exists()).toBe(true)
+    const options = wrapper.findAll(formatOptionSel)
+    expect(options.length).toBe(4)
+    expect(options[0]?.text()).toBe(EDIT_FORMAT_STRING)
+    expect(options[0]?.attributes().selected).toBeDefined()
+  })
+
+  test('set default basic string field format to string', async () => {
+    setBasicCharInput(undefined)
+    const wrapper = await showModal()
     expect(wrapper.find(formatSelectSel).exists()).toBe(true)
     const options = wrapper.findAll(formatOptionSel)
     expect(options.length).toBe(4)
