@@ -1,1 +1,12 @@
-{% extends 'projectroles/login.html' %}
+{% load projectroles_common_tags %}
+
+{% get_django_setting 'PROJECTROLES_TEMPLATE_INCLUDE_PATH' as template_include_path %}
+{% template_exists template_include_path|add:'/login.html' as login_override %}
+
+{% if login_override %}
+  {# Deployment-specific login template override #}
+  {% include template_include_path|add:'/login.html' %}
+{% else %}
+  {# Standard SODAR Core login template #}
+  {% include 'projectroles/login.html' %}
+{% endif %}

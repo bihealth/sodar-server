@@ -8,6 +8,12 @@ Changelog for the SODAR project. Loosely follows the
 Unreleased
 ==========
 
+Added
+-----
+
+- **General**
+    - Full login template overriding (#2551)
+
 Fixed
 -----
 
