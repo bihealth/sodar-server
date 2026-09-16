@@ -1098,7 +1098,7 @@ class ProjectIrodsFileListAPIView(
     string. This will return results in the Django Rest Framework
     ``PageNumberPagination`` format.
 
-    Returns HTTP 500 if iRODS collections have not been created for the project.
+    Returns HTTP 404 if iRODS collections have not been created for the project.
     This will be changed in samplesheets REST API v2.0.
 
     **URL:** ``/samplesheets/api/file/list/{Project.sodar_uuid}``
