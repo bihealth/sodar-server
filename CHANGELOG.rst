@@ -5,6 +5,31 @@ Changelog for the SODAR project. Loosely follows the
 `Keep a Changelog <http://keepachangelog.com/en/1.0.0/>`_ guidelines.
 
 
+v1.3.2 (2026-09-17)
+===================
+
+Added
+-----
+
+- **General**
+    - Full login template overriding (#2551)
+
+Changed
+-------
+
+- **General**
+    - Upgrade to django-sodar-core v1.4.5 (#2554)
+- **Samplesheets**
+    - Update ``ProjectIrodsFileListAPIView`` docs on uncreated collections (#2552)
+    - Update ``use_vue3_app`` setting description (#2553)
+
+Fixed
+-----
+
+- **Samplesheets**
+    - Vue3app ``ColumnConfigModal`` default format not selected (#2549)
+
+
 v1.3.1 (2026-09-14)
 ===================
 

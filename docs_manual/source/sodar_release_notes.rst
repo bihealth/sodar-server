@@ -8,6 +8,17 @@ list of changes in current and previous releases, see the
 :ref:`full changelog<sodar_changelog>`.
 
 
+v1.3.2 (2026-09-17)
+===================
+
+Release for minor updates, maintenance and bug fixes.
+
+- :ref:`Add full login template overriding <admin_custom_login_override>`
+- Fix samplesheets vue3app column config modal default format selecting
+- Upgrade to SODAR Core v1.4.5
+- Minor updates and bug fixes
+
+
 v1.3.1 (2026-09-14)
 ===================
 

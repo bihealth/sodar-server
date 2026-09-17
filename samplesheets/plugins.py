@@ -246,7 +246,7 @@ SHEETS_APP_SETTINGS = [
         default=False,
         label='Enable Sample Sheets Vue3 app',
         description='Enable the new Vue3 app for sample sheet browsing and '
-        'editing. This app is under development and may not be stable.',
+        'editing.',
         user_modifiable=True,
     ),
 ]

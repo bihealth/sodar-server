@@ -550,8 +550,9 @@ function setInitialConfig () {
         unitOptions.value = config.value!.unit!.join('\n')
       }
     } else if (colType.value === EDIT_COL_TYPE_DATE) {
-      // Force date format
-      config.value!.format = EDIT_FORMAT_DATE
+      config.value!.format = EDIT_FORMAT_DATE // Force date format
+    } else if (!params.editConfigField.format) {
+      config.value!.format = EDIT_FORMAT_STRING // Set string as default
     }
   }
 }
