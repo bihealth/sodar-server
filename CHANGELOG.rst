@@ -17,6 +17,8 @@ Added
 Changed
 -------
 
+- **General**
+    - Upgrade to django-sodar-core v1.4.5 (#2554)
 - **Samplesheets**
     - Update ``ProjectIrodsFileListAPIView`` docs on uncreated collections (#2552)
 

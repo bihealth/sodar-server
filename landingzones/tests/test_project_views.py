@@ -1,14 +1,12 @@
 """Tests for projectroles views with taskflow"""
 
-from typing import Optional
-
 from django.contrib.auth import get_user_model
 from django.urls import reverse
 
 # Projectroles dependency
 from projectroles.app_settings import AppSettingAPI
 from projectroles.models import Project, SODAR_CONSTANTS
-from projectroles.tests.base import UIViewTestBase
+from projectroles.tests.base import ProjectCreateViewMixin, UIViewTestBase
 from projectroles.tests.test_models import ProjectMixin, RoleAssignmentMixin
 
 
@@ -22,41 +20,10 @@ PROJECT_TYPE_PROJECT = SODAR_CONSTANTS['PROJECT_TYPE_PROJECT']
 PROJECT_TYPE_CATEGORY = SODAR_CONSTANTS['PROJECT_TYPE_CATEGORY']
 
 
-class TestProjectCreateView(ProjectMixin, RoleAssignmentMixin, UIViewTestBase):
+class TestProjectCreateView(
+    ProjectMixin, RoleAssignmentMixin, ProjectCreateViewMixin, UIViewTestBase
+):
     """Tests for ProjectCreateView with taskflow"""
-
-    # TODO: Replace this with ProjectCreateViewMixin dependency once upgraded to
-    #       SODAR Core>=1.4.5 (see bihealth/sodar-core#1983)
-    @classmethod
-    def _get_project_create_data(
-        cls,
-        title: str,
-        project_type: str,
-        parent: Optional[Project],
-        owner: User,
-    ) -> dict:
-        """
-        Return POST data for project creation.
-
-        :param title: Project title (string)
-        :param project_type: Project type (string)
-        :param parent: Parent category (Project or None)
-        :param owner: Owner user (User)
-        :return: dict
-        """
-        ret = {
-            'title': title,
-            'type': project_type,
-            'parent': parent.sodar_uuid if parent else '',
-            'owner': owner.sodar_uuid,
-            'description': 'description',
-            'public_access': '',
-        }
-        # Add settings values
-        ret.update(
-            app_settings.get_defaults(APP_SETTING_SCOPE_PROJECT, post_safe=True)
-        )
-        return ret
 
     def setUp(self):
         super().setUp()
@@ -73,7 +40,7 @@ class TestProjectCreateView(ProjectMixin, RoleAssignmentMixin, UIViewTestBase):
     def test_post_validate_restrict_no_role(self):
         """Test ProjectCreateView POST with zone_access_restrict and no role"""
         self.assertEqual(Project.objects.count(), 1)
-        post_data = self._get_project_create_data(
+        post_data = self.get_project_create_data(
             title='TestProject',
             project_type=PROJECT_TYPE_PROJECT,
             parent=self.category,
