@@ -21,6 +21,7 @@ Changed
     - Upgrade to django-sodar-core v1.4.5 (#2554)
 - **Samplesheets**
     - Update ``ProjectIrodsFileListAPIView`` docs on uncreated collections (#2552)
+    - Update ``use_vue3_app`` setting description (#2553)
 
 Fixed
 -----
