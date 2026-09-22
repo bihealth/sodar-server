@@ -8,6 +8,14 @@ list of changes in current and previous releases, see the
 :ref:`full changelog<sodar_changelog>`.
 
 
+v1.3.3 (WIP)
+============
+
+Release for minor updates, maintenance and bug fixes.
+
+- Fix iRODS file search with uppercase file names
+
+
 v1.3.2 (2026-09-17)
 ===================
 

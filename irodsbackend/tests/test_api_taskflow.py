@@ -430,6 +430,42 @@ class TestIrodsAPIGetObjects(IrodsAPITaskflowTestBase):
         self.assertEqual(res[1]['name'], TEST_FILE_NAME + '.md5')
         self.assertEqual(res[2]['name'], TEST_FILE_NAME + '.sha256')
 
+    def test_get_objects_name(self):
+        """Test get_objects() with name"""
+        data_obj = self.make_irods_object(self.coll, f'a_{TEST_FILE_NAME}')
+        self.make_checksum_object(data_obj)
+        data_obj2 = self.make_irods_object(self.coll, f'b_{TEST_FILE_NAME}')
+        self.make_checksum_object(data_obj2)
+        res = self.irods_backend.get_objects(
+            self.irods,
+            self.assay_path,
+            name_like=f'a_{TEST_FILE_NAME}',
+            include_checksum=True,
+        )
+        self.assertEqual(len(res), 2)
+        self.assertEqual(res[0]['name'], f'a_{TEST_FILE_NAME}')
+        self.assertEqual(res[1]['name'], f'a_{TEST_FILE_NAME}.md5')
+
+    def test_get_objects_name_case(self):
+        """Test get_objects() with name and different case in file name"""
+        data_obj = self.make_irods_object(
+            self.coll, f'a_{TEST_FILE_NAME}'.upper()
+        )
+        self.make_checksum_object(data_obj)
+        data_obj2 = self.make_irods_object(self.coll, f'a_{TEST_FILE_NAME}')
+        self.make_checksum_object(data_obj2)
+        res = self.irods_backend.get_objects(
+            self.irods,
+            self.assay_path,
+            name_like=f'a_{TEST_FILE_NAME}',
+            include_checksum=True,
+        )
+        self.assertEqual(len(res), 4)
+        self.assertEqual(res[0]['name'], f'a_{TEST_FILE_NAME}'.upper())
+        self.assertEqual(res[1]['name'], f'a_{TEST_FILE_NAME}')
+        self.assertEqual(res[2]['name'], f'A_{TEST_FILE_NAME.upper()}.md5')
+        self.assertEqual(res[3]['name'], f'a_{TEST_FILE_NAME}.md5')
+
     def test_get_objects_multi(self):
         """Test get_objects() with multiple search terms"""
         data_obj = self.make_irods_object(self.coll, TEST_FILE_NAME)
