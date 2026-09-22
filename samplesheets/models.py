@@ -613,6 +613,7 @@ class Assay(BaseSampleSheet):
                 'samplesheets:project_sheets',
                 kwargs={'project': self.get_project().sodar_uuid},
             )
+            + f'#/study/{self.study.sodar_uuid}'
             + f'#/assay/{self.sodar_uuid}'
         )
 

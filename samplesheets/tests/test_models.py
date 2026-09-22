@@ -843,6 +843,7 @@ class TestAssay(SamplesheetsModelTestBase):
                 'samplesheets:project_sheets',
                 kwargs={'project': self.project.sodar_uuid},
             )
+            + f'#/study/{self.study.sodar_uuid}'
             + f'#/assay/{self.assay.sodar_uuid}'
         )
         self.assertEqual(self.assay.get_url(), expected)

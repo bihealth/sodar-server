@@ -40,6 +40,7 @@ import {
   type StudyEditConfig,
   type StudyEditContext
 } from '@/types.ts'
+import { VIEW_STUDY } from '@/constants.ts'
 
 // External Data ---------------------------------------------------------------
 
@@ -146,6 +147,7 @@ function getStudy (studyUuid: string, editMode: boolean) {
     .then(data => data.json())
     .then(data => {
       buildStudy(data)
+      appStore.viewActive = VIEW_STUDY
       appStore.gridsBusy = false
       appStore.gridsLoaded = true
       scrollToCurrentTable()

@@ -15,6 +15,8 @@ Fixed
     - ``_make_object_query()`` case sensitive ``data_name`` handling (#2560)
 - **Samplesheets**
     - iRODS file search fails with upper case search terms (#2560)
+    - Vue3app initial routing fails with ``Assay.get_url()`` (#2559)
+    - Vue3app study tab inactive after study or assay URL init (#2561)
 
 
 v1.3.2 (2026-09-17)
