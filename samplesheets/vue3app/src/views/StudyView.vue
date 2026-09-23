@@ -191,6 +191,21 @@ if (appStore.sheetsAvailable && !appStore.gridsLoaded) {
 } else {
   watch(() => appStore.sodarContext, (newContext) => {
     if (newContext !== null && appStore.sheetsAvailable) {
+      // HACK for legacy assay URLs: set current study UUID based on assay
+      if (!('studyUuid' in route.params) && 'assayUuid' in route.params) {
+        let found = false
+        for (const [sk, v] of Object.entries(newContext.studies)) {
+          for (const ak of Object.keys(v.assays)) {
+            if (ak === route.params.assayUuid) {
+              appStore.currentStudyUuid = sk
+              console.log('Found')
+              found = true
+              break
+            }
+          }
+          if (found) break
+        }
+      }
       getStudy(appStore.currentStudyUuid, appStore.editMode)
     }
   })

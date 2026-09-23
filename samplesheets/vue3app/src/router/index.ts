@@ -19,6 +19,11 @@ export const routes = [
       component: StudyView
     },
     {
+      path: '/assay/:assayUuid',
+      name: 'assay_legacy',
+      component: StudyView
+    }, // For legacy URLs bookmarked/saved in legacy vueapp days
+    {
       path: '/overview',
       name: 'overview',
       component: OverviewView
