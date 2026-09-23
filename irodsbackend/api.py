@@ -65,10 +65,12 @@ IRODS_SHA256_PREFIX = 'sha2:'
 HASH_SCHEME_SHA256 = 'SHA256'
 TRASH_COLL_NAME = 'trash'
 PATH_PARENT_SUBSTRING = '/..'
+ERROR_OBJ_NAME = 'Invalid data object name pattern'
 ERROR_PATH_PARENT = 'Use of parent not allowed in path'
 ERROR_PATH_UNSET = 'Path is not set'
 TICKET_MODE_READ = 'read'
 TICKET_MODE_WRITE = 'write'
+DATA_OBJ_RE = re.compile(r'^[\w\s._-]+$')
 
 
 class IrodsAPI:
@@ -233,7 +235,7 @@ class IrodsAPI:
         irods: iRODSSession,
         path: str,
         include_checksum: bool = False,
-        name_like: Union[str, list[str], None] = None,
+        name_like: Union[list[str], None] = None,
         limit: Optional[int] = None,
         offset: Optional[int] = None,
         api_format: bool = False,
@@ -248,7 +250,7 @@ class IrodsAPI:
         :param path: Full path to iRODS collection (string)
         :param include_checksum: if True, include .md5/.sha256 files (bool,
                                  default=False)
-        :param name_like: Filtering of file names (string or list of strings)
+        :param name_like: Filtering of file names (list of strings or None)
         :param limit: Limit retrieval to N rows (int or None)
         :param offset: Offset retrieval by N rows (int or None)
         :param api_format: Format data for REST API (bool, default=False)
@@ -276,13 +278,12 @@ class IrodsAPI:
             )
         )
         if name_like:
-            if not isinstance(name_like, list):
-                name_like = [name_like]
             sql += ' AND ('
             for i, n in enumerate(name_like):
                 if i > 0:
                     sql += ' OR '
                 # NOTE: Using LOWER() performs better than ILIKE
+                # NOTE: name_like is validated in caller
                 sql += f"LOWER(data_name) LIKE '%{n.lower()}%'"
             sql += ')'
         if limit:
@@ -290,7 +291,7 @@ class IrodsAPI:
         if offset:
             sql += f' OFFSET {offset}'
 
-        # logger.debug(f'Object list query = "{sql}"')
+        # logger.debug(f'Object query = "{sql}"')
         columns = [
             DataObject.name,
             DataObject.size,
@@ -775,28 +776,39 @@ class IrodsAPI:
         :param coll: iRODSCollection object
         :param include_checksum: if True, include .md5/.sha256 files (bool,
                                  default=False)
-        :param name_like: Filtering of file names (string or list of strings)
+        :param name_like: Filtering of file names (string, list of strings or
+                          None)
         :param limit: Limit retrieval to N rows (int or None)
         :param offset: Offset retrieval by N rows (int or None)
         :param api_format: Format data for REST API (bool, default=False)
         :param checksum: Include checksum in info (bool, default=False)
         :return: List of dicts
+        :raise: ValueError with invalid characters in input
         """
         ret = []
         path_lookup = []
+        if name_like:
+            if not isinstance(name_like, list):
+                name_like = [name_like]
+            # Reject query with invalid chars in data object name pattern
+            if not all([re.fullmatch(DATA_OBJ_RE, n) for n in name_like]):
+                raise ValueError(f'{ERROR_OBJ_NAME}: {name_like}')
+            # Escape underscores for query
+            name_like = [n.replace('_', '\\_').lower() for n in name_like]
+
         # HACK: Long queries cause a crash with iRODS so we have to split them
         q_args = [
             irods,
             coll.path,
             include_checksum,
             name_like,
-            limit,
-            offset,
+            int(limit) if limit else None,  # Force limit and offset into int
+            int(offset) if offset else None,
             api_format,
             checksum,
             path_lookup,
         ]
-        if name_like and isinstance(name_like, list) and len(name_like) > 1:
+        if name_like and len(name_like) > 1:
             f_len = sum([len(x) + NAME_LIKE_OVERHEAD for x in name_like])
             q_count = math.ceil(f_len / NAME_LIKE_MAX_LEN)
             q_len = math.ceil(len(name_like) / q_count)
@@ -841,10 +853,6 @@ class IrodsAPI:
         except CollectionDoesNotExist:
             raise FileNotFoundError('iRODS collection not found')
 
-        if name_like:
-            if not isinstance(name_like, list):
-                name_like = [name_like]
-            name_like = [n.replace('_', '\\_') for n in name_like]  # noqa
         ret = self.get_objs_recursively(
             irods,
             coll,

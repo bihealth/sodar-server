@@ -13,6 +13,7 @@ Fixed
 
 - **Irodsbackend**
     - ``_make_object_query()`` case sensitive ``data_name`` handling (#2560)
+    - Missing input validations in data object queries (#2564)
 - **Samplesheets**
     - iRODS file search fails with upper case search terms (#2560)
     - Vue3app initial routing fails with ``Assay.get_url()`` (#2559)

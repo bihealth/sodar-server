@@ -466,8 +466,19 @@ class TestIrodsAPIGetObjects(IrodsAPITaskflowTestBase):
         self.assertEqual(res[2]['name'], f'A_{TEST_FILE_NAME.upper()}.md5')
         self.assertEqual(res[3]['name'], f'a_{TEST_FILE_NAME}.md5')
 
-    def test_get_objects_multi(self):
-        """Test get_objects() with multiple search terms"""
+    def test_get_objects_name_invalid(self):
+        """Test get_objects() with name and invalid string"""
+        self.make_irods_object(self.coll, f'a_{TEST_FILE_NAME}')
+        with self.assertRaises(ValueError):
+            self.irods_backend.get_objects(
+                self.irods,
+                self.assay_path,
+                name_like=f"a_{TEST_FILE_NAME}%'); DROP TABLES;",
+                include_checksum=True,
+            )
+
+    def test_get_objects_name_multi(self):
+        """Test get_objects() with multiple name search terms"""
         data_obj = self.make_irods_object(self.coll, TEST_FILE_NAME)
         self.make_checksum_object(data_obj)
         data_obj = self.make_irods_object(self.coll, TEST_FILE_NAME2)
@@ -479,6 +490,18 @@ class TestIrodsAPIGetObjects(IrodsAPITaskflowTestBase):
             include_checksum=True,
         )
         self.assertEqual(len(res), 4)
+
+    def test_get_objects_name_multi_invalid(self):
+        """Test get_objects() with multiple terms and invalid term"""
+        self.make_irods_object(self.coll, TEST_FILE_NAME)
+        with self.assertRaises(ValueError):
+            # Only one term has problems
+            self.irods_backend.get_objects(
+                self.irods,
+                self.assay_path,
+                name_like=[TEST_FILE_NAME, f"{TEST_FILE_NAME}%')"],
+                include_checksum=True,
+            )
 
     def test_get_objects_long_query(self):
         """Test get_objects() with a long query"""

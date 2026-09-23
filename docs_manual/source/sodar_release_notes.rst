@@ -16,6 +16,7 @@ Release for minor updates, maintenance and bug fixes.
 - Fix iRODS file search with uppercase file names
 - Fix vue3app initial routing from assay links
 - Fix vue3app study tab status from study and assay links
+- Fix missing input validations in iRODS data object queries
 
 
 v1.3.2 (2026-09-17)
