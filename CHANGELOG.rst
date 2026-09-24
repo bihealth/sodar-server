@@ -19,6 +19,8 @@ Fixed
     - Vue3app initial routing fails with ``Assay.get_url()`` (#2559, #2565)
     - Vue3app study tab inactive after study or assay URL init (#2561)
     - Vue3app initialization fails with legacy assay URLs (#2563)
+- **Taskflowbackend**
+    - Missing data object public guest access after landing zone move (#2567)
 
 
 v1.3.2 (2026-09-17)

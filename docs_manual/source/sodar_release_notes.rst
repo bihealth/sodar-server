@@ -14,6 +14,7 @@ v1.3.3 (WIP)
 Release for minor updates, maintenance and bug fixes.
 
 - Fix iRODS file search with upper case file names
+- Fix iRODS public guest access for data objects after landing zone move
 - Fix vue3app initial routing from assay links
 - Fix vue3app study tab status with study and assay links
 - Fix vue3app legacy assay URL support

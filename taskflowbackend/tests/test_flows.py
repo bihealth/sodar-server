@@ -803,6 +803,7 @@ class TestLandingZoneMove(
         self.assertEqual(
             self.irods.data_objects.exists(sample_obj_path + MD5_SUFFIX), True
         )
+
         self.assert_irods_access(
             self.project_group, sample_obj_path, IRODS_ACCESS_READ_OBJ
         )
@@ -815,12 +816,113 @@ class TestLandingZoneMove(
         self.assert_irods_access(
             self.owner_group, sample_obj_path + MD5_SUFFIX, None
         )
+        self.assert_irods_access(IRODS_GROUP_PUBLIC, sample_obj_path, None)
+        self.assert_irods_access(
+            IRODS_GROUP_PUBLIC, sample_obj_path + MD5_SUFFIX, None
+        )
+
         tl_event.refresh_from_db()
         expected = {
             'files': [iRODSPath(OBJ_COLL_NAME, OBJ_NAME, absolute=False)],
             'total_size': 1024,
         }
         self.assertEqual(tl_event.extra_data, expected)
+
+    def test_move_public_guest(self):
+        """Test landing_zone_move with public guest access project"""
+        # Set public access to guest for project
+        self.project.set_public_access(self.role_guest)
+
+        self.assertEqual(self.zone.status, ZONE_STATUS_ACTIVE)
+        self.assertEqual(self.irods.collections.exists(self.zone_path), True)
+
+        obj_coll_path = iRODSPath(self.zone_path, OBJ_COLL_NAME)
+        obj_coll = self.irods.collections.create(obj_coll_path)
+        obj = self.make_irods_object(obj_coll, OBJ_NAME)
+        self.make_checksum_object(obj)
+        sample_obj_path = iRODSPath(self.sample_path, OBJ_COLL_NAME, OBJ_NAME)
+
+        flow_data = {'zone_uuid': str(self.zone.sodar_uuid)}
+        flow = self.taskflow.get_flow(
+            flow_name='landing_zone_move', flow_data=flow_data, **self.flow_kw
+        )
+        self.assertEqual(type(flow), LandingZoneMoveFlow)
+        self.build_and_run(flow)
+
+        self.zone.refresh_from_db()
+        self.assertEqual(self.zone.status, ZONE_STATUS_MOVED)
+        self.assertEqual(self.irods.collections.exists(self.zone_path), False)
+        self.assertEqual(self.irods.data_objects.exists(sample_obj_path), True)
+        self.assertEqual(
+            self.irods.data_objects.exists(sample_obj_path + MD5_SUFFIX), True
+        )
+        self.assert_irods_access(
+            self.project_group, sample_obj_path, IRODS_ACCESS_READ_OBJ
+        )
+        self.assert_irods_access(self.owner_group, sample_obj_path, None)
+        self.assert_irods_access(
+            self.project_group,
+            sample_obj_path + MD5_SUFFIX,
+            IRODS_ACCESS_READ_OBJ,
+        )
+        self.assert_irods_access(
+            self.owner_group, sample_obj_path + MD5_SUFFIX, None
+        )
+        # Public user group should have read access to files
+        self.assert_irods_access(
+            IRODS_GROUP_PUBLIC, sample_obj_path, IRODS_ACCESS_READ_OBJ
+        )
+        self.assert_irods_access(
+            IRODS_GROUP_PUBLIC,
+            sample_obj_path + MD5_SUFFIX,
+            IRODS_ACCESS_READ_OBJ,
+        )
+
+    def test_move_public_viewer(self):
+        """Test landing_zone_move with public viweer access project"""
+        # Set public access to guest for project
+        self.project.set_public_access(self.role_viewer)
+
+        self.assertEqual(self.zone.status, ZONE_STATUS_ACTIVE)
+        self.assertEqual(self.irods.collections.exists(self.zone_path), True)
+
+        obj_coll_path = iRODSPath(self.zone_path, OBJ_COLL_NAME)
+        obj_coll = self.irods.collections.create(obj_coll_path)
+        obj = self.make_irods_object(obj_coll, OBJ_NAME)
+        self.make_checksum_object(obj)
+        sample_obj_path = iRODSPath(self.sample_path, OBJ_COLL_NAME, OBJ_NAME)
+
+        flow_data = {'zone_uuid': str(self.zone.sodar_uuid)}
+        flow = self.taskflow.get_flow(
+            flow_name='landing_zone_move', flow_data=flow_data, **self.flow_kw
+        )
+        self.assertEqual(type(flow), LandingZoneMoveFlow)
+        self.build_and_run(flow)
+
+        self.zone.refresh_from_db()
+        self.assertEqual(self.zone.status, ZONE_STATUS_MOVED)
+        self.assertEqual(self.irods.collections.exists(self.zone_path), False)
+        self.assertEqual(self.irods.data_objects.exists(sample_obj_path), True)
+        self.assertEqual(
+            self.irods.data_objects.exists(sample_obj_path + MD5_SUFFIX), True
+        )
+        self.assert_irods_access(
+            self.project_group, sample_obj_path, IRODS_ACCESS_READ_OBJ
+        )
+        self.assert_irods_access(self.owner_group, sample_obj_path, None)
+        self.assert_irods_access(
+            self.project_group,
+            sample_obj_path + MD5_SUFFIX,
+            IRODS_ACCESS_READ_OBJ,
+        )
+        self.assert_irods_access(
+            self.owner_group, sample_obj_path + MD5_SUFFIX, None
+        )
+        # Public user group should have no access
+        self.assert_irods_access(IRODS_GROUP_PUBLIC, sample_obj_path, None)
+        self.assert_irods_access(
+            IRODS_GROUP_PUBLIC, sample_obj_path + MD5_SUFFIX, None
+        )
 
     def test_move_locked(self):
         """Test landing_zone_move with locked project (should fail)"""

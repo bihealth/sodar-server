@@ -3,6 +3,9 @@ from irods.path import iRODSPath
 
 from django.conf import settings
 
+# Projectroles dependency
+from projectroles.models import SODAR_CONSTANTS
+
 # Samplesheets dependency
 import samplesheets.tasks_taskflow as ss_tasks
 
@@ -17,11 +20,19 @@ from landingzones.constants import (
 import landingzones.tasks_taskflow as lz_tasks
 from landingzones.models import LandingZone
 
-from taskflowbackend.constants import IRODS_ACCESS_READ_OBJ, IRODS_ACCESS_NULL
+from taskflowbackend.constants import (
+    IRODS_ACCESS_READ_OBJ,
+    IRODS_ACCESS_NULL,
+    IRODS_GROUP_PUBLIC,
+)
 from taskflowbackend.flows.base_flow import BaseLinearFlow
 from taskflowbackend.tasks import irods_tasks, sodar_tasks
 
 
+# SODAR constants
+PROJECT_ROLE_GUEST = SODAR_CONSTANTS['PROJECT_ROLE_GUEST']
+
+# Local constants
 SAMPLE_COLL = settings.IRODS_SAMPLE_COLL
 ZONE_INFO_CHECK = 'Checking availability and file types of {count} file{plural}'
 ZONE_INFO_CALC = 'Calculating missing checksums in iRODS'
@@ -72,7 +83,7 @@ class Flow(BaseLinearFlow):
             owner_group_exists = True
         except GroupDoesNotExist:
             owner_group_exists = False
-        sample_path = self.irods_backend.get_path(zone.assay)
+        assay_path = self.irods_backend.get_path(zone.assay)
         zone_path = self.irods_backend.get_path(zone)
         chk_suffix = self.irods_backend.get_checksum_file_suffix()
         admin_name = self.irods.username
@@ -111,7 +122,7 @@ class Flow(BaseLinearFlow):
         # Convert paths to collections inside sample collection
         zone_path_len = len(zone_path.split('/'))
         sample_colls = [
-            iRODSPath(sample_path, *p.split('/')[zone_path_len:])
+            iRODSPath(assay_path, *p.split('/')[zone_path_len:])
             for p in zone_object_colls
             if len(p.split('/')) > zone_path_len
         ]
@@ -339,7 +350,7 @@ class Flow(BaseLinearFlow):
                 inject={
                     'landing_zone': zone,
                     'src_root': zone_path,
-                    'dest_root': sample_path,
+                    'dest_root': assay_path,
                     'src_paths': zone_objects,
                     'access_name': IRODS_ACCESS_READ_OBJ,
                     'user_name': project_group,
@@ -350,11 +361,11 @@ class Flow(BaseLinearFlow):
         self.add_task(
             irods_tasks.SetAccessTask(
                 name=f'Remove user "{zone.user.username}" access from sample '
-                f'collection {sample_path}',
+                f'collection {assay_path}',
                 irods=self.irods,
                 inject={
                     'access_name': IRODS_ACCESS_NULL,
-                    'path': sample_path,
+                    'path': assay_path,
                     'user_name': zone.user.username,
                     'irods_backend': self.irods_backend,
                 },
@@ -364,11 +375,11 @@ class Flow(BaseLinearFlow):
             self.add_task(
                 irods_tasks.SetAccessTask(
                     name=f'Remove project owner group access from sample '
-                    f'collection {sample_path}',
+                    f'collection {assay_path}',
                     irods=self.irods,
                     inject={
                         'access_name': IRODS_ACCESS_NULL,
-                        'path': sample_path,
+                        'path': assay_path,
                         'user_name': owner_group,
                         'irods_backend': self.irods_backend,
                     },
@@ -378,13 +389,34 @@ class Flow(BaseLinearFlow):
         if script_user:
             self.add_task(
                 irods_tasks.SetAccessTask(
-                    name=f'Remove script user "{script_user}" access to sample '
-                    f'path zone',
+                    name=f'Remove script user "{script_user}" access from '
+                    f'sample path',
                     irods=self.irods,
                     inject={
                         'access_name': IRODS_ACCESS_NULL,
-                        'path': sample_path,
+                        'path': assay_path,
                         'user_name': script_user,
+                        'irods_backend': self.irods_backend,
+                    },
+                )
+            )
+        # Set public group access if public guest access is enabled (see #2567)
+        if self.project.get_public_access_name() == PROJECT_ROLE_GUEST:
+            # For some reason we need to set public group access to data objects
+            # explicitly here. Not sure if iRODS feature or bug?
+            obj_paths = [
+                iRODSPath(assay_path, p.split(zone_path + '/')[1])
+                for p in zone_objects
+            ]
+            self.add_task(
+                irods_tasks.BatchSetAccessTask(
+                    name='Batch set public group access to moved data objects',
+                    irods=self.irods,
+                    inject={
+                        'access_name': IRODS_ACCESS_READ_OBJ,
+                        'paths': obj_paths,
+                        'user_name': IRODS_GROUP_PUBLIC,
+                        'obj_target': True,
                         'irods_backend': self.irods_backend,
                     },
                 )
