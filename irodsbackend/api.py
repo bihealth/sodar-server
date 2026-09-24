@@ -65,7 +65,7 @@ IRODS_SHA256_PREFIX = 'sha2:'
 HASH_SCHEME_SHA256 = 'SHA256'
 TRASH_COLL_NAME = 'trash'
 PATH_PARENT_SUBSTRING = '/..'
-ERROR_OBJ_NAME = 'Invalid data object name pattern'
+ERROR_OBJ_NAME = 'No valid data object name patterns in name_like'
 ERROR_PATH_PARENT = 'Use of parent not allowed in path'
 ERROR_PATH_UNSET = 'Path is not set'
 TICKET_MODE_READ = 'read'
@@ -791,7 +791,8 @@ class IrodsAPI:
             if not isinstance(name_like, list):
                 name_like = [name_like]
             # Reject query with invalid chars in data object name pattern
-            if not all([re.fullmatch(DATA_OBJ_RE, n) for n in name_like]):
+            name_like = [n for n in name_like if re.fullmatch(DATA_OBJ_RE, n)]
+            if not name_like:  # No valid patterns left
                 raise ValueError(f'{ERROR_OBJ_NAME}: {name_like}')
             # Escape underscores for query
             name_like = [n.replace('_', '\\_').lower() for n in name_like]

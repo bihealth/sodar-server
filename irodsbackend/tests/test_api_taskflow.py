@@ -491,16 +491,35 @@ class TestIrodsAPIGetObjects(IrodsAPITaskflowTestBase):
         )
         self.assertEqual(len(res), 4)
 
-    def test_get_objects_name_multi_invalid(self):
-        """Test get_objects() with multiple terms and invalid term"""
+    def test_get_objects_name_multi_invalid_single(self):
+        """Test get_objects() with multiple terms and single invalid term"""
         self.make_irods_object(self.coll, TEST_FILE_NAME)
-        with self.assertRaises(ValueError):
-            # Only one term has problems
+        res = self.irods_backend.get_objects(
+            self.irods,
+            self.assay_path,
+            name_like=[TEST_FILE_NAME, f"{TEST_FILE_NAME}%')"],
+        )
+        self.assertEqual(len(res), 1)
+
+    def test_get_objects_name_multi_invalid_single_not_found(self):
+        """Test get_objects() with single invalid term and no results"""
+        self.make_irods_object(self.coll, TEST_FILE_NAME)
+        # Nothing should be found with TEST_FILE_NAME2, no exception either
+        res = self.irods_backend.get_objects(
+            self.irods,
+            self.assay_path,
+            name_like=[TEST_FILE_NAME2, f"{TEST_FILE_NAME}%')"],
+        )
+        self.assertEqual(len(res), 0)
+
+    def test_get_objects_name_multi_invalid_all(self):
+        """Test get_objects() with multiple terms and all terms invalid"""
+        self.make_irods_object(self.coll, TEST_FILE_NAME)
+        with self.assertRaises(ValueError):  # All invalid = exception
             self.irods_backend.get_objects(
                 self.irods,
                 self.assay_path,
-                name_like=[TEST_FILE_NAME, f"{TEST_FILE_NAME}%')"],
-                include_checksum=True,
+                name_like=[f"{TEST_FILE_NAME}%')", f"{TEST_FILE_NAME2}%')"],
             )
 
     def test_get_objects_long_query(self):
