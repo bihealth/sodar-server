@@ -198,7 +198,6 @@ if (appStore.sheetsAvailable && !appStore.gridsLoaded) {
           for (const ak of Object.keys(v.assays)) {
             if (ak === route.params.assayUuid) {
               appStore.currentStudyUuid = sk
-              console.log('Found')
               found = true
               break
             }

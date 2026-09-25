@@ -880,7 +880,7 @@ class TestLandingZoneMove(
 
     def test_move_public_viewer(self):
         """Test landing_zone_move with public viweer access project"""
-        # Set public access to guest for project
+        # Set public access to viewer for project
         self.project.set_public_access(self.role_viewer)
 
         self.assertEqual(self.zone.status, ZONE_STATUS_ACTIVE)

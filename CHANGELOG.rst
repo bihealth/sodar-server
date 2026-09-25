@@ -5,14 +5,14 @@ Changelog for the SODAR project. Loosely follows the
 `Keep a Changelog <http://keepachangelog.com/en/1.0.0/>`_ guidelines.
 
 
-Unreleased
-==========
+v1.3.3 (2026-09-25)
+===================
 
 Fixed
 -----
 
 - **Irodsbackend**
-    - ``_make_object_query()`` case sensitive ``data_name`` handling (#2560)
+    - Case sensitive ``data_name`` comparison in data object queries (#2560)
     - Missing input validations in data object queries (#2564, #2566)
 - **Samplesheets**
     - iRODS file search fails with upper case search terms (#2560)

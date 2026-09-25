@@ -282,8 +282,8 @@ class IrodsAPI:
             for i, n in enumerate(name_like):
                 if i > 0:
                     sql += ' OR '
-                # NOTE: Using LOWER() performs better than ILIKE
                 # NOTE: name_like is validated in caller
+                # NOTE: Using LOWER() performs better than ILIKE
                 sql += f"LOWER(data_name) LIKE '%{n.lower()}%'"
             sql += ')'
         if limit:
