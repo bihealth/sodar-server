@@ -946,7 +946,7 @@ class TestGetCategoryStats(SamplesheetsPluginTaskflowTestBase):
 class TestSearch(SamplesheetsPluginTaskflowTestBase):
     """Tests for ProjectAppPlugin.search()"""
 
-    def _assert_file_row_contents(self, row, name, project, user, assay):
+    def _assert_file_row(self, row, name, project, user, assay):
         project_url = reverse(
             'projectroles:detail',
             kwargs={'project': project.sodar_uuid},
@@ -966,8 +966,8 @@ class TestSearch(SamplesheetsPluginTaskflowTestBase):
         self._set_up_investigation()
         self.assay_path = self.irods_backend.get_path(self.assay)
         self.subcoll_path = iRODSPath(self.assay_path, 'subcoll')
-        assay_coll = self.irods.collections.create(self.subcoll_path)
-        self.irods_assay_obj = self.make_irods_object(assay_coll, TEST_OBJ_NAME)
+        self.assay_coll = self.irods.collections.create(self.subcoll_path)
+        self.irods_obj = self.make_irods_object(self.assay_coll, TEST_OBJ_NAME)
         self.user2 = self.make_user('user2')
         self.project2, _ = self.make_project_taskflow(
             title='TestProject2',
@@ -989,7 +989,7 @@ class TestSearch(SamplesheetsPluginTaskflowTestBase):
         )
         self.irods.collections.create(self.misc_path2)
         misc_coll2 = self.irods.collections.get(self.misc_path2)
-        self.irods_misc_obj2 = self.make_irods_object(misc_coll2, TEST_OBJ_NAME)
+        self.irods_obj2 = self.make_irods_object(misc_coll2, TEST_OBJ_NAME)
 
     def test_search_simple(self):
         """Test search() with simple term"""
@@ -1014,18 +1014,18 @@ class TestSearch(SamplesheetsPluginTaskflowTestBase):
         self.assertEqual(len(ret[0].rows), 0)
         self.assertEqual(len(ret[1].rows), 2)
         if str(self.project.sodar_uuid) in ret[1].rows[0][1].value:
-            first_row, second_row = ret[1].rows[0], ret[1].rows[1]
+            row, row2 = ret[1].rows[0], ret[1].rows[1]
         else:
-            first_row, second_row = ret[1].rows[1], ret[1].rows[0]
-        self._assert_file_row_contents(
-            first_row,
+            row, row2 = ret[1].rows[1], ret[1].rows[0]
+        self._assert_file_row(
+            row,
             TEST_OBJ_NAME,
             self.project,
             self.user,
             assay=self.assay,
         )
-        self._assert_file_row_contents(
-            second_row,
+        self._assert_file_row(
+            row2,
             TEST_OBJ_NAME,
             self.project2,
             self.user,
@@ -1067,18 +1067,18 @@ class TestSearch(SamplesheetsPluginTaskflowTestBase):
         self.assertEqual(ret[0].rows[1][0].value, '0815')
         self.assertEqual(len(ret[1].rows), 2)
         if str(self.project.sodar_uuid) in ret[1].rows[0][1].value:
-            first_row, second_row = ret[1].rows[0], ret[1].rows[1]
+            row, row2 = ret[1].rows[0], ret[1].rows[1]
         else:
-            first_row, second_row = ret[1].rows[1], ret[1].rows[0]
-        self._assert_file_row_contents(
-            first_row,
+            row, row2 = ret[1].rows[1], ret[1].rows[0]
+        self._assert_file_row(
+            row,
             TEST_OBJ_NAME,
             self.project,
             self.user,
             assay=self.assay,
         )
-        self._assert_file_row_contents(
-            second_row,
+        self._assert_file_row(
+            row2,
             TEST_OBJ_NAME,
             self.project2,
             self.user2,
@@ -1093,7 +1093,7 @@ class TestSearch(SamplesheetsPluginTaskflowTestBase):
             Project.objects.filter(title=self.project2.title),
         )
         self.assertEqual(len(ret[1].rows), 1)
-        self._assert_file_row_contents(
+        self._assert_file_row(
             ret[1].rows[0],
             TEST_OBJ_NAME,
             self.project2,
@@ -1150,3 +1150,18 @@ class TestSearch(SamplesheetsPluginTaskflowTestBase):
         self.assertEqual(len(ret), 2)
         self.assertEqual(len(ret[0].rows), 0)
         self.assertEqual(len(ret[1].rows), 0)
+
+    def test_search_case(self):
+        """Test search() with variable cases in file names"""
+        cat_obj = self.make_irods_object(self.assay_coll, TEST_OBJ_NAME.upper())
+        ret = self.plugin.search(
+            [TEST_OBJ_NAME],
+            self.user,
+            Project.objects.all(),
+        )
+        self.assertEqual(len(ret), 2)
+        self.assertEqual(ret[1].category, 'files')
+        self.assertEqual(len(ret[1].rows), 3)
+        res_urls = [r[0].value_url for r in ret[1].rows]
+        for obj in [self.irods_obj, self.irods_obj2, cat_obj]:
+            self.assertIn(settings.IRODS_WEBDAV_URL + obj.path, res_urls)

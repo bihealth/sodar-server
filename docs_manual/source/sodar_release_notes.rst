@@ -8,6 +8,19 @@ list of changes in current and previous releases, see the
 :ref:`full changelog<sodar_changelog>`.
 
 
+v1.3.3 (2026-09-25)
+===================
+
+Release for minor updates, maintenance and bug fixes.
+
+- Fix iRODS file search with upper case file names
+- Fix iRODS public guest access for data objects after landing zone move
+- Fix vue3app initial routing from assay links
+- Fix vue3app study tab status with study and assay links
+- Fix vue3app legacy assay URL support
+- Fix missing input validations in iRODS data object queries
+
+
 v1.3.2 (2026-09-17)
 ===================
 

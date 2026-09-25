@@ -40,6 +40,7 @@ import {
   type StudyEditConfig,
   type StudyEditContext
 } from '@/types.ts'
+import { VIEW_STUDY } from '@/constants.ts'
 
 // External Data ---------------------------------------------------------------
 
@@ -146,6 +147,7 @@ function getStudy (studyUuid: string, editMode: boolean) {
     .then(data => data.json())
     .then(data => {
       buildStudy(data)
+      appStore.viewActive = VIEW_STUDY
       appStore.gridsBusy = false
       appStore.gridsLoaded = true
       scrollToCurrentTable()
@@ -189,6 +191,20 @@ if (appStore.sheetsAvailable && !appStore.gridsLoaded) {
 } else {
   watch(() => appStore.sodarContext, (newContext) => {
     if (newContext !== null && appStore.sheetsAvailable) {
+      // HACK for legacy assay URLs: set current study UUID based on assay
+      if (!('studyUuid' in route.params) && 'assayUuid' in route.params) {
+        let found = false
+        for (const [sk, v] of Object.entries(newContext.studies)) {
+          for (const ak of Object.keys(v.assays)) {
+            if (ak === route.params.assayUuid) {
+              appStore.currentStudyUuid = sk
+              found = true
+              break
+            }
+          }
+          if (found) break
+        }
+      }
       getStudy(appStore.currentStudyUuid, appStore.editMode)
     }
   })

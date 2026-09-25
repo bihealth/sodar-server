@@ -430,8 +430,55 @@ class TestIrodsAPIGetObjects(IrodsAPITaskflowTestBase):
         self.assertEqual(res[1]['name'], TEST_FILE_NAME + '.md5')
         self.assertEqual(res[2]['name'], TEST_FILE_NAME + '.sha256')
 
-    def test_get_objects_multi(self):
-        """Test get_objects() with multiple search terms"""
+    def test_get_objects_name(self):
+        """Test get_objects() with name"""
+        data_obj = self.make_irods_object(self.coll, f'a_{TEST_FILE_NAME}')
+        self.make_checksum_object(data_obj)
+        data_obj2 = self.make_irods_object(self.coll, f'b_{TEST_FILE_NAME}')
+        self.make_checksum_object(data_obj2)
+        res = self.irods_backend.get_objects(
+            self.irods,
+            self.assay_path,
+            name_like=f'a_{TEST_FILE_NAME}',
+            include_checksum=True,
+        )
+        self.assertEqual(len(res), 2)
+        self.assertEqual(res[0]['name'], f'a_{TEST_FILE_NAME}')
+        self.assertEqual(res[1]['name'], f'a_{TEST_FILE_NAME}.md5')
+
+    def test_get_objects_name_case(self):
+        """Test get_objects() with name and different case in file name"""
+        data_obj = self.make_irods_object(
+            self.coll, f'a_{TEST_FILE_NAME}'.upper()
+        )
+        self.make_checksum_object(data_obj)
+        data_obj2 = self.make_irods_object(self.coll, f'a_{TEST_FILE_NAME}')
+        self.make_checksum_object(data_obj2)
+        res = self.irods_backend.get_objects(
+            self.irods,
+            self.assay_path,
+            name_like=f'a_{TEST_FILE_NAME}',
+            include_checksum=True,
+        )
+        self.assertEqual(len(res), 4)
+        self.assertEqual(res[0]['name'], f'a_{TEST_FILE_NAME}'.upper())
+        self.assertEqual(res[1]['name'], f'a_{TEST_FILE_NAME}')
+        self.assertEqual(res[2]['name'], f'A_{TEST_FILE_NAME.upper()}.md5')
+        self.assertEqual(res[3]['name'], f'a_{TEST_FILE_NAME}.md5')
+
+    def test_get_objects_name_invalid(self):
+        """Test get_objects() with name and invalid string"""
+        self.make_irods_object(self.coll, f'a_{TEST_FILE_NAME}')
+        with self.assertRaises(ValueError):
+            self.irods_backend.get_objects(
+                self.irods,
+                self.assay_path,
+                name_like=f"a_{TEST_FILE_NAME}%'); DROP TABLES;",
+                include_checksum=True,
+            )
+
+    def test_get_objects_name_multi(self):
+        """Test get_objects() with multiple name search terms"""
         data_obj = self.make_irods_object(self.coll, TEST_FILE_NAME)
         self.make_checksum_object(data_obj)
         data_obj = self.make_irods_object(self.coll, TEST_FILE_NAME2)
@@ -443,6 +490,37 @@ class TestIrodsAPIGetObjects(IrodsAPITaskflowTestBase):
             include_checksum=True,
         )
         self.assertEqual(len(res), 4)
+
+    def test_get_objects_name_multi_invalid_single(self):
+        """Test get_objects() with multiple terms and single invalid term"""
+        self.make_irods_object(self.coll, TEST_FILE_NAME)
+        res = self.irods_backend.get_objects(
+            self.irods,
+            self.assay_path,
+            name_like=[TEST_FILE_NAME, f"{TEST_FILE_NAME}%')"],
+        )
+        self.assertEqual(len(res), 1)
+
+    def test_get_objects_name_multi_invalid_single_not_found(self):
+        """Test get_objects() with single invalid term and no results"""
+        self.make_irods_object(self.coll, TEST_FILE_NAME)
+        # Nothing should be found with TEST_FILE_NAME2, no exception either
+        res = self.irods_backend.get_objects(
+            self.irods,
+            self.assay_path,
+            name_like=[TEST_FILE_NAME2, f"{TEST_FILE_NAME}%')"],
+        )
+        self.assertEqual(len(res), 0)
+
+    def test_get_objects_name_multi_invalid_all(self):
+        """Test get_objects() with multiple terms and all terms invalid"""
+        self.make_irods_object(self.coll, TEST_FILE_NAME)
+        with self.assertRaises(ValueError):  # All invalid = exception
+            self.irods_backend.get_objects(
+                self.irods,
+                self.assay_path,
+                name_like=[f"{TEST_FILE_NAME}%')", f"{TEST_FILE_NAME2}%')"],
+            )
 
     def test_get_objects_long_query(self):
         """Test get_objects() with a long query"""

@@ -5,6 +5,24 @@ Changelog for the SODAR project. Loosely follows the
 `Keep a Changelog <http://keepachangelog.com/en/1.0.0/>`_ guidelines.
 
 
+v1.3.3 (2026-09-25)
+===================
+
+Fixed
+-----
+
+- **Irodsbackend**
+    - Case sensitive ``data_name`` comparison in data object queries (#2560)
+    - Missing input validations in data object queries (#2564, #2566)
+- **Samplesheets**
+    - iRODS file search fails with upper case search terms (#2560)
+    - Vue3app initial routing fails with ``Assay.get_url()`` (#2559, #2565)
+    - Vue3app study tab inactive after study or assay URL init (#2561)
+    - Vue3app initialization fails with legacy assay URLs (#2563)
+- **Taskflowbackend**
+    - Missing data object public guest access after landing zone move (#2567)
+
+
 v1.3.2 (2026-09-17)
 ===================
 
