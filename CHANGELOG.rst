@@ -24,6 +24,12 @@ Changed
     - Upgrade samplesheets REST API version to v1.3 (#2320)
     - Upgrade vue3app dependencies (#2578)
 
+Fixed
+-----
+
+- **Samplesheets**
+    - Vue3app ``OntologyEditModal`` ``editIdx`` variable reactivity (#2584)
+
 Removed
 -------
 

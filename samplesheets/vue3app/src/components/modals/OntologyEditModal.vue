@@ -51,6 +51,7 @@ const editStore = useEditStore()
 const cellData = ref<OntologyTermCellData | null>(null)
 const editConfig = ref<StudyEditConfigNodeField | null>(null)
 const editDataValid = ref<boolean>(true)
+const editIdx = ref<number | null>(null)
 const insertDataValid = ref<boolean>(true)
 const insertValue = ref<EditOntologyRef>({
   name: '', ontology_name: '', accession: ''
@@ -72,7 +73,6 @@ const updated = ref<boolean>(false)
 // Internal Vars ---------------------------------------------------------------
 
 let allowLimit: boolean = false
-let editIdx: number | null = null
 let editTermVal: string = '' // Stored as string for comparison
 let params: GridCellEditorParams
 let prevSearchInput: string = ''
@@ -117,11 +117,11 @@ function copyValue () {
 }
 
 function enableDelete (idx: number): boolean {
-  return (!termRefresh && (editIdx === null || idx === editIdx))
+  return (!termRefresh && (editIdx.value === null || idx === editIdx.value))
 }
 
 function enableEdit (): boolean {
-  return !termRefresh && editIdx === null
+  return !termRefresh && editIdx.value === null
 }
 
 function enableEditSave (idx: number): boolean {
@@ -151,7 +151,7 @@ function enableInsert (): boolean {
 }
 
 function enableInsertInputs (): boolean {
-  return editIdx === null
+  return editIdx.value === null
 }
 
 function enableInsertSave (): boolean {
@@ -180,16 +180,16 @@ function enableMove (idx: number, up: boolean): boolean {
   const valueLen = cellData.value?.value.length || 0
   return (
     !termRefresh &&
-    editIdx === null &&
+    editIdx.value === null &&
     valueLen > 1 && ((idx > 0 && up) || (idx !== valueLen - 1 && !up)))
 }
 
 function enableSearch (): boolean {
-  return editIdx === null && !queryActive.value
+  return editIdx.value === null && !queryActive.value
 }
 
 function enableUpdate (): boolean {
-  return editIdx === null && updated.value
+  return editIdx.value === null && updated.value
 }
 
 function getLimitLabel (): string {
@@ -318,18 +318,18 @@ function onTermDeleteClick (idx: number) {
   cellData.value?.value.splice(idx, 1)
   updated.value = true
   editDataValid.value = true
-  editIdx = null
+  editIdx.value = null
   editTermVal = ''
 }
 
 function onTermEditClick (idx: number) {
-  if (editIdx === null) {
+  if (editIdx.value === null) {
     editTermVal = JSON.stringify(cellData.value?.value[idx])
     cellData.value!.value[idx]!.editing = true
-    editIdx = idx
+    editIdx.value = idx
   } else {
     cellData.value!.value[idx]!.editing = false
-    editIdx = null
+    editIdx.value = null
     // Cleanup data (NOTE: trim() should already happen in field)
     cellData.value!.value[idx]!.ontology_name =
       cellData.value!.value[idx]!.ontology_name!.trim().toUpperCase()
@@ -399,7 +399,7 @@ function resetModalState () {
   sodarOntologies.value = editStore.editContext?.sodar_ontologies || {}
   termOptions.value = []
   updated.value = false
-  editIdx = null
+  editIdx.value = null
   prevSearchInput = ''
   termRefresh = false
   resetInsertValue() // Clears insertValue
