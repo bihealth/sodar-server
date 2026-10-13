@@ -10,15 +10,15 @@ define USAGE=
 @echo -e "\tmake format-check                           -- check Python code formatting"
 @echo -e "\tmake js-beautify arg=<path>                 -- run js-beautify on JQuery file(s)"
 @echo -e "\tmake lint                                   -- lint Python code"
-@echo -e "\tmake samplesheets_vue                       -- start samplesheets Vue2 app for development"
-@echo -e "\tmake samplesheets_vue3                      -- start samplesheets Vue3 app for development"
+@echo -e "\tmake samplesheets_vue                       -- start samplesheets vue3app for development"
+@echo -e "\tmake samplesheets_vue3                      -- DEPRECATED alias for samplesheets_vue"
 @echo -e "\tmake serve [arg=sync]                       -- start Django server for development"
 @echo -e "\tmake spectacular                            -- generate OpenAPI schemas with drf-spectacular"
 @echo -e "\tmake sync_taskflow                          -- sync taskflow"
 @echo -e "\tmake test [arg=<test_object>]               -- run django tests"
 @echo -e "\tmake test_coverage                          -- run django tests and provide coverage html report"
-@echo -e "\tmake test_samplesheets_vue [arg=<target>]   -- run samplesheets Vue2 app tests"
-@echo -e "\tmake test_samplesheets_vue3 [arg=<target>]  -- run samplesheets Vue3 app tests"
+@echo -e "\tmake test_samplesheets_vue [arg=<target>]   -- run samplesheets vue3app tests"
+@echo -e "\tmake test_samplesheets_vue3 [arg=<target>]  -- DEPRECATED alias for test_samplesheets_vue"
 @echo -e
 endef
 
@@ -64,11 +64,12 @@ lint:
 
 .PHONY: samplesheets_vue
 samplesheets_vue:
-	npm run --prefix samplesheets/vueapp serve
+	npm run --prefix samplesheets/vue3app dev
 
 
 .PHONY: samplesheets_vue3
 samplesheets_vue3:
+	$(warning DEPRECATED: use make samplesheets_vue instead)
 	npm run --prefix samplesheets/vue3app dev
 
 
@@ -105,11 +106,12 @@ test_coverage: collectstatic
 
 .PHONY: test_samplesheets_vue
 test_samplesheets_vue:
-	npm run --prefix samplesheets/vueapp test:unit $(arg)
+	npm run --prefix samplesheets/vue3app test:unit $(arg)
 
 
 .PHONY: test_samplesheets_vue3
 test_samplesheets_vue3:
+	$(warning DEPRECATED: use make test_samplesheets_vue instead)
 	npm run --prefix samplesheets/vue3app test:unit $(arg)
 
 

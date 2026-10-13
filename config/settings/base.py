@@ -69,8 +69,7 @@ THIRD_PARTY_APPS = [
     'dal_select2',
     'dj_iconify.apps.DjIconifyConfig',  # Iconify for SVG icons
     'drf_spectacular',  # OpenAPI schema generation
-    'webpack_loader',  # For Vue2 app webpack integration
-    'django_vite',  # For Vue3 app vite integration
+    'django_vite',  # For vue3app vite integration
     # SODAR Core apps
     # Project apps
     'projectroles.apps.ProjectrolesConfig',
@@ -238,13 +237,6 @@ STATICFILES_FINDERS = [
 ]
 # Iconify SVG icons
 ICONIFY_JSON_ROOT = os.path.join(STATIC_ROOT, 'iconify')
-# Vue2 app Webpack loading
-WEBPACK_LOADER = {
-    'SAMPLESHEETS': {
-        # 'BUNDLE_DIR_NAME': 'samplesheets-vue/',
-        'STATS_FILE': ROOT_DIR('samplesheets/vueapp/webpack-stats.json'),
-    }
-}
 # Vue3 app Vite setup
 DJANGO_VITE = {
     'default': {

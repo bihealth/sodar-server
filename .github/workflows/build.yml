@@ -75,10 +75,6 @@ jobs:
         uses: actions/setup-node@v6
         with:
           node-version: 24.x
-      - name: Build and run Vue2 app
-        run: |
-          npm ci --prefix samplesheets/vueapp
-          nohup npm run -prefix samplesheets/vueapp serve &
       - name: Build and run Vue3 app
         run: |
           npm ci --prefix samplesheets/vue3app
@@ -97,11 +93,8 @@ jobs:
         working-directory: ./docs_manual
         run: make html
         if: ${{ matrix.python-version == '3.13' }}
-      - name: Run Vue2 app tests
-        run: make test_samplesheets_vue
-        if: ${{ matrix.python-version == '3.13' }}
       - name: Run Vue3 app tests
-        run: make test_samplesheets_vue3
+        run: make test_samplesheets_vue
         if: ${{ matrix.python-version == '3.13' }}
       - name: Run Django tests
         run: |

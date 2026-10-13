@@ -239,16 +239,6 @@ SHEETS_APP_SETTINGS = [
         'comma-separated list.',
         user_modifiable=True,
     ),
-    PluginAppSettingDef(
-        name='use_vue3_app',
-        scope=APP_SETTING_SCOPE_USER,
-        type=APP_SETTING_TYPE_BOOLEAN,
-        default=False,
-        label='Enable Sample Sheets Vue3 app',
-        description='Enable the new Vue3 app for sample sheet browsing and '
-        'editing.',
-        user_modifiable=True,
-    ),
 ]
 # Add remote sample sheet sync settings only if sync is enabled
 if settings.SHEETS_SYNC_ENABLE:
@@ -434,7 +424,6 @@ class ProjectAppPlugin(
             item_types = [kwargs['type'].upper()]
         else:
             item_types = ['SOURCE', 'SAMPLE']
-        use_vue3 = app_settings.get(APP_NAME, 'use_vue3_app', user=user)
         materials = GenericMaterial.objects.find(
             search_terms, projects, kwargs, item_types=item_types
         )
@@ -474,11 +463,7 @@ class ProjectAppPlugin(
                     '</a></div>'
                     for assay in assays
                 )
-            if use_vue3:
-                url = f'{study_url}?filter={m.name}'
-            else:  # TODO: Remove this once legacy vueapp is removed (#2393)
-                url = f'{study_url}/filter/{m.name}'
-
+            url = f'{study_url}?filter={m.name}'
             ret.append(
                 [
                     PluginSearchResultCell(value=m.name, value_url=url),  # Name

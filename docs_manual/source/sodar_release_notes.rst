@@ -15,6 +15,7 @@ Major feature release.
 
 - Add cache update control for iRODS data request REST API accepting
 - :ref:`Upgrade Sample Sheets REST API version to v1.3 <api_samplesheets_version_1_3>`
+- Remove samplesheets legacy Vue2 app
 
 REST API Updates
 ----------------
@@ -73,7 +74,7 @@ v1.3.0 (2026-08-21)
 
 Major feature release for samplesheets Vue3 app, SODAR Core v1.4 upgrade, etc.
 
-- :ref:`Add samplesheets Vue3 app <app_samplesheets_vue3>`
+- Add samplesheets Vue3 app
 - :ref:`Add django-axes support for login security <admin_settings_core>`
 - :ref:`Add fixirodstickets management command <admin_commands_sodar>`
 - Add Python v3.12 and v3.13 support

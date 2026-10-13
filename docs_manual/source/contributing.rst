@@ -104,15 +104,14 @@ Ready to contribute code to SODAR? Here are the steps to get started.
 
 5. When you're done making changes, make sure to apply proper formatting using
    Ruff with ``make format``. Next, check that your changes pass linting with
-   ``make lint``. Finally, run the tests. It is strongly recommended to use the
+   ``make check``. Finally, run the tests. It is strongly recommended to use the
    relevant ``Makefile`` targets to ensure the correct configurations are
    used. ::
 
     $ make format
-    $ make lint
+    $ make check
     $ make test
     $ make test_samplesheets_vue
-    $ make test_samplesheets_vue3
 
 6. Once the checks and tests pass, commit your changes and push your branch to
    GitHub. ::

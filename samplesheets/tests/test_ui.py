@@ -55,7 +55,7 @@ plugin_api = PluginAPI()
 # Local constants
 APP_NAME = 'samplesheets'
 SHEET_PATH = SHEET_DIR + 'i_small.zip'
-DEFAULT_WAIT_ID = 'sodar-ss-vue-content'
+DEFAULT_WAIT_ID = 'sodar-ss-vue-study-view-container'
 IRODS_REQUEST_PATH = '/some/path/to/a/file'
 
 with open(CONFIG_PATH_DEFAULT) as fp:
@@ -225,33 +225,19 @@ class TestProjectSheetsView(IrodsDataRequestMixin, SamplesheetsUITestBase):
             self.user_guest,
         ]
         for user in users:
-            self._login_and_render(user=user, wait_elem='sodar-ss-grid-study')
+            self._login_and_render(
+                user=user, wait_elem='sodar-ss-table-grid-study'
+            )
             # Ensure assay grid is found (we already know study is there)
             self.assertIsNotNone(
                 self.selenium.find_element(
                     By.ID,
-                    f'sodar-ss-grid-assay-{self.assay.sodar_uuid}',
+                    f'sodar-ss-table-grid-assay-{self.assay.sodar_uuid}',
                 )
             )
-            # Ensure error alert is not generated
+            # Ensure alert is not generated
             with self.assertRaises(NoSuchElementException):
-                self.selenium.find_element(By.ID, 'sodar-ss-alert-error')
-
-    def test_render_vue3(self):
-        """Test rendering view with Vue3 app"""
-        app_settings.set(APP_NAME, 'use_vue3_app', True, user=self.user_owner)
-        self._login_and_render(
-            user=self.user_owner, wait_elem='sodar-ss-table-grid-study'
-        )
-        self.assertIsNotNone(
-            self.selenium.find_element(
-                By.ID,
-                f'sodar-ss-table-grid-assay-{self.assay.sodar_uuid}',
-            )
-        )
-        with self.assertRaises(NoSuchElementException):
-            # Old ID from Vue2 app, should not be present
-            self.selenium.find_element(By.ID, 'sodar-ss-grid-study')
+                self.selenium.find_element(By.ID, 'sodar-ss-server-alert')
 
     def test_render_no_sheet(self):
         """Test rendering view with no sheet"""
@@ -268,7 +254,7 @@ class TestProjectSheetsView(IrodsDataRequestMixin, SamplesheetsUITestBase):
             self.user_guest,
         ]
         for user in users:
-            self._login_and_render(user)
+            self._login_and_render(user, wait_elem='sodar-ss-alert-empty')
             # Ensure alert is shown
             self.assertIsNotNone(
                 self.selenium.find_element(By.ID, 'sodar-ss-alert-empty')
@@ -277,7 +263,7 @@ class TestProjectSheetsView(IrodsDataRequestMixin, SamplesheetsUITestBase):
             with self.assertRaises(NoSuchElementException):
                 self.selenium.find_element(
                     By.ID,
-                    f'sodar-ss-grid-assay-{self.assay.sodar_uuid}',
+                    f'sodar-ss-table-grid-assay-{self.assay.sodar_uuid}',
                 )
 
     def test_render_alert(self):
@@ -307,7 +293,9 @@ class TestProjectSheetsView(IrodsDataRequestMixin, SamplesheetsUITestBase):
             self.user_guest,
         ]
         for user in users:
-            self._login_and_render(user=user, wait_elem='sodar-ss-grid-study')
+            self._login_and_render(
+                user=user, wait_elem='sodar-ss-table-grid-study'
+            )
             if user in [
                 self.superuser,
                 self.user_owner_cat,
@@ -316,25 +304,29 @@ class TestProjectSheetsView(IrodsDataRequestMixin, SamplesheetsUITestBase):
                 self.user_delegate,
             ]:
                 self.assertIsNotNone(
-                    self.selenium.find_element(By.CLASS_NAME, 'sodar-ss-alert')
-                )
-                self.assertEqual(
                     self.selenium.find_element(
-                        By.CLASS_NAME, 'sodar-ss-alert'
-                    ).get_attribute('innerHTML'),
+                        By.CLASS_NAME, 'sodar-ss-server-alert'
+                    )
+                )
+                self.assertIn(
                     ACTIVE_REQ_ALERT.format(
                         url=reverse(
                             'samplesheets:irods_requests',
                             kwargs={'project': self.project.sodar_uuid},
                         )
                     ),
+                    self.selenium.find_element(
+                        By.CLASS_NAME, 'sodar-ss-server-alert'
+                    ).get_attribute('innerHTML'),
                     msg=user.username,
                 )
             else:
                 with self.assertRaises(NoSuchElementException):
-                    self.selenium.find_element(By.CLASS_NAME, 'sodar-ss-alert')
+                    self.selenium.find_element(
+                        By.CLASS_NAME, 'sodar-ss-server-alert'
+                    )
 
-    # NOTE: For further vue app tests, see samplesheets/vueapp/tests
+    # NOTE: For vue3app unit tests, see samplesheets/vue3app/tests
 
 
 class TestSheetTemplateCreateView(SamplesheetsUITestBase):

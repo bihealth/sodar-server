@@ -224,7 +224,8 @@ onMounted(() => {
 </script>
 
 <template>
-  <div v-if="!appStore.gridsBusy && appStore.gridsLoaded">
+  <div v-if="!appStore.gridsBusy && appStore.gridsLoaded"
+       id="sodar-ss-vue-study-view-container">
     <!-- Study -->
     <SheetTableHeader
         :assay-mode="false"

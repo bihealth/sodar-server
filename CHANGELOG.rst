@@ -18,8 +18,19 @@ Added
 Changed
 -------
 
+- **General**
+    - Deprecate ``*_vue3`` commands in ``Makefile`` (#2393)
 - **Samplesheets**
     - Upgrade samplesheets REST API version to v1.3 (#2320)
+
+Removed
+-------
+
+- **General**
+    - ``django-webpack-loader`` dependency (#2393)
+- **Samplesheets**
+    - Legacy Vue2 app from ``vueapp`` (#2393)
+    - ``use_vue3_app`` app setting (#2393)
 
 
 v1.3.3 (2026-09-25)

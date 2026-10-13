@@ -63,8 +63,7 @@ Before submitting a pull request for review, ensure the following:
   (see :ref:`dev_guide_doc`).
 - ``make format`` has been run for the latest commit.
 - ``make lint`` produces no errors.
-- All tests pass with ``make test``, ``make test_samplesheets_vue`` and
-  ``make test_samplesheets_vue3``.
+- All tests pass with ``make test`` and ``make test_samplesheets_vue``
 
 Your pull request should work on the Python versions currently supported by the
 SODAR dev version. These will be checked by GitHub Actions CI upon pushing your
@@ -91,9 +90,9 @@ Testing Conventions
 For testing the Django site, see
 `SODAR Core testing conventions <https://sodar-core.readthedocs.io/en/dev/dev_core_guide.html#testing-conventions>`_.
 
-For testing the samplesheets Vue3 app, unit tests using Vitest and Vue Test
+For testing the samplesheets Vue app, unit tests using Vitest and Vue Test
 Utils are expected. Data from SODAR Ajax API views needs to be mocked. For
-general hints, see :ref:`dev_resource_vue3_test`.
+general hints, see :ref:`dev_resource_vue_test`.
 
 
 .. _dev_guide_doc:

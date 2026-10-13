@@ -85,21 +85,11 @@ recommended to develop views in the app as server-side Django views.
 Vue App
 -------
 
-A client side Vue.js sub-app is used within the Samplesheets app as the sample
-sheet viewer and editor. In this SODAR release, the Vue app is provided in two
-versions:
+A client side Vue3 sub-app is used within the Samplesheets app as the sample
+sheet viewer and editor. The app can be found under ``samplesheets/vue3app``.
 
-``samplesheets/vueapp``
-    Legacy Vue2 app, to be retired once the Vue3 app is finalized. Currently in
-    maintenance mode.
-``samplesheets/vue3app``
-    New Vue3 app under development. New features are developed into this
-    version of the app.
-
-The Vue apps are embedded into the Django app view ``ProjectSheetsView`` and the
-associated ``project_sheets.html`` template. In the Vue2 app, this is done using
-`django-webpack-loader <https://github.com/django-webpack/django-webpack-loader>`_.
-The new Vue3 app does the same with
+The Vue app is embedded into the Django app view ``ProjectSheetsView`` and the
+associated ``project_sheets.html`` template. The embedding is done using
 `django-vite <https://github.com/MrBin99/django-vite>`_.
 
 The app uses `ag-grid <https://www.ag-grid.com/vue-data-grid/>`_ for table
