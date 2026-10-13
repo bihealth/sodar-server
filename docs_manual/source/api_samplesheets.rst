@@ -83,6 +83,8 @@ v1.3
 
 - ``IrodsDataRequestAcceptAPIView``
     * Add ``update_cache`` field
+- ``SheetImportAPIView``
+    * Add ``update_cache`` field
 
 .. _api_samplesheets_version_1_2:
 

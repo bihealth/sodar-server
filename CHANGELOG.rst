@@ -14,6 +14,8 @@ Added
 - **Samplesheets**
     - ``IrodsDataRequestModifyMixin.accept_request()`` ``update_cache`` arg (#2320)
     - ``IrodsDataRequestAcceptAPIView`` ``update_cache`` field (#2320)
+    - ``SheetImportMixin.finalize_import()`` ``update_cache`` arg (#2581)
+    - ``SheetImportAPIView`` ``update_cache`` field (#2581)
 
 Changed
 -------

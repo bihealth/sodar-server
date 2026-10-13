@@ -43,6 +43,7 @@ from samplesheets.models import (
     IRODS_REQUEST_ACTION_DELETE,
 )
 from samplesheets.plugins import IRODS_STATS_CACHE_NAME
+from samplesheets.sheet_config import SheetConfigAPI
 from samplesheets.tests.test_io import SampleSheetIOMixin, SHEET_DIR
 from samplesheets.tests.test_models import (
     IrodsAccessTicketMixin,
@@ -70,6 +71,7 @@ from samplesheets.views_api import (
 
 
 app_settings = AppSettingAPI()
+conf_api = SheetConfigAPI()
 plugin_api = PluginAPI()
 
 
@@ -319,6 +321,62 @@ class TestIrodsCollsCreateAPIView(SampleSheetAPITaskflowTestBase):
         self.assertEqual(response.status_code, 503)
         self.investigation.refresh_from_db()
         self.assertEqual(self.investigation.irods_status, False)
+
+
+class TestSheetImportAPIView(SampleSheetAPITaskflowTestBase):
+    """Tests for SheetImportAPIView"""
+
+    def setUp(self):
+        super().setUp()
+        app_settings.set(
+            APP_NAME,
+            'sheet_config',
+            conf_api.get_sheet_config(self.investigation),
+            project=self.project,
+        )
+        self.make_irods_colls(self.investigation)
+
+        self.cache_backend = plugin_api.get_backend_api('sodar_cache')
+        self.cache_model = self.cache_backend.get_model()
+        self.cache_name = IRODS_STATS_CACHE_NAME.format(
+            uuid=self.project.sodar_uuid
+        )
+        self.url = reverse(
+            'samplesheets:api_import',
+            kwargs={'project': self.project.sodar_uuid},
+        )
+
+    @override_settings(SHEETS_ENABLE_CACHE=True)
+    def test_post_irods_cache(self):
+        """Test SheetImportAPIView POST with iRODS cache update"""
+        self.assertIsNone(
+            self.cache_model.objects.filter(name=self.cache_name).first()
+        )
+        with open(SHEET_PATH, 'rb') as file:
+            post_data = {'file': file}
+            response = self.request_knox(
+                self.url, method='POST', format='multipart', data=post_data
+            )
+        self.assertEqual(response.status_code, 200)
+        self.assertIsNotNone(
+            self.cache_model.objects.filter(name=self.cache_name).first()
+        )  # Cache should be updated
+
+    @override_settings(SHEETS_ENABLE_CACHE=True)
+    def test_post_irods_cache_disable(self):
+        """Test SheetImportAPIView POST with disabled iRODS cache update"""
+        self.assertIsNone(
+            self.cache_model.objects.filter(name=self.cache_name).first()
+        )
+        with open(SHEET_PATH, 'rb') as file:
+            post_data = {'file': file, 'update_cache': '0'}
+            response = self.request_knox(
+                self.url, method='POST', format='multipart', data=post_data
+            )
+        self.assertEqual(response.status_code, 200)
+        self.assertIsNone(
+            self.cache_model.objects.filter(name=self.cache_name).first()
+        )  # No cache item
 
 
 # NOTE: For TestIrodsAccessTicketListAPIView, see test_views_api
@@ -1192,7 +1250,7 @@ class TestIrodsDataRequestAcceptAPIView(
             self.cache_model.objects.filter(name=self.cache_name).first()
         )
         response = self.request_knox(
-            self.url, 'POST', data={'update_cache': False}
+            self.url, 'POST', data={'update_cache': '0'}
         )
         self.assertEqual(response.status_code, 200)
         self.irods_req.refresh_from_db()
@@ -1306,7 +1364,7 @@ class TestIrodsDataRequestAcceptAPIView(
         """Test POST with API v1.2 with update_cache parameter"""
         self.assertEqual(IrodsDataRequest.objects.count(), 1)
         response = self.request_knox(
-            self.url, 'POST', data={'update_cache': True}, version='1.2'
+            self.url, 'POST', data={'update_cache': '1'}, version='1.2'
         )
         self.assertEqual(response.status_code, 406)  # Request not acceptable
         self.irods_req.refresh_from_db()

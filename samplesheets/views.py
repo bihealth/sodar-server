@@ -426,17 +426,19 @@ class SheetImportMixin:
         investigation: Investigation,
         action: str,
         tl_event: Any = None,
-        isa_version: Optional[str] = None,
+        isa_version: Optional[ISATab] = None,
         ui_mode: bool = True,
+        update_cache: bool = True,
     ):
         """
         Handle finalization of sheet import.
 
-        :param investigation: Investigation object
+        :param investigation: Investigation being imported
         :param action: Import action, "import" or "replace" (string)
         :param tl_event: TimelineEvent or None
-        :param isa_version: String or None
-        :param ui_mode: Boolean, default=True
+        :param isa_version: ISATab version object (String or None)
+        :param ui_mode: Import from UI (boolean, default=True)
+        :param update_cache: Update project cache (boolean, default=True)
         """
         project = investigation.project
         success_msg = ''
@@ -570,6 +572,7 @@ class SheetImportMixin:
             action in ['replace', 'restore']
             and investigation.irods_status
             and settings.SHEETS_ENABLE_CACHE
+            and update_cache
         ):
             from samplesheets.tasks_celery import update_project_cache_task
 

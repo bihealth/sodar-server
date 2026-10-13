@@ -13,7 +13,7 @@ v1.4.0 (WIP)
 
 Major feature release.
 
-- Add cache update control for iRODS data request REST API accepting
+- Add cache update controls for samplesheets REST API views
 - :ref:`Upgrade Sample Sheets REST API version to v1.3 <api_samplesheets_version_1_3>`
 - Remove samplesheets legacy Vue2 app
 
@@ -24,6 +24,8 @@ REST API Updates
     * Current version: ``1.3`` (non-breaking changes)
     * Allowed versions: ``1.0``, ``1.1``, ``1.2``, ``1.3``
     * ``IrodsDataRequestAcceptAPIView``
+        + Add ``update_cache`` field
+    * ``SheetImportAPIView``
         + Add ``update_cache`` field
 
 

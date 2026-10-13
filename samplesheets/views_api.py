@@ -302,14 +302,26 @@ class SheetImportAPIView(
     The request should be in format of ``multipart/form-data``. Content type
     for each file must be provided.
 
+    If replacing the same investigation with multiple sequential requests, it is
+    recommended to call the view with `update_cache='0'` until the last API call
+    in the sequence, for optimal performance.
+
     **URL:** ``/samplesheets/api/import/{Project.sodar_uuid}``
 
     **Methods:** ``POST``
+
+    **Parameters:**
+
+    - ``update_cache``: Update project iRODS cache if SODAR cache is enabled ('0' or '1', optional, default=1)
 
     **Returns:**
 
     - ``detail``: Detail of project success (string)
     - ``sodar_warnings``: SODAR import issue warnings (list of srings, optional)
+
+    **Version Changes**:
+
+    - ``1.3``: Add ``update_cache`` field
     """
 
     http_method_names = ['post']
@@ -318,18 +330,27 @@ class SheetImportAPIView(
 
     def post(self, request, *args, **kwargs):
         """Handle POST request for submitting"""
+        version = parse_version(request.version)
+        if version < VERSION_1_3 and 'update_cache' in request.data:
+            raise NotAcceptable(
+                SHEETS_VERSION_ERR_MSG.format(
+                    feature='Field update_cache', min_version='1.3'
+                )
+            )
+        if len(request.FILES) == 0:
+            raise ParseError('No files provided')
+
+        sheet_io = SampleSheetIO()
         project = self.get_project()
         if app_settings.get(APP_NAME, 'sheet_sync_enable', project):
             raise ValidationError(
                 'Sheet synchronization enabled in project: import not allowed'
             )
-        sheet_io = SampleSheetIO()
         old_inv = Investigation.objects.filter(
             project=project, active=True
         ).first()
+        update_cache = bool(int(request.data.get('update_cache', '1')))
         zip_file = None
-        if len(request.FILES) == 0:
-            raise ParseError('No files provided')
 
         # Zip file handling
         if len(request.FILES) == 1:
@@ -398,6 +419,7 @@ class SheetImportAPIView(
             action=action,
             tl_event=tl_event,
             isa_version=isa_version,
+            update_cache=update_cache,
         )
         ret_data = {
             'detail': f'Sample sheets {action}d for project '
@@ -882,7 +904,7 @@ class IrodsDataRequestAcceptAPIView(
     locked by another operation.
 
     If accepting multiple requests in a batch, it is recommended to call the
-    view with `update_cache=False` until the last API call in the sequence for
+    view with `update_cache='0'` until the last API call in the sequence, for
     optimal performance.
 
     **URL:** ``/samplesheets/api/irods/request/accept/{IrodsDataRequest.sodar_uuid}``
@@ -891,7 +913,7 @@ class IrodsDataRequestAcceptAPIView(
 
     **Parameters:**
 
-    - ``update_cache``: Update project cache if SODAR cache is enabled (boolean, optional, default=True)
+    - ``update_cache``: Update project cache if SODAR cache is enabled ('0' or '1', optional, default='1')
 
     **Version Changes**:
 
@@ -919,7 +941,7 @@ class IrodsDataRequestAcceptAPIView(
         irods_request = IrodsDataRequest.objects.filter(
             sodar_uuid=self.kwargs.get('irodsdatarequest')
         ).first()
-        update_cache = request.data.get('update_cache', True)
+        update_cache = bool(int(request.data.get('update_cache', '1')))
 
         try:
             self.accept_request(

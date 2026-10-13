@@ -205,7 +205,7 @@ class TestSheetImportAPIView(
         )
 
     def test_post_zip(self):
-        """Test SheetImportAPIView with zip archive"""
+        """Test SheetImportAPIView POST with zip archive"""
         self.assertEqual(
             Investigation.objects.filter(project=self.project).count(), 0
         )
@@ -581,6 +581,50 @@ class TestSheetImportAPIView(
             Investigation.objects.filter(project=self.project).count(), 0
         )
         self.assertEqual(ISATab.objects.filter(project=self.project).count(), 0)
+
+    def test_post_v1_2(self):
+        """Test POST with API v1.2"""
+        self.assertEqual(
+            Investigation.objects.filter(project=self.project).count(), 0
+        )
+        self.assertEqual(ISATab.objects.filter(project=self.project).count(), 0)
+        with open(SHEET_PATH, 'rb') as file:
+            post_data = {'file': file}
+            response = self.request_knox(
+                self.url,
+                method='POST',
+                format='multipart',
+                data=post_data,
+                version='1.2',
+            )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            Investigation.objects.filter(project=self.project).count(), 1
+        )
+        self.assertEqual(ISATab.objects.filter(project=self.project).count(), 1)
+
+    def test_post_v1_2_update_cache(self):
+        """Test POST with API v1.2 and update_cache field"""
+        self.assertEqual(
+            Investigation.objects.filter(project=self.project).count(), 0
+        )
+        self.assertEqual(ISATab.objects.filter(project=self.project).count(), 0)
+        with open(SHEET_PATH, 'rb') as file:
+            post_data = {'file': file, 'update_cache': '1'}
+            response = self.request_knox(
+                self.url,
+                method='POST',
+                format='multipart',
+                data=post_data,
+                version='1.2',
+            )
+        self.assertEqual(response.status_code, 406)
+        self.assertEqual(
+            Investigation.objects.filter(project=self.project).count(), 0
+        )
+        self.assertEqual(ISATab.objects.filter(project=self.project).count(), 0)
+
+    # NOTE: For cache tests, see test_views_api_taskflow
 
 
 class TestSheetISAExportAPIView(SampleSheetAPIViewTestBase):
