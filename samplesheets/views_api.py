@@ -97,8 +97,8 @@ PROJECT_ROLE_GUEST = SODAR_CONSTANTS['PROJECT_ROLE_GUEST']
 APP_NAME = 'samplesheets'
 APP_NAME_PR = 'projectroles'
 SAMPLESHEETS_API_MEDIA_TYPE = 'application/vnd.bihealth.sodar.samplesheets+json'
-SAMPLESHEETS_API_ALLOWED_VERSIONS = ['1.0', '1.1', '1.2']
-SAMPLESHEETS_API_DEFAULT_VERSION = '1.2'
+SAMPLESHEETS_API_ALLOWED_VERSIONS = ['1.0', '1.1', '1.2', '1.3']
+SAMPLESHEETS_API_DEFAULT_VERSION = '1.3'
 CHECKSUM_RE = {
     IRODS_HASH_SCHEME_MD5: re.compile(r'^([a-fA-F\d]{32})$'),
     IRODS_HASH_SCHEME_SHA256: re.compile(r'^([a-fA-F\d]{64})$'),
@@ -111,15 +111,12 @@ FILE_EXISTS_RESTRICT_MSG = (
     'File exist query access restricted: user does not have guest access or '
     'above in any project (SHEETS_API_FILE_EXISTS_RESTRICT=True)'
 )
-FILE_LIST_PAGINATE_VERSION_MSG = 'Pagination not supported in API version 1.0'
-FILE_LIST_COLL_VERSION_MSG = (
-    'Collection listing not supported in API version <1.2'
-)
-HOST_VERSION_ERR_MSG = (
-    'Field allowed_hosts requires samplesheets API version 1.1 or above'
+SHEETS_VERSION_ERR_MSG = (
+    '{feature} requires samplesheets API version >={min_version}'
 )
 VERSION_1_1 = parse_version('1.1')
 VERSION_1_2 = parse_version('1.2')
+VERSION_1_3 = parse_version('1.3')
 
 
 # Base Classes and Mixins ------------------------------------------------------
@@ -533,7 +530,11 @@ class IrodsAccessTicketCreateAPIView(
         version = parse_version(self.request.version)
         if version < VERSION_1_1:
             if 'allowed_hosts' in request.data:
-                raise ValidationError(HOST_VERSION_ERR_MSG)
+                raise ValidationError(
+                    SHEETS_VERSION_ERR_MSG.format(
+                        feature='Field allowed_hosts', min_version='1.1'
+                    )
+                )
             default_hosts = app_settings.get(
                 APP_NAME, 'irods_ticket_hosts', project=self.get_project()
             )
@@ -603,7 +604,11 @@ class IrodsAccessTicketUpdateAPIView(
         version = parse_version(self.request.version)
         if version < VERSION_1_1:
             if 'allowed_hosts' in request.data:
-                raise ValidationError(HOST_VERSION_ERR_MSG)
+                raise ValidationError(
+                    SHEETS_VERSION_ERR_MSG.format(
+                        feature='Field allowed_hosts', min_version='1.1'
+                    )
+                )
             # Set current value for serializer
             obj = self.get_object()
             request.data['allowed_hosts'] = [
@@ -876,9 +881,21 @@ class IrodsDataRequestAcceptAPIView(
     Returns ``ServiceUnavailable`` (HTTP code 503) if the project is currently
     locked by another operation.
 
+    If accepting multiple requests in a batch, it is recommended to call the
+    view with `update_cache=False` until the last API call in the sequence for
+    optimal performance.
+
     **URL:** ``/samplesheets/api/irods/request/accept/{IrodsDataRequest.sodar_uuid}``
 
     **Methods:** ``POST``
+
+    **Parameters:**
+
+    - ``update_cache``: Update project cache if SODAR cache is enabled (boolean, optional, default=True)
+
+    **Version Changes**:
+
+    - ``1.3``: Add ``update_cache`` field
     """
 
     http_method_names = ['post']
@@ -887,6 +904,14 @@ class IrodsDataRequestAcceptAPIView(
 
     def post(self, request, *args, **kwargs):
         """POST request for accepting an iRODS data request"""
+        version = parse_version(request.version)
+        if version < VERSION_1_3 and 'update_cache' in request.data:
+            raise NotAcceptable(
+                SHEETS_VERSION_ERR_MSG.format(
+                    feature='Field update_cache', min_version='1.3'
+                )
+            )
+
         timeline = plugin_api.get_backend_api('timeline_backend')
         taskflow = plugin_api.get_backend_api('taskflow')
         app_alerts = plugin_api.get_backend_api('appalerts_backend')
@@ -894,6 +919,7 @@ class IrodsDataRequestAcceptAPIView(
         irods_request = IrodsDataRequest.objects.filter(
             sodar_uuid=self.kwargs.get('irodsdatarequest')
         ).first()
+        update_cache = request.data.get('update_cache', True)
 
         try:
             self.accept_request(
@@ -903,6 +929,7 @@ class IrodsDataRequestAcceptAPIView(
                 timeline=timeline,
                 taskflow=taskflow,
                 app_alerts=app_alerts,
+                update_cache=update_cache,
             )
         except Exception as ex:
             ex_msg = 'Accepting ' + IRODS_REQUEST_EX_MSG + ': '
@@ -1135,7 +1162,11 @@ class ProjectIrodsFileListAPIView(
         version = parse_version(request.version)
         page = request.GET.get('page')
         if page and version < VERSION_1_1:
-            raise NotAcceptable(FILE_LIST_PAGINATE_VERSION_MSG)
+            raise NotAcceptable(
+                SHEETS_VERSION_ERR_MSG.format(
+                    feature='Pagination', min_version='1.1'
+                )
+            )
         elif page:
             page = int(page)
 
@@ -1152,7 +1183,11 @@ class ProjectIrodsFileListAPIView(
         checksum = True if version >= VERSION_1_1 else False
         include_colls = request.GET.get('include_colls', False)
         if include_colls and version < VERSION_1_2:
-            raise NotAcceptable(FILE_LIST_COLL_VERSION_MSG)
+            raise NotAcceptable(
+                SHEETS_VERSION_ERR_MSG.format(
+                    feature='Field include_colls', min_version='1.2'
+                )
+            )
 
         try:
             with irods_backend.get_session() as irods:

@@ -1033,6 +1033,7 @@ class IrodsDataRequestModifyMixin:
         timeline: Any = None,
         taskflow: Any = None,
         app_alerts: Any = None,
+        update_cache: bool = True,
     ):
         """
         Accept an iRODS data request.
@@ -1043,6 +1044,7 @@ class IrodsDataRequestModifyMixin:
         :param timeline: TimelineAPI instance or None
         :param taskflow: TaskflowAPI instance or None
         :param app_alerts: AppalertsAPI instance or None
+        :param update_cache: Update project cache (boolean, default=True)
         :raise: FlowSubmitException if taskflow submission fails
         """
         tl_event = None
@@ -1103,7 +1105,7 @@ class IrodsDataRequestModifyMixin:
             raise ex
 
         # Update cache
-        if settings.SHEETS_ENABLE_CACHE:
+        if settings.SHEETS_ENABLE_CACHE and update_cache:
             from samplesheets.tasks_celery import update_project_cache_task
 
             update_project_cache_task.delay(

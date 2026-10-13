@@ -14,7 +14,7 @@ Media Type
 Current Version
     ``1.2``
 Accepted Versions
-    ``1.0``, ``1.1``, ``1.2``
+    ``1.0``, ``1.1``, ``1.2``, ``1.3``
 Header Example
     ``Accept: application/vnd.bihealth.sodar.samplesheets+json; version=x.y``
 
@@ -75,6 +75,14 @@ iRODS Data Requests
 
 Version Changes
 ===============
+
+.. _api_samplesheets_version_1_3:
+
+v1.3
+----
+
+- ``IrodsDataRequestAcceptAPIView``
+    * Add ``update_cache`` field
 
 .. _api_samplesheets_version_1_2:
 

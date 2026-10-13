@@ -42,6 +42,7 @@ from samplesheets.models import (
     IRODS_REQUEST_STATUS_REJECTED,
     IRODS_REQUEST_ACTION_DELETE,
 )
+from samplesheets.plugins import IRODS_STATS_CACHE_NAME
 from samplesheets.tests.test_io import SampleSheetIOMixin, SHEET_DIR
 from samplesheets.tests.test_models import (
     IrodsAccessTicketMixin,
@@ -442,7 +443,7 @@ class TestIrodsAccessTicketCreateAPIView(IrodsAccessTicketAPIViewTestBase):
         self.assertEqual(host_res, ['127.0.0.1', '192.168.0.1'])
 
     def test_post_hosts_v1_0(self):
-        """Test POST with allowed hosts and API version 1.0 (should fail)"""
+        """Test POST with allowed hosts and API v1.0 (should fail)"""
         self.post_data['allowed_hosts'] = ['127.0.0.1', '192.168.0.1']
         self.assertEqual(IrodsAccessTicket.objects.count(), 0)
         response = self.request_knox(
@@ -452,7 +453,7 @@ class TestIrodsAccessTicketCreateAPIView(IrodsAccessTicketAPIViewTestBase):
         self.assertEqual(IrodsAccessTicket.objects.count(), 0)
 
     def test_post_hosts_v1_0_default(self):
-        """Test POST with default allowed hosts and API version 1.0"""
+        """Test POST with default allowed hosts and API v1.0"""
         app_settings.set(
             APP_NAME,
             'irods_ticket_hosts',
@@ -675,7 +676,7 @@ class TestIrodsAccessTicketUpdateAPIView(IrodsAccessTicketAPIViewTestBase):
         self.assertEqual(host_res, ['127.0.0.1', '192.168.0.1', '2.22.231.13'])
 
     def test_put_v1_0(self):
-        """Test PUT with API version 1.0"""
+        """Test PUT with API v1.0"""
         put_data = {
             'path': self.coll.path,
             'label': LABEL_UPDATE,
@@ -696,7 +697,7 @@ class TestIrodsAccessTicketUpdateAPIView(IrodsAccessTicketAPIViewTestBase):
         self.assertEqual(host_res, ['127.0.0.1', '192.168.0.1'])
 
     def test_put_v1_0_hosts(self):
-        """Test PUT with API version 1.0 and hosts param (should fail)"""
+        """Test PUT with API v1.0 and hosts param (should fail)"""
         put_data = {
             'path': self.coll.path,
             'label': LABEL_UPDATE,
@@ -1142,6 +1143,11 @@ class TestIrodsDataRequestAcceptAPIView(
             description=IRODS_REQUEST_DESC,
             user=self.user_contributor,
         )
+        self.cache_backend = plugin_api.get_backend_api('sodar_cache')
+        self.cache_model = self.cache_backend.get_model()
+        self.cache_name = IRODS_STATS_CACHE_NAME.format(
+            uuid=self.project.sodar_uuid
+        )
         self.url = reverse(
             'samplesheets:api_irods_request_accept',
             kwargs={'irodsdatarequest': self.irods_req.sodar_uuid},
@@ -1161,6 +1167,40 @@ class TestIrodsDataRequestAcceptAPIView(
         self.assert_app_alert_count(ACCEPT_ALERT, 0, user=self.user_delegate)
         self.assert_app_alert_count(ACCEPT_ALERT, 1, user=self.user_contributor)
         self.assert_irods_obj(self.obj_path, False)
+
+    @override_settings(SHEETS_ENABLE_CACHE=True)
+    def test_post_cache(self):
+        """Test POST with cache enabled"""
+        self.assertEqual(IrodsDataRequest.objects.count(), 1)
+        self.assertIsNone(
+            self.cache_model.objects.filter(name=self.cache_name).first()
+        )
+        response = self.request_knox(self.url, 'POST')
+        self.assertEqual(response.status_code, 200)
+        self.irods_req.refresh_from_db()
+        self.assertEqual(self.irods_req.status, IRODS_REQUEST_STATUS_ACCEPTED)
+        self.assert_irods_obj(self.obj_path, False)
+        self.assertIsNotNone(
+            self.cache_model.objects.filter(name=self.cache_name).first()
+        )  # Cache should be updated
+
+    @override_settings(SHEETS_ENABLE_CACHE=True)
+    def test_post_cache_false(self):
+        """Test POST with cache enabled and update_cache=False"""
+        self.assertEqual(IrodsDataRequest.objects.count(), 1)
+        self.assertIsNone(
+            self.cache_model.objects.filter(name=self.cache_name).first()
+        )
+        response = self.request_knox(
+            self.url, 'POST', data={'update_cache': False}
+        )
+        self.assertEqual(response.status_code, 200)
+        self.irods_req.refresh_from_db()
+        self.assertEqual(self.irods_req.status, IRODS_REQUEST_STATUS_ACCEPTED)
+        self.assert_irods_obj(self.obj_path, False)
+        self.assertIsNone(
+            self.cache_model.objects.filter(name=self.cache_name).first()
+        )  # Cache item should not exist
 
     def test_post_no_request(self):
         """Test POST to accept non-existing request"""
@@ -1232,7 +1272,7 @@ class TestIrodsDataRequestAcceptAPIView(
         self.assert_app_alert_count(ACCEPT_ALERT, 0, user=self.user_contributor)
 
     def test_post_accepted(self):
-        """Test acceptining previously accepted request (should fail)"""
+        """Test acceptiing previously accepted request (should fail)"""
         self.assertEqual(self.irods_req.status, IRODS_REQUEST_STATUS_ACTIVE)
         response = self.request_knox(self.url, 'POST')
         self.assertEqual(response.status_code, 200)
@@ -1251,6 +1291,26 @@ class TestIrodsDataRequestAcceptAPIView(
         self.assertEqual(response.status_code, 400)
         self.irods_req.refresh_from_db()
         self.assertEqual(self.irods_req.status, IRODS_REQUEST_STATUS_REJECTED)
+        self.assert_irods_obj(self.obj_path, True)
+
+    def test_post_v1_2(self):
+        """Test POST with API v1.2"""
+        self.assertEqual(IrodsDataRequest.objects.count(), 1)
+        response = self.request_knox(self.url, 'POST', version='1.2')
+        self.assertEqual(response.status_code, 200)
+        self.irods_req.refresh_from_db()
+        self.assertEqual(self.irods_req.status, IRODS_REQUEST_STATUS_ACCEPTED)
+        self.assert_irods_obj(self.obj_path, False)
+
+    def test_post_v1_2_update_cache(self):
+        """Test POST with API v1.2 with update_cache parameter"""
+        self.assertEqual(IrodsDataRequest.objects.count(), 1)
+        response = self.request_knox(
+            self.url, 'POST', data={'update_cache': True}, version='1.2'
+        )
+        self.assertEqual(response.status_code, 406)  # Request not acceptable
+        self.irods_req.refresh_from_db()
+        self.assertEqual(self.irods_req.status, IRODS_REQUEST_STATUS_ACTIVE)
         self.assert_irods_obj(self.obj_path, True)
 
 
@@ -1620,7 +1680,7 @@ class TestProjectIrodsFileListAPIView(SampleSheetAPITaskflowTestBase):
         self.assertEqual(response.data['results'][0]['name'], 'test10.txt')
 
     def test_get_files_v1_0(self):
-        """Test GET with files and API version 1.0"""
+        """Test GET with files and API v1.0"""
         self.make_irods_colls(self.investigation)
         coll_path = self.irods_backend.get_sample_path(self.project)
         coll = self.irods.collections.get(coll_path)
@@ -1638,7 +1698,7 @@ class TestProjectIrodsFileListAPIView(SampleSheetAPITaskflowTestBase):
         self.assertEqual(response.data[0], expected)
 
     def test_get_include_colls_v1_1(self):
-        """Test GET with include_colls=True and API version 1.1"""
+        """Test GET with include_colls=True and API v1.1"""
         self.make_irods_colls(self.investigation)
         response = self.request_knox(
             self.url + '?include_colls=1', version='1.1'

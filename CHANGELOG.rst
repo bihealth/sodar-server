@@ -5,6 +5,23 @@ Changelog for the SODAR project. Loosely follows the
 `Keep a Changelog <http://keepachangelog.com/en/1.0.0/>`_ guidelines.
 
 
+Unreleased
+==========
+
+Added
+-----
+
+- **Samplesheets**
+    - ``IrodsDataRequestModifyMixin.accept_request()`` ``update_cache`` arg (#2320)
+    - ``IrodsDataRequestAcceptAPIView`` ``update_cache`` field (#2320)
+
+Changed
+-------
+
+- **Samplesheets**
+    - Upgrade samplesheets REST API version to v1.3 (#2320)
+
+
 v1.3.3 (2026-09-25)
 ===================
 
