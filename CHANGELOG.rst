@@ -22,6 +22,7 @@ Changed
     - Deprecate ``*_vue3`` commands in ``Makefile`` (#2393)
 - **Samplesheets**
     - Upgrade samplesheets REST API version to v1.3 (#2320)
+    - Upgrade vue3app dependencies (#2578)
 
 Removed
 -------
