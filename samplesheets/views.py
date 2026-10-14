@@ -2927,6 +2927,8 @@ class IrodsDataRequestAcceptBatchView(
             if not batch:
                 messages.error(self.request, NO_REQUEST_MSG)
                 return redirect(redirect_url)
+            bc = batch.count()
+            i = 0
 
             for obj in batch:
                 try:
@@ -2937,7 +2939,8 @@ class IrodsDataRequestAcceptBatchView(
                         timeline=timeline,
                         taskflow=taskflow,
                         app_alerts=app_alerts,
-                    )
+                        update_cache=True if i == bc - 1 else False,
+                    )  # Only update cache once at the end
                     messages.success(
                         self.request,
                         f'iRODS data request "{obj.get_display_name()}" '
@@ -2945,6 +2948,7 @@ class IrodsDataRequestAcceptBatchView(
                     )
                 except Exception as ex:
                     self.add_error_message(obj, ex)
+                i += 1
             return redirect(redirect_url)
 
         # Render the confirmation form if the form is not valid

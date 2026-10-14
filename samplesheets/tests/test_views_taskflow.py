@@ -52,6 +52,8 @@ from samplesheets.models import (
     IRODS_REQUEST_STATUS_ACCEPTED,
     IRODS_REQUEST_STATUS_REJECTED,
 )
+from samplesheets.plugins import IRODS_STATS_CACHE_NAME
+from samplesheets.tasks_celery import CACHE_UPDATE_EVENT
 from samplesheets.tests.test_io import SampleSheetIOMixin, SHEET_DIR
 from samplesheets.tests.test_models import (
     IrodsAccessTicketMixin,
@@ -99,6 +101,7 @@ IRODS_REQUEST_DESC_UPDATE = 'Updated'
 SHEET_SYNC_URL = 'https://sodar.instance/samplesheets/sync/' + DUMMY_UUID
 SHEET_SYNC_URL_INVALID = 'https://some.sodar/not-valid-url'
 SHEET_SYNC_TOKEN = 'dohdai4EZie0xooF'
+FIELD_REQUIRED_MSG = 'This field is required.'
 
 
 # Base Classes and Mixins ------------------------------------------------------
@@ -1851,8 +1854,7 @@ class TestIrodsDataRequestAcceptView(
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(
-            response.context['form'].errors['confirm'][0],
-            'This field is required.',
+            response.context['form'].errors['confirm'][0], FIELD_REQUIRED_MSG
         )
         self.assert_tl_event_count(EVENT_ACCEPT, 0)
         self.assert_app_alert_count(EVENT_CREATE, 1, user=self.user)
@@ -2205,6 +2207,11 @@ class TestIrodsDataRequestAcceptBatchView(
 
     def setUp(self):
         super().setUp()
+        self.cache_backend = plugin_api.get_backend_api('sodar_cache')
+        self.cache_model = self.cache_backend.get_model()
+        self.cache_name = IRODS_STATS_CACHE_NAME.format(
+            uuid=self.project.sodar_uuid
+        )
         self.url_create = reverse(
             'samplesheets:irods_request_create',
             kwargs={'project': self.project.sodar_uuid},
@@ -2291,10 +2298,7 @@ class TestIrodsDataRequestAcceptBatchView(
 
         with self.login(self.user_contributor):
             self.client.post(self.url_create, self.post_data)
-            self.client.post(
-                self.url_create,
-                self.post_data2,
-            )
+            self.client.post(self.url_create, self.post_data2)
 
         self.assertEqual(IrodsDataRequest.objects.count(), 2)
         self.assert_app_alert_count(EVENT_CREATE, 1, user=self.user)
@@ -2338,16 +2342,56 @@ class TestIrodsDataRequestAcceptBatchView(
         self.assert_irods_obj(self.obj_path, False)
         self.assert_irods_obj(self.obj_path2, False)
 
+    @override_settings(SHEETS_ENABLE_CACHE=True)
+    def test_post_cache(self):
+        """Test POST with SODAR cache enabled"""
+        self.assert_irods_obj(self.obj_path)
+        self.assert_irods_obj(self.obj_path2)
+        self.assertIsNone(
+            self.cache_model.objects.filter(name=self.cache_name).first()
+        )
+        self.assertEqual(
+            TimelineEvent.objects.filter(event_name=CACHE_UPDATE_EVENT).count(),
+            0,
+        )
+
+        with self.login(self.user_contributor):
+            self.client.post(self.url_create, self.post_data)
+            self.client.post(self.url_create, self.post_data2)
+        self.assertEqual(IrodsDataRequest.objects.count(), 2)
+
+        with self.login(self.user):
+            response = self.client.post(
+                self.url_accept,
+                {'irods_requests': self._get_request_uuids(), 'confirm': True},
+            )
+            self.assertRedirects(response, self.url_list)
+        obj = IrodsDataRequest.objects.first()
+        obj.refresh_from_db()
+        self.assertEqual(obj.status, IRODS_REQUEST_STATUS_ACCEPTED)
+        obj2 = IrodsDataRequest.objects.last()
+        obj2.refresh_from_db()
+        self.assertEqual(obj2.status, IRODS_REQUEST_STATUS_ACCEPTED)
+        self.assert_irods_obj(self.obj_path, False)
+        self.assert_irods_obj(self.obj_path2, False)
+
+        cache_obj = self.cache_model.objects.filter(
+            name=self.cache_name
+        ).first()
+        self.assertIsNotNone(cache_obj)  # Cache item should be created
+        # Only one cache event should be created
+        self.assertEqual(
+            TimelineEvent.objects.filter(event_name=CACHE_UPDATE_EVENT).count(),
+            1,
+        )
+
     def test_post_no_request(self):
         """Test POST with non-existing delete request"""
         self.assertEqual(IrodsDataRequest.objects.count(), 0)
         with self.login(self.user_owner_cat):
             response = self.client.post(
                 self.url_accept,
-                {
-                    'irods_requests': DUMMY_UUID + ',',
-                    'confirm': True,
-                },
+                {'irods_requests': DUMMY_UUID, 'confirm': True},
             )
         self.assertEqual(response.status_code, 302)
         self.assertEqual(
@@ -2374,15 +2418,11 @@ class TestIrodsDataRequestAcceptBatchView(
         with self.login(self.user):
             response = self.client.post(
                 self.url_accept,
-                {
-                    'irods_requests': self._get_request_uuids() + ',',
-                    'confirm': False,
-                },
+                {'irods_requests': self._get_request_uuids(), 'confirm': False},
             )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(
-            response.context['form'].errors['confirm'][0],
-            'This field is required.',
+            response.context['form'].errors['confirm'][0], FIELD_REQUIRED_MSG
         )
         self.assert_app_alert_count(EVENT_CREATE, 1, user=self.user)
         self.assert_app_alert_count(EVENT_CREATE, 1, user=self.user_delegate)
@@ -2394,6 +2434,7 @@ class TestIrodsDataRequestAcceptBatchView(
     @override_settings(REDIS_URL=INVALID_REDIS_URL)
     def test_post_lock_failure(self):
         """Test POST with project lock failure"""
+        # TODO: This is performing very slowly, fix? (see #2588)
         self.assert_irods_obj(self.obj_path)
         self.assert_irods_obj(self.obj_path2)
 
@@ -2411,10 +2452,7 @@ class TestIrodsDataRequestAcceptBatchView(
         with self.login(self.user):
             response = self.client.post(
                 self.url_accept,
-                {
-                    'irods_requests': self._get_request_uuids() + ',',
-                    'confirm': True,
-                },
+                {'irods_requests': self._get_request_uuids(), 'confirm': True},
             )
             self.assertRedirects(response, self.url_list)
         obj = IrodsDataRequest.objects.first()
