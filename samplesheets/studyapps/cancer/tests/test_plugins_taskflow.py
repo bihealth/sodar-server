@@ -13,7 +13,7 @@ from projectroles.plugins import PluginAPI
 # Taskflowbackend dependency
 from taskflowbackend.tests.base import TaskflowViewTestBase
 
-from samplesheets.models import ISA_META_STUDY_PLUGIN
+from samplesheets.constants import ISA_META_STUDY_PLUGIN
 from samplesheets.plugins import SampleSheetStudyPluginPoint
 from samplesheets.rendering import SampleSheetTableBuilder
 from samplesheets.studyapps.cancer.utils import get_library_file_path

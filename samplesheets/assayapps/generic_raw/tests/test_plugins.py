@@ -6,8 +6,7 @@ from irods.path import iRODSPath
 
 from samplesheets.assayapps.generic_raw.plugins import RAW_DATA_COLL
 from samplesheets.assayapps.tests.base import AssayPluginTestBase
-from samplesheets.models import ISA_META_ASSAY_PLUGIN
-
+from samplesheets.constants import ISA_META_ASSAY_PLUGIN
 
 # Local constants
 PLUGIN_NAME = 'samplesheets_assay_generic_raw'

@@ -7,3 +7,8 @@
 DEFAULT_EXTERNAL_LINK_LABELS = {
     'x-generic-remote': {'label': 'External ID'},
 }
+
+# ISA-Tab comment keys for SODAR-specific metadata and overrides
+ISA_META_ASSAY_DISPLAY_NAME = 'SODAR Assay Display Name'
+ISA_META_ASSAY_PLUGIN = 'SODAR Assay Plugin'
+ISA_META_STUDY_PLUGIN = 'SODAR Study Plugin'

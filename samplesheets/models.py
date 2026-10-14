@@ -21,6 +21,11 @@ from django.utils.timezone import localtime
 from projectroles.models import Project
 from projectroles.plugins import PluginAPI
 
+from samplesheets.constants import (
+    ISA_META_STUDY_PLUGIN,
+    ISA_META_ASSAY_PLUGIN,
+    ISA_META_ASSAY_DISPLAY_NAME,
+)
 from samplesheets.utils import (
     get_alt_names,
     get_comment,
@@ -81,12 +86,6 @@ IRODS_REQUEST_STATUS_FAILED = 'FAILED'
 IRODS_REQUEST_STATUS_REJECTED = 'REJECTED'
 
 ASSAY_DISPLAY_NAME_UNIQUE_MSG = 'Assay display name must be unique within study'
-
-# ISA-Tab SODAR metadata comment keys for study and assay plugin overrides
-# TODO: Move to constants (see #2589)
-ISA_META_STUDY_PLUGIN = 'SODAR Study Plugin'
-ISA_META_ASSAY_PLUGIN = 'SODAR Assay Plugin'
-ISA_META_ASSAY_DISPLAY_NAME = 'SODAR Assay Display Name'
 
 
 # Abstract base class ----------------------------------------------------------

@@ -47,6 +47,7 @@ from projectroles.plugins import (
 )
 from projectroles.utils import build_secret
 
+from samplesheets.constants import ISA_META_ASSAY_PLUGIN
 from samplesheets.models import (
     Investigation,
     Study,
@@ -56,7 +57,6 @@ from samplesheets.models import (
     IrodsAccessTicket,
     IrodsDataRequest,
     GENERIC_MATERIAL_TYPES,
-    ISA_META_ASSAY_PLUGIN,
     ITEM_TYPE_SAMPLE,
 )
 from samplesheets.rendering import SampleSheetTableBuilder

@@ -15,7 +15,8 @@ from projectroles.plugins import PluginAPI
 # Taskflowbackend dependency
 from taskflowbackend.tests.base import TaskflowViewTestBase
 
-from samplesheets.models import GenericMaterial, ISA_META_STUDY_PLUGIN
+from samplesheets.constants import ISA_META_STUDY_PLUGIN
+from samplesheets.models import GenericMaterial
 from samplesheets.plugins import SampleSheetStudyPluginPoint
 from samplesheets.rendering import SampleSheetTableBuilder
 from samplesheets.studyapps.germline.utils import get_pedigree_file_path

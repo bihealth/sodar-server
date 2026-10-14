@@ -29,6 +29,11 @@ from projectroles.tests.test_models import (
 )
 from projectroles.utils import build_secret
 
+from samplesheets.constants import (
+    ISA_META_ASSAY_DISPLAY_NAME,
+    ISA_META_ASSAY_PLUGIN,
+    ISA_META_STUDY_PLUGIN,
+)
 from samplesheets.models import (
     Investigation,
     Study,
@@ -41,9 +46,6 @@ from samplesheets.models import (
     IrodsDataRequest,
     NOT_AVAILABLE_STR,
     CONFIG_LABEL_CREATE,
-    ISA_META_ASSAY_DISPLAY_NAME,
-    ISA_META_ASSAY_PLUGIN,
-    ISA_META_STUDY_PLUGIN,
     IRODS_REQUEST_ACTION_DELETE,
     IRODS_REQUEST_STATUS_ACTIVE,
 )

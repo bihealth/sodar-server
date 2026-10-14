@@ -14,7 +14,7 @@ from samplesheets.assayapps.generic.plugins import (
     RESULTS_COMMENT,
 )
 from samplesheets.assayapps.tests.base import AssayPluginTestBase
-from samplesheets.models import ISA_META_ASSAY_PLUGIN
+from samplesheets.constants import ISA_META_ASSAY_PLUGIN
 from samplesheets.rendering import SIMPLE_LINK_TEMPLATE
 from samplesheets.views import MISC_FILES_COLL, RESULTS_COLL
 
