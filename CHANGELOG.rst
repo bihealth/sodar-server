@@ -31,7 +31,8 @@ Fixed
 -----
 
 - **Samplesheets**
-    - Vue3app ``OntologyEditModal`` ``editIdx`` variable reactivity (#2584)
+    - ``OntologyEditModal`` ``editIdx`` variable reactivity (#2584)
+    - ``IrodsDirModal`` responsiveness with long data object paths (#2569)
 
 Removed
 -------

@@ -295,6 +295,7 @@ defineExpose({ show })
 table.sodar-irods-obj-table thead tr th:nth-child(1),
 table.sodar-irods-obj-table tbody tr td:nth-child(1) {
   width: 100%;
+  word-break: break-all;
 }
 table.sodar-irods-obj-table thead tr th:nth-child(2),
 table.sodar-irods-obj-table tbody tr td:nth-child(2) {
@@ -321,5 +322,18 @@ table.sodar-irods-obj-table tbody tr td:nth-child(4) {
 }
 #sodar-ss-irods-stats-container {
   line-height: 28px !important;
+}
+/* Responsive modifications */
+@media screen and (max-width: 1200px) {
+  table.sodar-irods-obj-table thead tr th:nth-child(3),
+  table.sodar-irods-obj-table tbody tr td:nth-child(3) {
+    display: none;
+  }
+}
+@media screen and (max-width: 1000px) {
+  table.sodar-irods-obj-table thead tr th:nth-child(2),
+  table.sodar-irods-obj-table tbody tr td:nth-child(2) {
+    display: none;
+  }
 }
 </style>
