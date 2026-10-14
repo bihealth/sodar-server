@@ -227,6 +227,140 @@ class SheetImportMixin:
                 f'"{ticket.ticket}" ({ticket.sodar_uuid})'
             )
 
+    def _update_sheet_configs(
+        self,
+        project: Project,
+        investigation: Investigation,
+        isa_version: Optional[ISATab],
+        action: str,
+    ):
+        """
+        Update sheet edit and display configurations.
+
+        :param project: Project object
+        :param investigation: Imported Investigation object
+        :param isa_version: ISATab object for the current version or None
+        :param action: Import action (import, replace, restore)
+        """
+        display_config = None
+        inv_tables = None  # Ensure we only build render tables once
+        sheet_config = None
+        sheet_config_valid = True
+
+        # If replacing, delete old user display configurations
+        if action == 'replace':
+            if self.replace_configs:
+                logger.debug('Deleting existing user display configurations..')
+                app_settings.delete(APP_NAME, 'display_config', project=project)
+            else:
+                logger.debug('Keeping existing configurations')
+                sheet_config = app_settings.get(
+                    APP_NAME, 'sheet_config', project=project
+                )
+                inv_tables = table_builder.build_inv_tables(
+                    investigation, use_config=False
+                )
+                conf_api.restore_sheet_config(
+                    investigation, inv_tables, sheet_config
+                )
+                display_config = app_settings.get(
+                    APP_NAME, 'display_config_default', project=project
+                )
+        elif isa_version and action == 'restore':
+            logger.debug('Restoring previous edit and display configurations')
+            sheet_config = isa_version.data.get('sheet_config')
+            display_config = isa_version.data.get('display_config')
+            if not inv_tables:
+                inv_tables = table_builder.build_inv_tables(
+                    investigation, use_config=False
+                )
+            try:
+                conf_api.validate_sheet_config(sheet_config)
+                conf_api.restore_sheet_config(
+                    investigation, inv_tables, sheet_config
+                )
+            except ValueError:
+                sheet_config_valid = False
+
+        if not sheet_config or not sheet_config_valid or not display_config:
+            if not inv_tables:
+                inv_tables = table_builder.build_inv_tables(
+                    investigation, use_config=False
+                )
+            if not sheet_config or not sheet_config_valid:
+                logger.debug('Building new sheet configuration')
+                sheet_config = conf_api.build_sheet_config(
+                    investigation, inv_tables
+                )
+                # TODO: Delete possible cached sheets here
+            if not display_config:
+                logger.debug('Building new display configuration')
+                display_config = conf_api.build_display_config(
+                    inv_tables, sheet_config
+                )
+
+        # Save configs to isa version if we are creating the sheet
+        # (or if the version is missing these configs for some reason)
+        if (
+            isa_version
+            and action != 'restore'
+            and (
+                not isa_version.data.get('sheet_config')
+                or not isa_version.data.get('display_config')
+            )
+        ):
+            isa_version.data['sheet_config'] = sheet_config
+            isa_version.data['display_config'] = display_config
+            isa_version.save()
+            logger.info('Sheet configurations added into ISA-Tab version')
+
+        app_settings.set(
+            APP_NAME, 'sheet_config', sheet_config, project=project
+        )
+        app_settings.set(
+            APP_NAME,
+            'display_config_default',
+            display_config,
+            project=project,
+        )
+        logger.info('Sheet configurations updated')
+
+    @classmethod
+    def _get_ui_success_msg(
+        cls,
+        investigation: Investigation,
+        isa_version: Optional[ISATab],
+        action: str,
+        cache_updated: bool,
+    ) -> str:
+        """
+        Return success messages to be displayed in the UI.
+
+        :param investigation: Imported Investigation object
+        :param isa_version: ISATab object for the current version or None
+        :param action: Import action (import, replace, restore)
+        :param cache_updated: Whether iRODS cache update was initiated (bool)
+        :return: String
+        """
+        ret = '{}d sample sheets from {}'.format(
+            action.capitalize(),
+            (
+                'version {}'.format(
+                    isa_version.get_full_name() if isa_version else 'unknown'
+                )
+                if action == 'restore'
+                else 'ISA-Tab import'
+            ),
+        )
+        if investigation.parser_warnings:
+            ret += (
+                ' (<strong>Note:</strong> '
+                '<a href="#/warnings">parser warnings raised</a>)'
+            )
+        if cache_updated:
+            ret += ', initiated iRODS cache update'
+        return ret + '.'
+
     def add_tl_event(
         self, project: Project, action: str, tpl_name: Optional[str] = None
     ) -> Any:
@@ -441,9 +575,7 @@ class SheetImportMixin:
         :param update_cache: Update project cache (boolean, default=True)
         """
         project = investigation.project
-        success_msg = ''
-        # Set current import active status to True
-        investigation.active = True
+        investigation.active = True  # Make current investigation active
         investigation.save()
 
         # Add investigation data in Timeline
@@ -461,105 +593,8 @@ class SheetImportMixin:
                 extra_data=extra_data,
             )
 
-        if ui_mode:
-            success_msg = '{}d sample sheets from {}'.format(
-                action.capitalize(),
-                (
-                    'version {}'.format(isa_version.get_full_name())
-                    if action == 'restore'
-                    else 'ISA-Tab import'
-                ),
-            )
-            if investigation.parser_warnings:
-                success_msg += (
-                    ' (<strong>Note:</strong> '
-                    '<a href="#/warnings">parser warnings raised</a>)'
-                )
-
         # Build/restore/keep sheet and display configurations
-        sheet_config = None
-        display_config = None
-        sheet_config_valid = True
-        inv_tables = None  # Ensure we only build render tables once
-
-        # If replacing, delete old user display configurations
-        if action == 'replace':
-            if self.replace_configs:
-                logger.debug('Deleting existing user display configurations..')
-                app_settings.delete(APP_NAME, 'display_config', project=project)
-            else:
-                logger.debug('Keeping existing configurations')
-                sheet_config = app_settings.get(
-                    APP_NAME, 'sheet_config', project=project
-                )
-                inv_tables = table_builder.build_inv_tables(
-                    investigation, use_config=False
-                )
-                conf_api.restore_sheet_config(
-                    investigation, inv_tables, sheet_config
-                )
-                display_config = app_settings.get(
-                    APP_NAME, 'display_config_default', project=project
-                )
-
-        if isa_version and action == 'restore':
-            logger.debug('Restoring previous edit and display configurations')
-            sheet_config = isa_version.data.get('sheet_config')
-            display_config = isa_version.data.get('display_config')
-            if not inv_tables:
-                inv_tables = table_builder.build_inv_tables(
-                    investigation, use_config=False
-                )
-            try:
-                conf_api.validate_sheet_config(sheet_config)
-                conf_api.restore_sheet_config(
-                    investigation, inv_tables, sheet_config
-                )
-            except ValueError:
-                sheet_config_valid = False
-
-        if not sheet_config or not sheet_config_valid or not display_config:
-            if not inv_tables:
-                inv_tables = table_builder.build_inv_tables(
-                    investigation, use_config=False
-                )
-            if not sheet_config or not sheet_config_valid:
-                logger.debug('Building new sheet configuration')
-                sheet_config = conf_api.build_sheet_config(
-                    investigation, inv_tables
-                )
-                # TODO: Delete possible cached sheets here
-            if not display_config:
-                logger.debug('Building new display configuration')
-                display_config = conf_api.build_display_config(
-                    inv_tables, sheet_config
-                )
-
-        # Save configs to isa version if we are creating the sheet
-        # (or if the version is missing these configs for some reason)
-        if (
-            isa_version
-            and action != 'restore'
-            and (
-                not isa_version.data.get('sheet_config')
-                or not isa_version.data.get('display_config')
-            )
-        ):
-            isa_version.data['sheet_config'] = sheet_config
-            isa_version.data['display_config'] = display_config
-            isa_version.save()
-            logger.info('Sheet configurations added into ISA-Tab version')
-
-        app_settings.set(
-            APP_NAME, 'sheet_config', sheet_config, project=project
-        )
-        app_settings.set(
-            APP_NAME,
-            'display_config_default',
-            display_config,
-            project=project,
-        )
-        logger.info('Sheet configurations updated')
+        self._update_sheet_configs(project, investigation, isa_version, action)
 
         # Clear cached study tables
         if action in ['replace', 'restore']:
@@ -567,7 +602,8 @@ class SheetImportMixin:
                 study.refresh_from_db()
                 table_builder.clear_study_cache(study)
 
-        # Update project cache if replacing sheets and iRODS collections exists
+        # Update iRODS cache if replacing sheets and collections exist
+        cache_updated = False
         if (
             action in ['replace', 'restore']
             and investigation.irods_status
@@ -576,18 +612,19 @@ class SheetImportMixin:
         ):
             from samplesheets.tasks_celery import update_project_cache_task
 
-            # Update iRODS cache
             update_project_cache_task.delay(
                 project_uuid=str(project.sodar_uuid),
                 user_uuid=str(self.request.user.sodar_uuid),
                 add_alert=ui_mode,
                 alert_msg=f'Sample sheet {action}d',
             )
-            if ui_mode:
-                success_msg += ', initiated iRODS cache update.'
+            cache_updated = True
 
-        if ui_mode:
-            messages.success(self.request, mark_safe(success_msg + '.'))
+        if ui_mode:  # Display UI success message
+            msg = self._get_ui_success_msg(
+                investigation, isa_version, action, cache_updated
+            )
+            messages.success(self.request, mark_safe(msg))
         logger.info(f'Sample sheet {action} OK')
         return investigation
 

@@ -25,6 +25,7 @@ Changed
 - **Samplesheets**
     - Upgrade samplesheets REST API version to v1.3 (#2320)
     - Upgrade vue3app dependencies (#2578)
+    - Refactor ``SheetImportMixin.finalize_import()`` (#2585)
 
 Fixed
 -----
