@@ -41,8 +41,9 @@ from samplesheets.models import (
     IrodsDataRequest,
     NOT_AVAILABLE_STR,
     CONFIG_LABEL_CREATE,
-    ISA_META_STUDY_PLUGIN,
+    ISA_META_ASSAY_DISPLAY_NAME,
     ISA_META_ASSAY_PLUGIN,
+    ISA_META_STUDY_PLUGIN,
     IRODS_REQUEST_ACTION_DELETE,
     IRODS_REQUEST_STATUS_ACTIVE,
 )
@@ -749,7 +750,7 @@ class TestAssay(SamplesheetsModelTestBase):
     """Tests for the Assay model"""
 
     def test_initialization(self):
-        """Test Study initialization"""
+        """Test Assay initialization"""
         expected = {
             'id': self.assay.pk,
             'file_name': ASSAY_FILE_NAME,
@@ -781,16 +782,32 @@ class TestAssay(SamplesheetsModelTestBase):
         self.assertEqual(repr(self.assay), expected)
 
     def test_get_study(self):
-        """Test Assay get_study() function"""
+        """Test get_study()"""
         self.assertEqual(self.assay.get_study(), self.study)
 
     def test_get_project(self):
-        """Test Assay get_project() function"""
+        """Test get_project()"""
         self.assertEqual(self.assay.get_project(), self.project)
 
     def test_get_name(self):
-        """Test Assay get_name() function"""
+        """Test get_name()"""
         self.assertEqual(self.assay.get_name(), 'assay')
+
+    def test_get_display_name(self):
+        """Test get_display_name()"""
+        self.assertEqual(self.assay.get_display_name(), 'Assay')
+
+    def test_get_display_name_custom(self):
+        """Test get_display_name() with custom name in comments"""
+        self.assay.comments = {ISA_META_ASSAY_DISPLAY_NAME: 'Custom Assay Name'}
+        self.assertEqual(self.assay.get_display_name(), 'Custom Assay Name')
+
+    def test_get_display_name_custom_empty(self):
+        """Test get_display_name() with empty custom name"""
+        # Testing with a whitespace as that also counts as empty
+        self.assay.comments = {ISA_META_ASSAY_DISPLAY_NAME: ' '}
+        # We should return the generated name
+        self.assertEqual(self.assay.get_display_name(), 'Assay')
 
     def test_get_plugin(self):
         """Test get_plugin() with measurement/technology type"""
@@ -847,6 +864,71 @@ class TestAssay(SamplesheetsModelTestBase):
             + f'/assay/{self.assay.sodar_uuid}'
         )
         self.assertEqual(self.assay.get_url(), expected)
+
+    def test_get_save_display_name_dupe(self):
+        """Test save() with duplicate assay name within study"""
+        self.make_assay(
+            file_name='a_assay2.txt',
+            study=self.study,
+            tech_platform=ASSAY_TECH_PLATFORM,
+            tech_type=ASSAY_TECH_TYPE,
+            measurement_type=ASSAY_MEASURE_TYPE,
+            arcs=[],
+            comments={ISA_META_ASSAY_DISPLAY_NAME: 'Assay Name'},
+        )
+        self.assay.comments = {ISA_META_ASSAY_DISPLAY_NAME: 'Assay Name'}
+        with self.assertRaises(ValidationError):
+            self.assay.save()
+
+    def test_get_save_display_name_no_dupe(self):
+        """Test save() with different assay name within study"""
+        self.make_assay(
+            file_name='a_assay2.txt',
+            study=self.study,
+            tech_platform=ASSAY_TECH_PLATFORM,
+            tech_type=ASSAY_TECH_TYPE,
+            measurement_type=ASSAY_MEASURE_TYPE,
+            arcs=[],
+            comments={ISA_META_ASSAY_DISPLAY_NAME: 'Assay Name2'},
+        )
+        self.assay.comments = {ISA_META_ASSAY_DISPLAY_NAME: 'Assay Name'}
+        self.assay.save()  # No exception should be raised
+
+    def test_get_save_display_name_dupe_empty(self):
+        """Test save() with duplicate empty assay name within study"""
+        self.make_assay(
+            file_name='a_assay2.txt',
+            study=self.study,
+            tech_platform=ASSAY_TECH_PLATFORM,
+            tech_type=ASSAY_TECH_TYPE,
+            measurement_type=ASSAY_MEASURE_TYPE,
+            arcs=[],
+            comments={ISA_META_ASSAY_DISPLAY_NAME: ''},
+        )
+        self.assay.comments = {ISA_META_ASSAY_DISPLAY_NAME: ''}
+        self.assay.save()  # No exception should be raised
+
+    def test_get_save_display_name_dupe_other_study(self):
+        """Test save() with duplicate assay name in another study"""
+        study2 = self.make_study(
+            identifier=STUDY_IDENTIFIER + '2',
+            file_name='s_study2.txt',
+            investigation=self.investigation,
+            title=STUDY_TITLE + '2',
+            description=DEFAULT_DESCRIPTION,
+            comments=DEFAULT_COMMENTS,
+        )
+        self.make_assay(
+            file_name='a_assay2.txt',
+            study=study2,
+            tech_platform=ASSAY_TECH_PLATFORM,
+            tech_type=ASSAY_TECH_TYPE,
+            measurement_type=ASSAY_MEASURE_TYPE,
+            arcs=[],
+            comments={ISA_META_ASSAY_DISPLAY_NAME: 'Assay Name'},
+        )
+        self.assay.comments = {ISA_META_ASSAY_DISPLAY_NAME: 'Assay Name'}
+        self.assay.save()  # No exception should be raised
 
 
 class TestSource(SamplesheetsModelTestBase):

@@ -13,7 +13,8 @@ v1.4.0 (WIP)
 
 Major feature release.
 
-- Add cache update controls for samplesheets REST API views
+- :ref:`Add custom assay display name support <metadata_advanced_assay_name>`
+- :ref:`Add cache update controls for samplesheets REST API views <api_samplesheets>`
 - :ref:`Upgrade Sample Sheets REST API version to v1.3 <api_samplesheets_version_1_3>`
 - Remove samplesheets legacy Vue2 app
 

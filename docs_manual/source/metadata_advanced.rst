@@ -311,3 +311,30 @@ avspecific measurement type and technology type.
     This plugin is a candidate for deprecation and may be removed in a
     subsequent release. It is recommended to use the
     :ref:`metadata_advanced_assay_generic` instead.
+
+
+.. _metadata_advanced_assay_name:
+
+Assay Custom Display Name
+=========================
+
+In the ISA-Tab standard, an assay has no identifying name beyond its file name.
+By default, SODAR constructs a display name from the file name, which may or may
+not appear as desired. This also limits unique assay names to one within an
+investigation even if in different studies.
+
+Starting in v1.4, SODAR supports providing a custom display name as a comment
+under ``STUDY ASSAY`` in your investigation file. If you supply a comment named
+``SODAR Assay Display Name``, the given name will be displayed in the SODAR
+Sample Sheets UI.
+
+These custom assay names are required to be unique within a study, but not
+within the entire investigation.
+
+Example:
+
+.. code-block::
+
+    STUDY ASSAYS
+    Study Assay File Name   a_assay.txt
+    Comment[SODAR Assay Display Name] Your Custom Assay Display Name

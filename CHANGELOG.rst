@@ -16,6 +16,8 @@ Added
     - ``IrodsDataRequestAcceptAPIView`` ``update_cache`` field (#2320)
     - ``SheetImportMixin.finalize_import()`` ``update_cache`` arg (#2581)
     - ``SheetImportAPIView`` ``update_cache`` field (#2581)
+    - ``ISA_META_ASSAY_DISPLAY_NAME`` ISA-Tab SODAR metadata constant (#1782)
+    - ``Assay.get_display_name()`` custom display name support (#1782)
 
 Changed
 -------

@@ -80,9 +80,13 @@ IRODS_REQUEST_STATUS_ACTIVE = 'ACTIVE'
 IRODS_REQUEST_STATUS_FAILED = 'FAILED'
 IRODS_REQUEST_STATUS_REJECTED = 'REJECTED'
 
+ASSAY_DISPLAY_NAME_UNIQUE_MSG = 'Assay display name must be unique within study'
+
 # ISA-Tab SODAR metadata comment keys for study and assay plugin overrides
+# TODO: Move to constants (see #2589)
 ISA_META_STUDY_PLUGIN = 'SODAR Study Plugin'
 ISA_META_ASSAY_PLUGIN = 'SODAR Assay Plugin'
+ISA_META_ASSAY_DISPLAY_NAME = 'SODAR Assay Display Name'
 
 
 # Abstract base class ----------------------------------------------------------
@@ -570,6 +574,19 @@ class Assay(BaseSampleSheet):
         )
         return 'Assay({})'.format(', '.join(repr(v) for v in values))
 
+    # Saving and validation
+
+    def save(self, *args, **kwargs):
+        """Custom validation and saving method"""
+        if self.comments.get(ISA_META_ASSAY_DISPLAY_NAME, '').strip():
+            for a in self.study.assays.exclude(sodar_uuid=self.sodar_uuid):
+                if (
+                    a.comments.get(ISA_META_ASSAY_DISPLAY_NAME)
+                    == self.comments[ISA_META_ASSAY_DISPLAY_NAME]
+                ):
+                    raise ValidationError(ASSAY_DISPLAY_NAME_UNIQUE_MSG)
+        super().save(*args, **kwargs)
+
     # Custom row-level functions
 
     def get_name(self) -> str:
@@ -578,6 +595,8 @@ class Assay(BaseSampleSheet):
 
     def get_display_name(self) -> str:
         """Return display name for assay"""
+        if self.comments.get(ISA_META_ASSAY_DISPLAY_NAME, '').strip():
+            return self.comments[ISA_META_ASSAY_DISPLAY_NAME]
         return ' '.join(s for s in self.get_name().split('_')).title()
 
     def get_plugin(self) -> Any:
