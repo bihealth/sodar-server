@@ -15,8 +15,8 @@
 }
 .sodar-lz-table thead tr th:nth-child(4),
 .sodar-lz-table tbody tr td:nth-child(4) {
-  width: 140px;
-  max-width: 140px;
+  width: 120px;
+  max-width: 120px;
   white-space: nowrap;
 }
 .sodar-lz-table thead tr th:nth-child(5),

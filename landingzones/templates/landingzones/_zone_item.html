@@ -103,21 +103,7 @@
   {% if not details_card_mode %}
     <td class="sodar-lz-zone-links">
       {% if irods_backend_enabled %}
-        <span class="sodar-lz-control">
-          {% get_irods_path zone as zone_irods_path %}
-          <button class="btn btn-secondary sodar-list-btn sodar-irods-btn sodar-lz-list-modal-btn"
-                  data-irods-path="{{ zone_irods_path }}"
-                  data-list-url="{% url 'landingzones:ajax_irods_list' landingzone=zone.sodar_uuid %}"
-                  data-checksum-url="{% url 'landingzones:ajax_irods_checksum' landingzone=zone.sodar_uuid %}"
-                  data-webdav-url="{{ irods_webdav_url }}"
-                  role="submit"
-                  {# NOTE: Modal not triggered here as data is async, see JQuery #}
-                  title="List files"
-                  {% if not irods_colls or disable_all %} disabled{% endif %}>
-            <i class="iconify" data-icon="mdi:folder-open-outline"></i>
-          </button>
-          {% include 'irodsbackend/_irods_buttons.html' with project=project irods_colls=True irods_path=zone_irods_path disable_all=disable_zone_ui %}
-        </span>
+        {% include 'landingzones/_irods_buttons.html' with project=project irods_colls=True irods_path=zone_irods_path disable_all=disable_zone_ui %}
       {% endif %}
     </td>
     <td class="sodar-lz-zone-edit">
