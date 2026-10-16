@@ -5,9 +5,13 @@ import io
 import os
 import warnings
 
+from copy import deepcopy
+from importlib import import_module
 from typing import Optional
 from zipfile import ZipFile
 
+import altamisa
+from altamisa.constants import investigation_headers as ih
 from altamisa.exceptions import (
     ModerateIsaValidationWarning,
     AdvisoryIsaValidationWarning,
@@ -20,7 +24,9 @@ from altamisa.isatab import (
     models as isa_models,
 )
 
+from django.conf import settings
 from django.test import override_settings
+from django.urls import reverse
 
 from test_plus.test import TestCase
 
@@ -32,8 +38,12 @@ from projectroles.tests.test_models import (
     RoleAssignmentMixin,
 )
 
-from samplesheets.models import Investigation, ISATab
+import samplesheets.constants as sc
+from samplesheets.models import Investigation, ISATab, CONFIG_LABEL_CREATE
 from samplesheets.io import SampleSheetIO
+
+
+site = import_module(settings.SITE_PACKAGE)
 
 
 # Local constants
@@ -41,6 +51,7 @@ SHEET_DIR = os.path.dirname(__file__) + '/isatab/'
 SHEET_DIR_SPECIAL = os.path.dirname(__file__) + '/isatab_special/'
 SHEET_NAME = 'BII-I-1_edited.zip'
 SHEET_PATH = SHEET_DIR + SHEET_NAME
+SHEET_PATH_META = SHEET_DIR_SPECIAL + 'i_small2_export_metadata.zip'
 WARN_MSG = 'Test warning 1'
 WARN_MSG2 = 'Test warning 2'
 
@@ -485,6 +496,81 @@ class TestSampleSheetIOImport(SampleSheetIOTestBase):
         out_data = self.sheet_io._import_publications(in_data)
         self.assertEqual(len(out_data), len(in_data))
 
+    def test_update_isa_import_comments(self):
+        """Test _update_isa_import_comments()"""
+        comments = {
+            CONFIG_LABEL_CREATE: 'bih_germline',
+            sc.ISA_META_PROJECT_UUID: str(self.project.sodar_uuid),
+        }
+        headers = [
+            ih.INVESTIGATION_IDENTIFIER,
+            f'Comment[{CONFIG_LABEL_CREATE}]'
+            f'Comment[{sc.ISA_META_PROJECT_UUID}]',
+        ]
+        ret_c, ret_h = self.sheet_io._update_isa_import_comments(
+            comments, headers, sc.ISA_META_INV_EXPORT_KEYS
+        )
+        self.assertEqual(ret_c, {CONFIG_LABEL_CREATE: 'bih_germline'})
+        self.assertEqual(ret_h, headers[:2])
+
+    def test_import_isa_metadata(self):
+        """Test import_isa() with SODAR metadata"""
+        sheet_io = SampleSheetIO(warn=False, allow_critical=True)
+        zf = ZipFile(os.fsdecode(SHEET_PATH_META))
+        investigation = sheet_io.import_isa(
+            sheet_io.get_isa_from_zip(zf),
+            self.project,
+            archive_name=zf.filename,
+            user=self.user_owner,
+            save_isa=False,
+        )
+        study = investigation.studies.first()
+        assay = study.assays.first()
+
+        # Sanity check for a non-metadata field
+        grant_key = 'Study Grant Number'
+        self.assertIn(grant_key, study.comments)
+        self.assertIn(f'Comment[{grant_key}]', study.headers)
+
+        # SODAR export-only metadata should be stripped
+        self.assertNotIn(sc.ISA_META_PROJECT_UUID, investigation.comments)
+        self.assertNotIn(
+            f'Comment[{sc.ISA_META_PROJECT_UUID}', investigation.headers
+        )
+        self.assertNotIn(sc.ISA_META_STUDY_UUID, study.comments)
+        self.assertNotIn(f'Comment[{sc.ISA_META_STUDY_UUID}', study.headers)
+        self.assertNotIn(sc.ISA_META_ASSAY_UUID, assay.comments)
+        self.assertNotIn(f'Comment[{sc.ISA_META_ASSAY_UUID}', assay.headers)
+
+    def test_import_isa_metadata_version(self):
+        """Test import_isa() with SODAR metadata and saved version"""
+        self.assertEqual(Investigation.objects.count(), 0)
+        self.assertEqual(ISATab.objects.count(), 0)
+
+        sheet_io = SampleSheetIO(warn=False, allow_critical=True)
+        zf = ZipFile(os.fsdecode(SHEET_PATH_META))
+        investigation = sheet_io.import_isa(
+            sheet_io.get_isa_from_zip(zf),
+            self.project,
+            archive_name=zf.filename,
+            user=self.user_owner,
+            save_isa=True,  # Explicitly save metadata
+        )
+
+        # SODAR export-only metadata should be stripped
+        self.assertNotIn(sc.ISA_META_PROJECT_UUID, investigation.comments)
+        self.assertNotIn(
+            f'Comment[{sc.ISA_META_PROJECT_UUID}', investigation.headers
+        )
+
+        # Despite stripped from active sheets, fields should appear in version
+        self.assertEqual(ISATab.objects.count(), 1)
+        isa_ver = ISATab.objects.first()
+        inv_data = isa_ver.data['investigation']['tsv']
+        self.assertIn(f'Comment[{sc.ISA_META_PROJECT_UUID}]', inv_data)
+        self.assertIn(f'Comment[{sc.ISA_META_STUDY_UUID}]', inv_data)
+        self.assertIn(f'Comment[{sc.ISA_META_ASSAY_UUID}]', inv_data)
+
 
 class TestSampleSheetIOImportWarnings(SampleSheetIOTestBase):
     """Tests for sample sheet import warning handling"""
@@ -593,6 +679,8 @@ class TestSampleSheetIOExport(SampleSheetIOTestBase):
         super().setUp()
         self.sheet_io = SampleSheetIO(warn=False, allow_critical=True)
         self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
+        self.study = self.investigation.studies.first()
+        self.assay = self.study.assays.first()
         self.p_id = f'p{self.project.pk}'
 
     def test_export_value(self):
@@ -773,3 +861,117 @@ class TestSampleSheetIOExport(SampleSheetIOTestBase):
             for k, v in in_data.items()
         )
         self.assertEqual(out_data, expected)
+
+    def test_update_isa_export_comments_inv(self):
+        """Test _update_isa_export_comments() with investigation"""
+        exp_com = deepcopy(self.investigation.comments)
+        exp_head = deepcopy(self.investigation.headers)
+        self.sheet_io._update_isa_export_comments(self.investigation, False)
+        self.assertEqual(self.investigation.comments, exp_com)
+        self.assertEqual(self.investigation.headers, exp_head)
+
+    def test_update_isa_export_comments_inv_meta(self):
+        """Test _update_isa_export_comments() with investigation and metadata"""
+        exp_com = deepcopy(self.investigation.comments)
+        host = 'http://127.0.0.1:8000'
+        project_url = reverse(
+            'projectroles:detail',
+            kwargs={'project': self.project.sodar_uuid},
+        )
+        m = {
+            sc.ISA_META_ALTAMISA_VERSION: altamisa.__version__,
+            sc.ISA_META_INVESTIGATION_UUID: str(self.investigation.sodar_uuid),
+            sc.ISA_META_PROJECT_FULL_TITLE: self.project.full_title,
+            sc.ISA_META_PROJECT_URL: host + project_url,
+            sc.ISA_META_PROJECT_UUID: str(self.project.sodar_uuid),
+            sc.ISA_META_SAVE_TIMESTAMP: '',
+            sc.ISA_META_SODAR_SITE_INSTANCE: 'SODAR Dev Site',
+            sc.ISA_META_SODAR_SITE_URL: host,
+            sc.ISA_META_SODAR_SERVER_VERSION: site.__version__,
+        }
+        exp_com.update(m)
+        exp_head = deepcopy(self.investigation.headers)
+        exp_head += [f'Comment[{k}]' for k in sc.ISA_META_INV_EXPORT_KEYS]
+
+        self.sheet_io._update_isa_export_comments(self.investigation, True)
+        # Patch timestamp
+        exp_com[sc.ISA_META_SAVE_TIMESTAMP] = self.investigation.comments[
+            sc.ISA_META_SAVE_TIMESTAMP
+        ]
+        self.assertEqual(self.investigation.comments, exp_com)
+        self.assertEqual(self.investigation.headers, exp_head)
+
+    def test_update_isa_export_comments_study(self):
+        """Test _update_isa_export_comments() with study"""
+        exp_com = deepcopy(self.study.comments)
+        exp_head = deepcopy(self.study.headers)
+        self.sheet_io._update_isa_export_comments(self.study, False)
+        self.assertEqual(self.study.comments, exp_com)
+        self.assertEqual(self.study.headers, exp_head)
+
+    def test_update_isa_export_comments_study_metadata(self):
+        """Test _update_isa_export_comments() with study and metadata"""
+        exp_com = deepcopy(self.study.comments)
+        exp_com[sc.ISA_META_STUDY_UUID] = str(self.study.sodar_uuid)
+        exp_head = deepcopy(self.study.headers)
+        exp_head.append(f'Comment[{sc.ISA_META_STUDY_UUID}]')
+        self.sheet_io._update_isa_export_comments(self.study, True)
+        self.assertEqual(self.study.comments, exp_com)
+        self.assertEqual(self.study.headers, exp_head)
+
+    def test_update_isa_export_comments_assay(self):
+        """Test _update_isa_export_comments() with assay"""
+        exp_com = deepcopy(self.assay.comments)
+        exp_head = deepcopy(self.assay.headers)
+        self.sheet_io._update_isa_export_comments(self.assay, False)
+        self.assertEqual(self.assay.comments, exp_com)
+        self.assertEqual(self.assay.headers, exp_head)
+
+    def test_update_isa_export_comments_assay_metadata(self):
+        """Test _update_isa_export_comments() with assay and metadata"""
+        exp_com = deepcopy(self.assay.comments)
+        exp_com[sc.ISA_META_ASSAY_UUID] = str(self.assay.sodar_uuid)
+        exp_head = deepcopy(self.assay.headers)
+        exp_head.append(f'Comment[{sc.ISA_META_ASSAY_UUID}]')
+        self.sheet_io._update_isa_export_comments(self.assay, True)
+        self.assertEqual(self.assay.comments, exp_com)
+        self.assertEqual(self.assay.headers, exp_head)
+
+    def test_export_isa_meta(self):
+        """Test export_isa() with metadata"""
+        export_data = self.get_flat_export_data(
+            self.sheet_io.export_isa(self.investigation, include_meta=True)
+        )
+        # Assert selected metadata is present
+        inv_data = export_data['i_investigation.txt']
+        self.assertIn(
+            f'Comment[{sc.ISA_META_PROJECT_UUID}]\t{self.project.sodar_uuid}',
+            inv_data,
+        )
+        self.assertIn(
+            f'Comment[{sc.ISA_META_STUDY_UUID}]\t{self.study.sodar_uuid}',
+            inv_data,
+        )
+        self.assertIn(
+            f'Comment[{sc.ISA_META_ASSAY_UUID}]\t{self.assay.sodar_uuid}',
+            inv_data,
+        )
+
+    def test_export_isa_no_meta(self):
+        """Test export_isa() without metadata"""
+        export_data = self.get_flat_export_data(
+            self.sheet_io.export_isa(self.investigation, include_meta=False)
+        )
+        inv_data = export_data['i_investigation.txt']
+        self.assertNotIn(
+            f'Comment[{sc.ISA_META_PROJECT_UUID}]\t{self.project.sodar_uuid}',
+            inv_data,
+        )
+        self.assertNotIn(
+            f'Comment[{sc.ISA_META_STUDY_UUID}]\t{self.study.sodar_uuid}',
+            inv_data,
+        )
+        self.assertNotIn(
+            f'Comment[{sc.ISA_META_ASSAY_UUID}]\t{self.assay.sodar_uuid}',
+            inv_data,
+        )

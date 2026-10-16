@@ -28,6 +28,7 @@ from timeline.tests.test_views import TimelineTestMixin
 from landingzones.models import LandingZone
 from landingzones.tests.test_models import LandingZoneMixin
 
+import samplesheets.constants as sc
 from samplesheets.io import SampleSheetIO
 from samplesheets.models import (
     Investigation,
@@ -630,40 +631,66 @@ class TestSheetImportAPIView(
 class TestSheetISAExportAPIView(SampleSheetAPIViewTestBase):
     """Tests for SheetISAExportAPIView"""
 
-    def test_get_zip(self):
-        """Test SheetISAExportAPIView GET with Zip export"""
-        # Import investigation
-        self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
-        url = reverse(
+    def setUp(self):
+        super().setUp()
+        self.url_json = reverse(
+            'samplesheets:api_export_json',
+            kwargs={'project': self.project.sodar_uuid},
+        )
+        self.url_zip = reverse(
             'samplesheets:api_export_zip',
             kwargs={'project': self.project.sodar_uuid},
         )
-        response = self.request_knox(url)
+
+    def test_get_zip(self):
+        """Test SheetISAExportAPIView GET with Zip export"""
+        self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
+        response = self.request_knox(self.url_zip)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response['content-type'], 'application/zip')
 
     def test_get_no_investigation(self):
         """Test GET with no imported investigation"""
-        url = reverse(
-            'samplesheets:api_export_zip',
-            kwargs={'project': self.project.sodar_uuid},
-        )
-        response = self.request_knox(url)
+        response = self.request_knox(self.url_zip)
         self.assertEqual(response.status_code, 404)
 
     def test_get_json(self):
         """Test GET with JSON epxort"""
         investigation = self.import_isa_from_file(SHEET_PATH, self.project)
-        url = reverse(
-            'samplesheets:api_export_json',
-            kwargs={'project': self.project.sodar_uuid},
-        )
-        response = self.request_knox(url)
+        response = self.request_knox(self.url_json)
         sheet_io = SampleSheetIO()
         expected = sheet_io.export_isa(investigation)
         expected['date_modified'] = str(investigation.date_modified)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data, expected)
+        self.assertNotIn(
+            f'Comment[{sc.ISA_META_PROJECT_UUID}]\t{self.project.sodar_uuid}',
+            response.data['investigation']['tsv'],
+        )  # No metadata should be present
+
+    def test_get_json_metadata(self):
+        """Test GET with JSON epxort and SODAR metadata"""
+        self.import_isa_from_file(SHEET_PATH, self.project)
+        response = self.request_knox(self.url_json, data={'include_meta': '1'})
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(
+            f'Comment[{sc.ISA_META_PROJECT_UUID}]\t{self.project.sodar_uuid}',
+            response.data['investigation']['tsv'],
+        )  # Metadata should be present
+
+    def test_get_v1_2(self):
+        """Test GET with API v1.2"""
+        self.import_isa_from_file(SHEET_PATH, self.project)
+        response = self.request_knox(self.url_json, version='1.2')
+        self.assertEqual(response.status_code, 200)
+
+    def test_get_v1_2_include_meta(self):
+        """Test GET with API v1.2 and include_meta field"""
+        self.import_isa_from_file(SHEET_PATH, self.project)
+        response = self.request_knox(
+            self.url_json, data={'include_meta': '1'}, version='1.2'
+        )
+        self.assertEqual(response.status_code, 406)  # Not acceptable
 
 
 class TestIrodsAccessTicketRetrieveAPIView(IrodsAccessTicketAPITestBase):

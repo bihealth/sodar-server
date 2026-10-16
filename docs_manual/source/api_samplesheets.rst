@@ -83,6 +83,8 @@ v1.3
 
 - ``IrodsDataRequestAcceptAPIView``
     * Add ``update_cache`` field
+- ``SheetISAExportAPIView``
+    * Add ``include_meta`` field
 - ``SheetImportAPIView``
     * Add ``update_cache`` field
 

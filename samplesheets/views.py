@@ -657,8 +657,9 @@ class SheetISAExportMixin:
         self,
         project: Project,
         request: HttpRequest,
-        format='zip',
-        version_uuid=None,
+        format: str = 'zip',
+        version_uuid: Optional[str] = None,
+        include_meta: bool = False,
     ) -> HttpResponse:
         """
         Export sample sheets as a HTTP response as ISA-Tab, either in a zipped
@@ -668,6 +669,8 @@ class SheetISAExportMixin:
         :param request: HttpRequest object
         :param format: Export format ("zip" or "json")
         :param version_uuid: Version UUID (optional)
+        :param include_meta: Include export-only SODAR metadata comments (bool,
+                             default=False)
         :return: HttpResponse object
         :raise: ISATab.DoesNotExist if version is requested but not found
         :raise Investigation.DosNotExist if investigation is not found
@@ -721,7 +724,7 @@ class SheetISAExportMixin:
         if isa_version:
             export_data = isa_version.data
         else:
-            export_data = sheet_io.export_isa(investigation)
+            export_data = sheet_io.export_isa(investigation, include_meta)
         zip_io = None
 
         if format == 'zip':
@@ -1802,7 +1805,11 @@ class SheetISAExportView(
     ProjectContextMixin,
     View,
 ):
-    """Sample sheet table ISA-Tab export view"""
+    """
+    Sample sheet table ISA-Tab export view.
+
+    Returns SODAR export-only metadata if called with the ?meta=1 query string.
+    """
 
     permission_required = 'samplesheets.export_sheet'
 
@@ -1810,8 +1817,12 @@ class SheetISAExportView(
         """Override get() to return ISA-Tab files as a ZIP archive"""
         project = self.get_project()
         version_uuid = kwargs.get('isatab')
+        include_meta = bool(int(request.GET.get('meta', '0')))
+        # TODO: Handle request with version AND meta set
         try:
-            return self.get_isa_export(project, request, 'zip', version_uuid)
+            return self.get_isa_export(
+                project, request, 'zip', version_uuid, include_meta
+            )
         except Exception as ex:
             if version_uuid:
                 redirect_url = reverse(

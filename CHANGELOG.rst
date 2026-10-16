@@ -12,12 +12,13 @@ Added
 -----
 
 - **Samplesheets**
-    - ``IrodsDataRequestModifyMixin.accept_request()`` ``update_cache`` arg (#2320)
     - ``IrodsDataRequestAcceptAPIView`` ``update_cache`` field (#2320)
-    - ``SheetImportMixin.finalize_import()`` ``update_cache`` arg (#2581)
     - ``SheetImportAPIView`` ``update_cache`` field (#2581)
     - ``ISA_META_ASSAY_DISPLAY_NAME`` ISA-Tab SODAR metadata constant (#1782)
-    - ``Assay.get_display_name()`` custom display name support (#1782)
+    - Custom assay display name support (#1782)
+    - SODAR metadata comments in ISA-Tab export and version saving (#614)
+    - Vue3app ops dropdown  "Export Without Metadata" link (#614)
+    - ``SheetISAExportAPIView`` ``include_meta`` field (#614)
 
 Changed
 -------

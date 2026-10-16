@@ -22,6 +22,7 @@ import {
   STUDY_NAV_DROPDOWN_LEN,
   STUDY_NAV_TAB_LEN,
   URL_EDIT_FINISH_PREFIX,
+  URL_ISA_EXPORT_PREFIX,
   VIEW_PARSER_WARNING,
   VIEW_OVERVIEW,
   VIEW_STUDY
@@ -402,22 +403,22 @@ describe('ViewHeader.vue', () => {
     const dropdown = wrapper.find('#sodar-ss-op-dropdown')
     expect(dropdown.exists()).toBe(true)
     expect(dropdown.attributes().disabled).not.toBeDefined()
-    expect(wrapper.findAll('.sodar-ss-op-item').length).toBe(10)
+    expect(wrapper.findAll('.sodar-ss-op-item').length).toBe(11)
     const expected = {
-      'sync':       false,
-      'import':     false,
-      'create':     false,
-      'edit':       true,
-      'warnings':   true,
-      'cache':      true,
-      'replace':    true,
-      'export':     true,
-      'export-win': false,
-      'irods':      true,
-      'versions':   true,
-      'tickets':    true,
-      'requests':   true,
-      'delete':     true,
+      'sync':           false,
+      'import':         false,
+      'create':         false,
+      'edit':           true,
+      'warnings':       true,
+      'cache':          true,
+      'replace':        true,
+      'export':         true,
+      'export-no-meta': true,
+      'irods':          true,
+      'versions':       true,
+      'tickets':        true,
+      'requests':       true,
+      'delete':         true,
     }
     expectDropdownItems(wrapper, expected)
     // Disabled for now
@@ -444,20 +445,20 @@ describe('ViewHeader.vue', () => {
     appStore.sodarContext!.irods_status = false
     const wrapper = mountComponent()
     const expected = {
-      'sync':       false,
-      'import':     false,
-      'create':     false,
-      'edit':       true,
-      'warnings':   true,
-      'cache':      false, // Changed
-      'replace':    true,
-      'export':     true,
-      'export-win': false,
-      'irods':      true,
-      'versions':   true,
-      'tickets':    false, // Changed
-      'requests':   false, // Changed
-      'delete':     true,
+      'sync':           false,
+      'import':         false,
+      'create':         false,
+      'edit':           true,
+      'warnings':       true,
+      'cache':          false, // Changed
+      'replace':        true,
+      'export':         true,
+      'export-no-meta': true,
+      'irods':          true,
+      'versions':       true,
+      'tickets':        false, // Changed
+      'requests':       false, // Changed
+      'delete':         true,
     }
     expectDropdownItems(wrapper, expected)
     expect(wrapper.find(
@@ -486,20 +487,20 @@ describe('ViewHeader.vue', () => {
     appStore.sodarContext!.perms.edit_sheet = false
     const wrapper = mountComponent()
     const expected = {
-      'sync':       false,
-      'import':     false,
-      'create':     false,
-      'edit':       false, // Changed
-      'warnings':   false, // Changed
-      'cache':      true,
-      'replace':    false, // Changed
-      'export':     true,
-      'export-win': false,
-      'irods':      true,
-      'versions':   true,
-      'tickets':    true,
-      'requests':   false, // Changed
-      'delete':     true,
+      'sync':           false,
+      'import':         false,
+      'create':         false,
+      'edit':           false, // Changed
+      'warnings':       false, // Changed
+      'cache':          true,
+      'replace':        false, // Changed
+      'export':         true,
+      'export-no-meta': true,
+      'irods':          true,
+      'versions':       true,
+      'tickets':        true,
+      'requests':       false, // Changed
+      'delete':         true,
     }
     expectDropdownItems(wrapper, expected)
   })
@@ -531,20 +532,20 @@ describe('ViewHeader.vue', () => {
     appStore.sodarContext!.sheet_sync_enabled = true
     const wrapper = mountComponent()
     const expected = {
-      'sync':       true,  // Changed
-      'import':     false,
-      'create':     false,
-      'edit':       false, // Changed
-      'warnings':   true,
-      'cache':      true,
-      'replace':    false, // Changed
-      'export':     true,
-      'export-win': false,
-      'irods':      true,
-      'versions':   false, // Changed
-      'tickets':    true,
-      'requests':   true,
-      'delete':     false, // Changed
+      'sync':           true,  // Changed
+      'import':         false,
+      'create':         false,
+      'edit':           false, // Changed
+      'warnings':       true,
+      'cache':          true,
+      'replace':        false, // Changed
+      'export':         true,
+      'export-no-meta': true,
+      'irods':          true,
+      'versions':       false, // Changed
+      'tickets':        true,
+      'requests':       true,
+      'delete':         false, // Changed
     }
     expectDropdownItems(wrapper, expected)
   })
@@ -554,21 +555,21 @@ describe('ViewHeader.vue', () => {
     // As sheetsAvailable is computed, we modify currentStudyUuid instead
     appStore.currentStudyUuid = ''
     const wrapper = mountComponent()
-    const expected = {
-      'sync':       false,
-      'import':     true,  // Changed
-      'create':     true,  // Changed
-      'edit':       false, // Changed
-      'warnings':   false, // Changed
-      'cache':      false, // Changed
-      'replace':    false, // Changed
-      'export':     false, // Changed
-      'export-win': false,
-      'irods':      false, // Changed
-      'versions':   false, // Changed
-      'tickets':    false, // Changed
-      'requests':   false, // Changed
-      'delete':     false, // Changed
+    const expected = { // All changed except for sync
+      'sync':           false,
+      'import':         true,
+      'create':         true,
+      'edit':           false,
+      'warnings':       false,
+      'cache':          false,
+      'replace':        false,
+      'export':         false,
+      'export-no-meta': false,
+      'irods':          false,
+      'versions':       false,
+      'tickets':        false,
+      'requests':       false,
+      'delete':         false,
     }
     expectDropdownItems(wrapper, expected)
   })
@@ -583,42 +584,31 @@ describe('ViewHeader.vue', () => {
     appStore.sodarContext!.sheet_sync_enabled = true
     const wrapper = mountComponent()
     const expected = {
-      'sync':       true,  // Changed
-      'import':     false,
-      'create':     false,
-      'edit':       false, // Changed
-      'warnings':   false, // Changed
-      'cache':      false, // Changed
-      'replace':    false, // Changed
-      'export':     false, // Changed
-      'export-win': false,
-      'irods':      false, // Changed
-      'versions':   false, // Changed
-      'tickets':    false, // Changed
-      'requests':   false, // Changed
-      'delete':     false, // Changed
+      'sync':           true,  // Changed
+      'import':         false,
+      'create':         false,
+      'edit':           false, // Changed
+      'warnings':       false, // Changed
+      'cache':          false, // Changed
+      'replace':        false, // Changed
+      'export':         false, // Changed
+      'export-no-meta': false, // Changed
+      'irods':          false, // Changed
+      'versions':       false, // Changed
+      'tickets':        false, // Changed
+      'requests':       false, // Changed
+      'delete':         false, // Changed
     }
     expectDropdownItems(wrapper, expected)
   })
 
-  test('render ops dropdown with windowsOs=true', async () => {
-    const appStore = useAppStore()
-    appStore.windowsOs = true
-    const wrapper = mountComponent()
-    const expected = {
-      'export':     false,
-      'export-win': true,
-    }
-    expectDropdownItems(wrapper, expected)
-  })
-
-  test('open windows export modal with button click', async () => {
+  test('open windows export modal with export item click', async () => {
     const appStore = useAppStore()
     appStore.windowsOs = true
     expect(mockWinExportModal.methods.show).not.toHaveBeenCalled()
 
     const wrapper = mountComponent()
-    await wrapper.find('#sodar-ss-op-item-export-win').trigger('click')
+    await wrapper.find('#sodar-ss-op-item-export').trigger('click')
     expect(mockWinExportModal.methods.show).toHaveBeenCalled()
   })
 

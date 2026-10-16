@@ -253,6 +253,19 @@ class SheetISAExportAPIView(
     **URL for JSON export:** ``/samplesheets/api/export/json/{Project.sodar_uuid}``
 
     **Methods:** ``GET``
+
+    **Parameters:**
+
+    - ``include_meta``: Include SODAR-specific export-only metadata ('0' or '1', optional, default=0)
+
+    **Returns:**
+
+    ISA-Tab TSV files wrapped in JSON or Zip archive as attachment, depending on
+    the URL used for querying.
+
+    **Version Changes**:
+
+    - ``1.3``: Add ``include_meta`` field
     """
 
     http_method_names = ['get']
@@ -260,6 +273,14 @@ class SheetISAExportAPIView(
     serializer_class = None
 
     def get(self, request, *args, **kwargs):
+        version = parse_version(request.version)
+        if version < VERSION_1_3 and 'include_meta' in request.GET:
+            raise NotAcceptable(
+                SHEETS_VERSION_ERR_MSG.format(
+                    feature='Field include_meta', min_version=VERSION_1_3
+                )
+            )
+
         project = self.get_project()
         investigation = Investigation.objects.filter(
             project=project, active=True
@@ -267,14 +288,22 @@ class SheetISAExportAPIView(
         if not investigation:
             raise NotFound()
         export_format = 'json'
-        if self.request.get_full_path() == reverse(
-            'samplesheets:api_export_zip',
-            kwargs={'project': project.sodar_uuid},
+        if (
+            reverse(
+                'samplesheets:api_export_zip',
+                kwargs={'project': project.sodar_uuid},
+            )
+            in self.request.get_full_path()
         ):
             export_format = 'zip'
+        include_meta = bool(int(request.GET.get('include_meta', '0')))
+
         try:
-            return self.get_isa_export(project, request, export_format)
+            return self.get_isa_export(
+                project, request, export_format, include_meta=include_meta
+            )
         except Exception as ex:
+            print(ex)
             raise APIException(f'Unable to export ISA-Tab: {ex}')
 
 
@@ -334,7 +363,7 @@ class SheetImportAPIView(
         if version < VERSION_1_3 and 'update_cache' in request.data:
             raise NotAcceptable(
                 SHEETS_VERSION_ERR_MSG.format(
-                    feature='Field update_cache', min_version='1.3'
+                    feature='Field update_cache', min_version=VERSION_1_3
                 )
             )
         if len(request.FILES) == 0:
@@ -554,7 +583,7 @@ class IrodsAccessTicketCreateAPIView(
             if 'allowed_hosts' in request.data:
                 raise ValidationError(
                     SHEETS_VERSION_ERR_MSG.format(
-                        feature='Field allowed_hosts', min_version='1.1'
+                        feature='Field allowed_hosts', min_version=VERSION_1_1
                     )
                 )
             default_hosts = app_settings.get(
@@ -628,7 +657,7 @@ class IrodsAccessTicketUpdateAPIView(
             if 'allowed_hosts' in request.data:
                 raise ValidationError(
                     SHEETS_VERSION_ERR_MSG.format(
-                        feature='Field allowed_hosts', min_version='1.1'
+                        feature='Field allowed_hosts', min_version=VERSION_1_1
                     )
                 )
             # Set current value for serializer
@@ -930,7 +959,7 @@ class IrodsDataRequestAcceptAPIView(
         if version < VERSION_1_3 and 'update_cache' in request.data:
             raise NotAcceptable(
                 SHEETS_VERSION_ERR_MSG.format(
-                    feature='Field update_cache', min_version='1.3'
+                    feature='Field update_cache', min_version=VERSION_1_3
                 )
             )
 
@@ -1186,7 +1215,7 @@ class ProjectIrodsFileListAPIView(
         if page and version < VERSION_1_1:
             raise NotAcceptable(
                 SHEETS_VERSION_ERR_MSG.format(
-                    feature='Pagination', min_version='1.1'
+                    feature='Pagination', min_version=VERSION_1_1
                 )
             )
         elif page:
@@ -1207,7 +1236,7 @@ class ProjectIrodsFileListAPIView(
         if include_colls and version < VERSION_1_2:
             raise NotAcceptable(
                 SHEETS_VERSION_ERR_MSG.format(
-                    feature='Field include_colls', min_version='1.2'
+                    feature='Field include_colls', min_version=VERSION_1_2
                 )
             )
 

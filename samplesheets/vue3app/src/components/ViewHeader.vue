@@ -31,6 +31,7 @@ import {
   STUDY_NAV_DROPDOWN_LEN,
   STUDY_NAV_TAB_LEN,
   URL_EDIT_FINISH_PREFIX,
+  URL_ISA_EXPORT_PREFIX,
   VIEW_OVERVIEW,
   VIEW_STUDY,
 } from '@/constants.ts'
@@ -111,6 +112,16 @@ function handleStudyNavigation (studyUuid: string, assayUuid: string | null) {
 function isStudyActive (studyUuid: string): boolean {
   return appStore.currentStudyUuid === studyUuid &&
     appStore.viewActive === VIEW_STUDY
+}
+
+function onIsaExportClick (meta: boolean) {
+  if (appStore.windowsOs) {
+    winExportCompRef.value!.show()
+  } else {
+    let url = URL_ISA_EXPORT_PREFIX + appStore.projectUuid
+    if (meta) url += '?meta=1'
+    window.location.href = url
+  }
 }
 
 function toggleEditMode () {
@@ -360,18 +371,19 @@ function truncate (s: string, maxLen: number): string {
           <i class="iconify" data-icon="mdi:upload"></i> Replace ISA-Tab
         </BDropdownItem>
         <BDropdownItem
-            v-if="appStore.sheetsAvailable && !appStore.windowsOs"
+            v-if="appStore.sheetsAvailable"
             class="sodar-ss-op-item"
             id="sodar-ss-op-item-export"
-            :href="'export/isa/' + appStore.projectUuid">
+            @click="onIsaExportClick(true)">
           <i class="iconify" data-icon="mdi:download"></i> Export ISA-Tab
         </BDropdownItem>
         <BDropdownItem
-            v-else-if="appStore.sheetsAvailable && appStore.windowsOs"
+            v-if="appStore.sheetsAvailable"
             class="sodar-ss-op-item"
-            id="sodar-ss-op-item-export-win"
-            @click="winExportCompRef!.show()">
-          <i class="iconify" data-icon="mdi:download"></i> Export ISA-Tab
+            id="sodar-ss-op-item-export-no-meta"
+            @click="onIsaExportClick(false)">
+          <i class="iconify" data-icon="mdi:download-outline"></i>
+          Export Without SODAR Metadata
         </BDropdownItem>
         <BDropdownItem
             v-if="appStore.sodarContext &&

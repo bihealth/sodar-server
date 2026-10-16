@@ -14,6 +14,7 @@ v1.4.0 (WIP)
 Major feature release.
 
 - :ref:`Add custom assay display name support <metadata_advanced_assay_name>`
+- :ref:`Add SODAR metadata to ISA-Tab exports and version saving <metadata_advanced_sodar_export>`
 - :ref:`Add cache update controls for samplesheets REST API views <api_samplesheets>`
 - :ref:`Upgrade Sample Sheets REST API version to v1.3 <api_samplesheets_version_1_3>`
 - Remove samplesheets legacy Vue2 app
@@ -26,6 +27,8 @@ REST API Updates
     * Allowed versions: ``1.0``, ``1.1``, ``1.2``, ``1.3``
     * ``IrodsDataRequestAcceptAPIView``
         + Add ``update_cache`` field
+    * ``SheetISAExportAPIView``
+        + Add ``include_meta`` field
     * ``SheetImportAPIView``
         + Add ``update_cache`` field
 

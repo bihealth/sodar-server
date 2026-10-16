@@ -338,3 +338,69 @@ Example:
     STUDY ASSAYS
     Study Assay File Name   a_assay.txt
     Comment[SODAR Assay Display Name] Your Custom Assay Display Name
+
+
+.. _metadata_advanced_sodar_export:
+
+Export-Only SODAR Metadata
+==========================
+
+Starting in v1.4, SODAR includes SODAR-specific metadata into exported ISA-Tab
+investigation files as comments. These can be found either in the
+``INVESTIGATION``,  ``STUDY`` or ``STUDY ASSAYS`` sections. Included export-only
+comments are listed in this section.
+
+The user can also export "pure" ISA-Tabs without SODAR-specific export-only
+metadata. For instructions, see related :ref:`UI <app_samplesheets_export>` or
+:ref:`REST API <api_samplesheets>` documentation.
+
+.. note::
+
+    On re-import, SODAR will strip these comments away from the active sample
+    sheets. They will be regenerated on further exports. Other SODAR metadata
+    with functional purposes, such as plugin overrides and assay display names,
+    will be retained on import.
+
+.. note::
+
+    Export-only metadata will always be saved in
+    :ref:`ISA-Tab versions <app_samplesheets_version>` created when editing or
+    replacing sample sheets. Currently there is no functionality to
+    automatically strip the metadata if exporting a specific ISA-Tab version
+    from the version history.
+
+Investigation Comments
+----------------------
+
+``SODAR AltamISA Version``
+    Version of the altamISA parser used to generate the ISA-Tab.
+``SODAR Investigation UUID``
+    SODAR investigation UUID, mostly useful for internal features and debugging.
+``SODAR Project Full Title``
+    Full category and project title path for the project in which the ISA-Tab
+    belongs.
+``SODAR Project URL``
+    URL for the related project in the SODAR server on which the ISA-Tab was
+    last saved.
+``SODAR Project UUID``
+    UUID of the project in SODAR.
+``SODAR Save Timestamp``
+    Date and time of the saving of this version of the ISA-Tab in ISO format.
+``SODAR Site Instance Name``
+    Name of the SODAR server instance on which the ISA-Tab was last saved.
+``SODAR Site URL``
+    Root URL of the SODAR server.
+``SODAR Server Version``
+    SODAR Server version at the time of saving the ISA-Tab.
+
+Study Comments
+--------------
+
+``SODAR Study UUID``
+    UUID of the study in SODAR.
+
+Assay Comments
+--------------
+
+``SODAR Assay UUID``
+    UUID of the assay in SODAR.

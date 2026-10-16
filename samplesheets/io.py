@@ -7,6 +7,7 @@ import time
 import warnings
 
 from fnmatch import fnmatch
+from importlib import import_module
 from typing import Any, Optional, Union
 from uuid import UUID
 from zipfile import ZipFile
@@ -27,15 +28,18 @@ from altamisa.isatab import (
     PublicationInfo,
 )
 
-from django.db import transaction
 from django.conf import settings
 from django.core.files.uploadedfile import UploadedFile
+from django.db import transaction
 from django.db.models import QuerySet
+from django.urls import reverse
+from django.utils import timezone
 
 # Projectroles dependency
 from projectroles.app_settings import AppSettingAPI
 from projectroles.models import Project, SODARUser
 
+import samplesheets.constants as sc
 from samplesheets.models import (
     Investigation,
     Study,
@@ -51,6 +55,7 @@ from samplesheets.utils import get_alt_names
 
 app_settings = AppSettingAPI()
 logger = logging.getLogger(__name__)
+site = import_module(settings.SITE_PACKAGE)
 
 
 # Local constants
@@ -536,6 +541,33 @@ class SampleSheetIO:
         db_parent.save()
         logger.debug(f'Added {len(arc_vals)} arcs to "{db_parent.get_name()}"')
 
+    @classmethod
+    def _update_isa_import_comments(
+        cls, comments: dict, headers: list, keys: list
+    ) -> tuple[dict, list]:
+        """
+        Update comments and headers for importing an Investigation, Study or
+        Assay object. Remove export-only SODAR metadata if present.
+
+        :param comments: Dict
+        :param headers: List
+        :param keys: List
+        :return: Tuple of comments dict, headers list
+        """
+        found_meta = {}
+        for k in keys:
+            if k in comments:
+                v = comments.pop(k, None)
+                found_meta[k] = v
+            h = f'Comment[{k}]'
+            if h in headers:
+                headers.remove(h)
+        if found_meta:
+            msg = 'SODAR metadata removed: '
+            msg += '; '.join([f'{k} = {v}' for k, v in found_meta.items()])
+            logger.debug(msg)
+        return comments, headers
+
     @transaction.atomic
     def import_isa(
         self,
@@ -583,6 +615,11 @@ class SampleSheetIO:
             InvestigationValidator(isa_inv).validate()
 
         # Create investigation
+        comments, headers = self._update_isa_import_comments(
+            self._import_comments(isa_inv.info.comments),
+            isa_inv.info.headers,
+            sc.ISA_META_INV_EXPORT_KEYS,
+        )  # Strip SODAR export-only metadata
         values = {
             'project': project,
             'identifier': isa_inv.info.identifier,
@@ -594,8 +631,8 @@ class SampleSheetIO:
             ),
             'publications': self._import_publications(isa_inv.publications),
             'contacts': self._import_contacts(isa_inv.contacts),
-            'headers': isa_inv.info.headers,
-            'comments': self._import_comments(isa_inv.info.comments),
+            'headers': headers,
+            'comments': comments,
             'submission_date': isa_inv.info.submission_date,
             'public_release_date': isa_inv.info.public_release_date,
             'parser_version': altamisa.__version__,
@@ -650,6 +687,11 @@ class SampleSheetIO:
                     logger.error(ex_msg)
                     raise Exception(ex_msg)
 
+            comments, headers = self._update_isa_import_comments(
+                self._import_comments(isa_study.info.comments),
+                isa_study.info.headers,
+                sc.ISA_META_STUDY_EXPORT_KEYS,
+            )  # Strip SODAR export-only metadata
             values = {
                 'identifier': isa_study.info.identifier,
                 'file_name': isa_study.info.path,
@@ -664,10 +706,10 @@ class SampleSheetIO:
                 'factors': {
                     k: attr.asdict(v) for k, v in isa_study.factors.items()
                 },
-                'comments': self._import_comments(isa_study.info.comments),
+                'comments': comments,
                 'submission_date': isa_study.info.submission_date,
                 'public_release_date': isa_study.info.public_release_date,
-                'headers': isa_study.info.headers,
+                'headers': headers,
             }
             db_study = Study.objects.create(**values)
             db_studies.append(db_study)
@@ -763,6 +805,11 @@ class SampleSheetIO:
                         raise Exception(ex_msg)
                 logger.debug('altamISA assay import OK')
 
+                comments, headers = self._update_isa_import_comments(
+                    self._import_comments(isa_assay.comments),
+                    isa_assay.headers,
+                    sc.ISA_META_ASSAY_EXPORT_KEYS,
+                )  # Strip SODAR export-only metadata
                 values = {
                     'file_name': isa_assay.path,
                     'study': db_study,
@@ -773,8 +820,8 @@ class SampleSheetIO:
                         isa_assay.technology_type
                     ),
                     'technology_platform': isa_assay.platform,
-                    'comments': self._import_comments(isa_assay.comments),
-                    'headers': isa_assay.headers,
+                    'comments': comments,
+                    'headers': headers,
                 }
                 db_assay = Assay.objects.create(**values)
                 # Handle parser warnings for assay
@@ -884,8 +931,65 @@ class SampleSheetIO:
         return list(ret.values())
 
     @classmethod
+    def _get_inv_meta_fields(cls, inv: Investigation) -> dict:
+        """
+        Return Investigation SODAR metadata comment fields as dictionary.
+
+        :param inv: Investigation object
+        :return: dict
+        """
+        host = settings.SODAR_API_DEFAULT_HOST.geturl()
+        project_url = reverse(
+            'projectroles:detail', kwargs={'project': inv.project.sodar_uuid}
+        )
+        return {
+            sc.ISA_META_ALTAMISA_VERSION: altamisa.__version__,
+            sc.ISA_META_INVESTIGATION_UUID: str(inv.sodar_uuid),
+            sc.ISA_META_PROJECT_FULL_TITLE: inv.project.full_title,
+            sc.ISA_META_PROJECT_URL: host + project_url,
+            sc.ISA_META_PROJECT_UUID: str(inv.project.sodar_uuid),
+            sc.ISA_META_SAVE_TIMESTAMP: timezone.localtime().isoformat(),
+            sc.ISA_META_SODAR_SITE_INSTANCE: settings.SITE_INSTANCE_TITLE,
+            sc.ISA_META_SODAR_SITE_URL: host,
+            sc.ISA_META_SODAR_SERVER_VERSION: site.__version__,
+        }
+
+    @classmethod
+    def _update_isa_export_comments(
+        cls, obj: Union[Investigation, Study, Assay], include_meta: bool
+    ) -> tuple[tuple[isa_models.Comment], list]:
+        """
+        Update comments and headers for exporting an Investigation, Study or
+        Assay object. Include export-only SODAR metadata if enabled.
+
+        :param obj: Investigation, Study or Assay object
+        :param include_meta: Include export-only SODAR metadata (bool)
+        :return: Tuple of comments dict, headers list
+        """
+        if include_meta:
+            keys = []
+            if isinstance(obj, Investigation):
+                meta_fields = cls._get_inv_meta_fields(obj)
+                obj.comments.update(cls._get_inv_meta_fields(obj))
+                keys = meta_fields.keys()
+            elif isinstance(obj, Study):
+                obj.comments[sc.ISA_META_STUDY_UUID] = str(obj.sodar_uuid)
+                keys = [sc.ISA_META_STUDY_UUID]
+            elif isinstance(obj, Assay):
+                obj.comments[sc.ISA_META_ASSAY_UUID] = str(obj.sodar_uuid)
+                keys = [sc.ISA_META_ASSAY_UUID]
+            for k in keys:
+                h = f'Comment[{k}]'
+                if h not in obj.headers:
+                    obj.headers.append(h)
+            msg = f'{obj.__class__.__name__} SODAR metadata added: '
+            msg += '; '.join([f'{k} = {obj.comments[k]}' for k in keys])
+            logger.debug(msg)
+        return obj.comments, obj.headers
+
+    @classmethod
     def _export_val(
-        cls, value: Union[dict, str]
+        cls, value: Union[dict, list, str]
     ) -> Union[list, str, isa_models.OntologyTermRef, None]:
         """
         Build a "FreeTextOrTermRef" value out of a string/dict value in a
@@ -1244,12 +1348,16 @@ class SampleSheetIO:
             )
         return ret
 
-    def export_isa(self, investigation: Investigation) -> dict:
+    def export_isa(
+        self, investigation: Investigation, include_meta: bool = False
+    ) -> dict:
         """
         Import ISA investigation and its studies/assays from the SODAR database
         model into an ISA-Tab archive.
 
         :param investigation: Investigation object
+        :param include_meta: Include export-only SODAR metadata comments (bool,
+                             default=False)
         :return: Dict
         """
         # Create StudyInfo objects for studies
@@ -1290,6 +1398,7 @@ class SampleSheetIO:
 
             # Create AssayInfo objects for assays
             for assay in study.assays.all().order_by('file_name'):
+                self._update_isa_export_comments(assay, include_meta)
                 assay_info = isa_models.AssayInfo(
                     measurement_type=self._export_val(assay.measurement_type),
                     technology_type=self._export_val(assay.technology_type),
@@ -1337,6 +1446,7 @@ class SampleSheetIO:
                 )
 
             # Create BasicInfo for study
+            self._update_isa_export_comments(study, include_meta)
             isa_study_basic = isa_models.BasicInfo(
                 path=study.file_name,
                 identifier=study.identifier,
@@ -1362,6 +1472,7 @@ class SampleSheetIO:
             study_idx += 1
 
         # Create BasicInfo for investigation
+        self._update_isa_export_comments(investigation, include_meta)
         inv_basic = isa_models.BasicInfo(
             path=investigation.file_name,
             identifier=investigation.identifier,
@@ -1383,7 +1494,6 @@ class SampleSheetIO:
             contacts=self._export_contacts(investigation.contacts),
             studies=tuple(isa_study_infos),
         )
-
         logger.info('Models converted')
 
         # Prepare return data
@@ -1476,6 +1586,10 @@ class SampleSheetIO:
                 ret['assays'][assay_info.path] = {'tsv': assay_out.getvalue()}
                 assay_out.close()
                 logger.info(f'Exported assay "{db_assay.file_name}"')
+        msg = 'Export{} OK'.format(
+            ' with SODAR metadata' if include_meta else ''
+        )
+        logger.info(msg)
         return ret
 
     @classmethod

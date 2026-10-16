@@ -284,7 +284,8 @@ class SheetVersionMixin:
         """
         sheet_io = SampleSheetIO()
         project = investigation.project
-        isa_data = sheet_io.export_isa(investigation)
+        # SODAR export-only metadata is always saved along with version
+        isa_data = sheet_io.export_isa(investigation, include_meta=True)
         # Save sheet config with ISA-Tab version
         isa_data['sheet_config'] = app_settings.get(
             APP_NAME, 'sheet_config', project=project

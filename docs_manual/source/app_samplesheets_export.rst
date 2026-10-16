@@ -21,6 +21,20 @@ supporting the model.
 
 .. include:: _include/sheets_zip_warning.rst
 
+If you want to omit SODAR specific metadata comments such as project UUIDs from
+the exported files, you can select :guilabel:`Export Without SODAR Metadata`.
+For more information on this metadata, see
+:ref:`metadata_advanced_sodar_export`.
+
+.. hint::
+
+    If you plan to use an exported ISA-Tab in another SODAR project or on
+    another SODAR instance, it is strongly recommended to export it *without*
+    the SODAR-specific metadata. If present, this information is retained on
+    import in :ref:`ISA-Tab versions <app_samplesheets_version>`. Having e.g.
+    UUIDs referring to projects other than the current one may create user
+    confusion.
+
 
 Export Excel Table
 ==================

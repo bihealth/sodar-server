@@ -7,10 +7,10 @@ Saving backup versions of sample sheets was previously described in
 :ref:`app_samplesheets_edit`. This section details the browsing and management
 of the saved versions.
 
-To access currently saved sheet versions, open the :guilabel:`Sheet Operations
+To access currently saved sheet versions, open the :guilabel:`Sheet Operations`
 dropdown and select :guilabel:`Sheet Versions`. You are directed to the version
 list view which lists all the versions saved of the investigation currently in
-the project with the most recent version on top.
+the project, with the most recent version on top.
 
 .. figure:: _static/app_samplesheets/version_list.png
     :align: center
@@ -64,3 +64,11 @@ elements, click the icon in the top right corner of the table card.
 Selecting any amount of versions in the version list enables the
 :guilabel:`Delete Versions` option, which allows you to delete multiple backup
 versions at once.
+
+.. note::
+
+    :ref:`Export-only SODAR metadata <metadata_advanced_sodar_export>` will
+    always be saved in the ISA-Tab versions created when editing or replacing
+    sample sheets. Currently there is no functionality to automatically strip
+    the metadata if exporting a specific ISA-Tab version from the version
+    history.

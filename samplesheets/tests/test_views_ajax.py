@@ -28,6 +28,7 @@ from ontologyaccess.io import OBOFormatOntologyIO
 from ontologyaccess.models import DEFAULT_TERM_URL
 from ontologyaccess.tests.test_io import OBO_PATH, OBO_NAME
 
+import samplesheets.constants as sc
 from samplesheets.models import (
     Study,
     Assay,
@@ -2116,8 +2117,13 @@ class TestSheetVersionSaveAjaxView(SamplesheetsViewTestBase):
             )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(ISATab.objects.count(), 2)
-        new_version = ISATab.objects.order_by('-pk').first()
-        self.assertEqual(new_version.description, VERSION_DESC)
+        isa_ver = ISATab.objects.order_by('-pk').first()
+        self.assertEqual(isa_ver.description, VERSION_DESC)
+        # Assert export-only SODAR metadata is saved
+        inv_data = isa_ver.data['investigation']['tsv']
+        self.assertIn(f'Comment[{sc.ISA_META_PROJECT_UUID}]', inv_data)
+        self.assertIn(f'Comment[{sc.ISA_META_STUDY_UUID}]', inv_data)
+        self.assertIn(f'Comment[{sc.ISA_META_ASSAY_UUID}]', inv_data)
 
 
 class TestSheetEditFinishAjaxView(SamplesheetsViewTestBase):
@@ -2143,6 +2149,12 @@ class TestSheetEditFinishAjaxView(SamplesheetsViewTestBase):
             )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(ISATab.objects.count(), 2)
+        # Assert export-only SODAR metadata is saved
+        isa_ver = ISATab.objects.order_by('-pk').first()
+        inv_data = isa_ver.data['investigation']['tsv']
+        self.assertIn(f'Comment[{sc.ISA_META_PROJECT_UUID}]', inv_data)
+        self.assertIn(f'Comment[{sc.ISA_META_STUDY_UUID}]', inv_data)
+        self.assertIn(f'Comment[{sc.ISA_META_ASSAY_UUID}]', inv_data)
 
     def test_post_version_saved(self):
         """Test POST with version_saved=True"""

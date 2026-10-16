@@ -136,6 +136,11 @@ ENABLED_BACKEND_PLUGINS = [
     'omics_irods',
 ]
 
+# General site settings
+SITE_TITLE = 'SODAR'
+SITE_SUBTITLE = 'Dev'
+SITE_INSTANCE_TITLE = 'SODAR Dev Site'
+
 # Projectroles app settings
 PROJECTROLES_SITE_MODE = 'SOURCE'
 PROJECTROLES_SECRET_LENGTH = 32

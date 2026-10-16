@@ -96,7 +96,7 @@ project and the current status of the project sample sheets.
 
 .. figure:: _static/app_samplesheets/sheet_ops.png
     :align: center
-    :scale: 75%
+    :scale: 80%
 
     Sheet Operations dropdown menu
 

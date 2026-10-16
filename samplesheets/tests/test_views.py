@@ -47,6 +47,7 @@ from landingzones.tests.test_models import LandingZoneMixin
 # Sodarcache dependency
 from sodarcache.models import JSONCacheItem
 
+import samplesheets.constants as sc
 from samplesheets.forms import TPL_DIR_FIELD
 from samplesheets.io import SampleSheetIO
 from samplesheets.models import (
@@ -1027,6 +1028,7 @@ class TestSheetISAExportView(SamplesheetsViewTestBase):
             'samplesheets:export_isa',
             kwargs={'project': self.project.sodar_uuid},
         )
+        self.url_meta_suffix = '?meta=1'
 
     def test_get(self):
         """Test SheetISAExportView GET"""
@@ -1037,6 +1039,18 @@ class TestSheetISAExportView(SamplesheetsViewTestBase):
             response.get('Content-Disposition'),
             f'attachment; filename="{self.investigation.archive_name}"',
         )
+        # TODO: Assert no metadata
+
+    def test_get_metadata(self):
+        """Test GET with metadata enabled"""
+        with self.login(self.user):
+            response = self.client.get(self.url + self.url_meta_suffix)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response.get('Content-Disposition'),
+            f'attachment; filename="{self.investigation.archive_name}"',
+        )
+        # TODO: Assert metadata
 
     def test_get_no_investigation(self):
         """Test GET with no investigation"""
@@ -1068,6 +1082,8 @@ class TestSheetISAExportView(SamplesheetsViewTestBase):
             response.get('Content-Disposition'),
             f'attachment; filename="{filename}"',
         )
+
+    # TODO: Test with version and metadata?
 
 
 class TestSheetDeleteView(SamplesheetsViewTestBase):
@@ -1207,7 +1223,6 @@ class TestSheetVersionRestoreView(SamplesheetsViewTestBase):
 
     def setUp(self):
         super().setUp()
-        # Import investigation
         self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
         self.study = self.investigation.studies.first()
         self.isatab = ISATab.objects.get(
@@ -1216,6 +1231,7 @@ class TestSheetVersionRestoreView(SamplesheetsViewTestBase):
         # Set up helpers
         self.cache_backend = plugin_api.get_backend_api('sodar_cache')
         self.timeline = plugin_api.get_backend_api('timeline_backend')
+        self.sheet_io = SampleSheetIO()
 
     def test_get(self):
         """Test SheetVersionRestoreView GET"""
@@ -1231,11 +1247,10 @@ class TestSheetVersionRestoreView(SamplesheetsViewTestBase):
 
     def test_post(self):
         """Test POST"""
-        sheet_io = SampleSheetIO()
-        isatab_new = sheet_io.save_isa(
+        isatab_new = self.sheet_io.save_isa(
             project=self.project,
             inv_uuid=self.investigation.sodar_uuid,
-            isa_data=sheet_io.export_isa(self.investigation),
+            isa_data=self.sheet_io.export_isa(self.investigation),
         )
         self.assertEqual(Investigation.objects.count(), 1)
         self.assertEqual(ISATab.objects.count(), 2)
@@ -1266,11 +1281,10 @@ class TestSheetVersionRestoreView(SamplesheetsViewTestBase):
 
     def test_post_study_cache(self):
         """Test POST with cached study table"""
-        sheet_io = SampleSheetIO()
-        isatab_new = sheet_io.save_isa(
+        isatab_new = self.sheet_io.save_isa(
             project=self.project,
             inv_uuid=self.investigation.sodar_uuid,
-            isa_data=sheet_io.export_isa(self.investigation),
+            isa_data=self.sheet_io.export_isa(self.investigation),
         )
 
         study_tables = table_builder.build_study_tables(self.study)
@@ -1295,6 +1309,38 @@ class TestSheetVersionRestoreView(SamplesheetsViewTestBase):
         cache_item = self.cache_backend.get_cache_item(*cache_args)
         self.assertEqual(cache_item.data, {})
         self.assertEqual(JSONCacheItem.objects.count(), 1)
+
+    def test_post_metadata(self):
+        """Test POST with SODAR export metadata"""
+        isatab_new = self.sheet_io.save_isa(
+            project=self.project,
+            inv_uuid=self.investigation.sodar_uuid,
+            isa_data=self.sheet_io.export_isa(self.investigation, True),
+        )
+        self.assertEqual(Investigation.objects.count(), 1)
+        self.assertEqual(ISATab.objects.count(), 2)
+
+        with self.login(self.user):
+            response = self.client.post(
+                reverse(
+                    'samplesheets:version_restore',
+                    kwargs={'isatab': isatab_new.sodar_uuid},
+                )
+            )
+
+        self.assertEqual(response.status_code, 302)
+        isatab_latest = ISATab.objects.all().order_by('-date_created').first()
+        self.assertNotEqual(
+            isatab_latest.date_created, self.isatab.date_created
+        )
+
+        # Assert export-only metadata has been stripped
+        inv = Investigation.objects.get(project=self.project, active=True)
+        study = inv.studies.first()
+        assay = study.assays.first()
+        self.assertNotIn(sc.ISA_META_PROJECT_UUID, inv.comments)
+        self.assertNotIn(sc.ISA_META_STUDY_UUID, study.comments)
+        self.assertNotIn(sc.ISA_META_ASSAY_UUID, assay.comments)
 
 
 class TestSheetVersionUpdateView(SamplesheetsViewTestBase):

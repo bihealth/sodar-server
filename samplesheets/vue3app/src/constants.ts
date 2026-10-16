@@ -22,6 +22,7 @@ export const URL_DATA_REQUEST_DELETE_PREFIX =
   '/samplesheets/ajax/irods/request/delete/'
 export const URL_DISPLAY_CONFIG_PREFIX = '/samplesheets/ajax/display/update/'
 export const URL_EDIT_FINISH_PREFIX = '/samplesheets/ajax/edit/finish/'
+export const URL_ISA_EXPORT_PREFIX = '/samplesheets/export/isa/'
 export const URL_IRODS_LIST_PREFIX = '/samplesheets/ajax/irods/objects/'
 export const URL_IRODS_STATS_PREFIX = '/irodsbackend/ajax/stats/'
 export const URL_PARSER_WARNING_PREFIX = '/samplesheets/ajax/warnings/'
