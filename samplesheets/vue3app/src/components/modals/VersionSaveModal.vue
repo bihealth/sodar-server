@@ -117,7 +117,7 @@ defineExpose({ show })
             variant="primary"
             id="sodar-ss-version-btn-update"
             @click="hideModal(true)">
-          <i class="iconify" data-icon="mdi:check-bold"></i> Update
+          <i class="iconify" data-icon="mdi:content-save"></i> Save
         </BButton>
       </BButtonGroup>
     </div>
