@@ -183,10 +183,6 @@ function truncate (s: string, maxLen: number): string {
          id="sodar-ss-subtitle-col-title">
       <h3 class="text-nowrap">
         <i class="iconify" data-icon="mdi:flask" /> Sample Sheets
-        <i class="iconify text-info ml-1 mb-1"
-           data-icon="mdi:alert-octagram"
-           data-height="20"
-           title="Sample Sheets Vue3 app enabled"></i>
       </h3>
     </div>
     <!-- Study navigation -->
@@ -482,7 +478,7 @@ div.sodar-subtitle-container {
 }
 div#sodar-ss-subtitle-col-title {
   padding-left: 0;
-  max-width: 255px;
+  max-width: 230px;
 }
 div#sodar-ss-subtitle-right {
   padding-right: 0;
