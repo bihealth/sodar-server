@@ -296,7 +296,7 @@ class TestFixIrodsTickets(
         self.logger_name = LOGGER_PREFIX + self.cmd_name
 
     def test_fixirodstickets(self):
-        """Test that fixirodstickets recreates orphaned ticket objects"""
+        """Test fixirodstickets to recreate orphaned ticket objects"""
         self.assertEqual(
             IrodsAccessTicket.objects.filter(ticket=ORPHAN_TICKET_STR).count(),
             0,
@@ -313,7 +313,7 @@ class TestFixIrodsTickets(
         self.assertEqual(ticket_obj.user, self.admin)
 
     def test_fixirodstickets_after_deletion(self):
-        """Test fixirodstickets after deleting the object"""
+        """Test fixirodstickets after object deletion"""
         ticket = IrodsAccessTicket.objects.get(ticket=DATA_TICKET_STR)
         ticket.delete()
         self.assertEqual(
@@ -350,7 +350,7 @@ class TestFixIrodsTickets(
             )
 
     def test_fixirodstickets_null_study(self):
-        """Test fixirodstickets when ticket study is None"""
+        """Test fixirodstickets with study=None"""
         self.irods_backend.get_ticket(self.irods, NULL_STUDY_TICKET_STR)
         self.assertEqual(
             IrodsAccessTicket.objects.filter(
@@ -398,7 +398,7 @@ class TestFixIrodsTickets(
                 STUDY_DOES_NOT_EXIST.format(
                     ticket_string=DATA_TICKET_STR, ticket_study=study_uuid
                 ),
-                cm.output[2],
+                ';'.join(cm.output),
             )
 
     def test_fixirodstickets_orphaned_assay(self):
@@ -427,5 +427,5 @@ class TestFixIrodsTickets(
                 ASSAY_DOES_NOT_EXIST.format(
                     ticket_string=DATA_TICKET_STR, ticket_assay=assay_uuid
                 ),
-                cm.output[2],
+                ';'.join(cm.output),
             )

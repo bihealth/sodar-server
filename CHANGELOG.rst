@@ -42,6 +42,7 @@ Fixed
     - ``OntologyEditModal`` ``editIdx`` variable reactivity (#2584)
     - ``IrodsDirModal`` responsiveness with long data object paths (#2569)
     - ``IrodsDataRequestAcceptBatchView`` redundant cache updates (#2586)
+    - ``TestFixIrodsTickets`` sporadic output assertion errors (#2597)
 
 Removed
 -------
