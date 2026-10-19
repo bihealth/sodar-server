@@ -7,6 +7,7 @@ import altamisa
 import re
 
 from datetime import datetime, timedelta
+from importlib import import_module
 from typing import Optional
 
 from irods.path import iRODSPath
@@ -49,6 +50,7 @@ from samplesheets.utils import get_alt_names
 
 
 plugin_api = PluginAPI()
+site = import_module(settings.SITE_PACKAGE)
 
 
 # Local constants
@@ -353,7 +355,7 @@ class SampleSheetModelMixin:
         investigation_uuid: Optional[str] = None,
         archive_name: Optional[str] = None,
         tags: list = [],
-        parser_version: Optional[str] = None,
+        parser_version: str = '',
         user: Optional[SODARUser] = None,
         extra_data: dict = {},
         description: Optional[str] = None,
@@ -1561,6 +1563,7 @@ class TestISATab(SamplesheetsModelTestBase):
             'archive_name': self.investigation.archive_name,
             'tags': [],
             'parser_version': DEFAULT_PARSER_VERSION,
+            'sodar_version': site.__version__,
             'user': self.user_owner.pk,
             'extra_data': {},
             'description': ISATAB_DESC,

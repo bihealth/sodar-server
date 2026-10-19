@@ -19,6 +19,8 @@ Added
     - SODAR metadata comments in ISA-Tab export and version saving (#614)
     - Vue3app ops dropdown  "Export Without Metadata" link (#614)
     - ``SheetISAExportAPIView`` ``include_meta`` field (#614)
+    - ``ISATab`` ``sodar_version`` field (#2596)
+    - SODAR version in ``SheetVersionListView`` (#2596)
 
 Changed
 -------

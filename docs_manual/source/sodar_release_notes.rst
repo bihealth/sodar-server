@@ -15,6 +15,7 @@ Major feature release.
 
 - :ref:`Add custom assay display name support <metadata_advanced_assay_name>`
 - :ref:`Add SODAR metadata to ISA-Tab exports and version saving <metadata_advanced_sodar_export>`
+- Add ISA-Tab versions SODAR version storage and displaying
 - :ref:`Add cache update controls for samplesheets REST API views <api_samplesheets>`
 - :ref:`Upgrade Sample Sheets REST API version to v1.3 <api_samplesheets_version_1_3>`
 - Remove samplesheets legacy Vue2 app

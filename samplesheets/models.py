@@ -4,9 +4,11 @@ import logging
 import os
 import uuid
 
-from altamisa.constants import table_headers as th
 from datetime import datetime
+from importlib import import_module
 from typing import Any, Optional, Union
+
+from altamisa.constants import table_headers as th
 
 from django.conf import settings
 from django.contrib.postgres.fields import ArrayField
@@ -1139,12 +1141,19 @@ class ISATab(models.Model):
         auto_now_add=True, help_text='DateTime of ISAtab creation or restoring'
     )
 
-    #: Version of altamISA used when processing this ISA-Tab
+    #: AltamISA version at the time of ISA-Tab saving
     parser_version = models.CharField(
         max_length=DEFAULT_LENGTH,
         blank=True,
-        null=True,
-        help_text='Version of altamISA used when processing this ISAtab',
+        default='',
+        help_text='AltamISA version at the time of ISA-Tab saving',
+    )
+
+    #: SODAR version at the time of ISA-Tab saving
+    sodar_version = models.CharField(
+        max_length=DEFAULT_LENGTH,
+        blank=True,
+        help_text='SODAR version at the time of ISA-Tab saving',
     )
 
     #: Optional extra data
@@ -1171,6 +1180,19 @@ class ISATab(models.Model):
     def __repr__(self):
         values = (self.project.title, self.archive_name, self.date_created)
         return 'ISATab({})'.format(', '.join(repr(v) for v in values))
+
+    def save(self, *args, **kwargs):
+        """Override save() to populate fields"""
+        if not self.pk:  # Save SODAR version on create
+            try:
+                site = import_module(settings.SITE_PACKAGE)
+                self.sodar_version = site.__version__[:DEFAULT_LENGTH]
+            except Exception as ex:
+                logger.error(
+                    f'Exception in saving ISATab with sodar_version: {ex}'
+                )
+                self.sodar_version = ''
+        super().save()
 
     # Custom row-level functions
 
