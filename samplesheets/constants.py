@@ -8,6 +8,10 @@ DEFAULT_EXTERNAL_LINK_LABELS = {
     'x-generic-remote': {'label': 'External ID'},
 }
 
+# ISA-Tab comment fields NOT originating from SODAR
+ISA_COMM_STUDY_CONFIG_CREATE = 'Created With Configuration'
+ISA_COMM_STUDY_CONFIG_OPEN = 'Last Opened With Configuration'
+
 # Investigation ISA-Tab SODAR metadata keys
 ISA_META_ALTAMISA_VERSION = 'SODAR AltamISA Version'
 ISA_META_INVESTIGATION_UUID = 'SODAR Investigation UUID'

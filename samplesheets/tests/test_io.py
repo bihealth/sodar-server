@@ -39,7 +39,7 @@ from projectroles.tests.test_models import (
 )
 
 import samplesheets.constants as sc
-from samplesheets.models import Investigation, ISATab, CONFIG_LABEL_CREATE
+from samplesheets.models import Investigation, ISATab
 from samplesheets.io import SampleSheetIO
 
 
@@ -499,18 +499,20 @@ class TestSampleSheetIOImport(SampleSheetIOTestBase):
     def test_update_isa_import_comments(self):
         """Test _update_isa_import_comments()"""
         comments = {
-            CONFIG_LABEL_CREATE: 'bih_germline',
+            sc.ISA_COMM_STUDY_CONFIG_CREATE: 'bih_germline',
             sc.ISA_META_PROJECT_UUID: str(self.project.sodar_uuid),
         }
         headers = [
             ih.INVESTIGATION_IDENTIFIER,
-            f'Comment[{CONFIG_LABEL_CREATE}]'
+            f'Comment[{sc.ISA_COMM_STUDY_CONFIG_CREATE}]'
             f'Comment[{sc.ISA_META_PROJECT_UUID}]',
         ]
         ret_c, ret_h = self.sheet_io._update_isa_import_comments(
             comments, headers, sc.ISA_META_INV_EXPORT_KEYS
         )
-        self.assertEqual(ret_c, {CONFIG_LABEL_CREATE: 'bih_germline'})
+        self.assertEqual(
+            ret_c, {sc.ISA_COMM_STUDY_CONFIG_CREATE: 'bih_germline'}
+        )
         self.assertEqual(ret_h, headers[:2])
 
     def test_import_isa_metadata(self):

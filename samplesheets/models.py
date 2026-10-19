@@ -21,11 +21,7 @@ from django.utils.timezone import localtime
 from projectroles.models import Project
 from projectroles.plugins import PluginAPI
 
-from samplesheets.constants import (
-    ISA_META_STUDY_PLUGIN,
-    ISA_META_ASSAY_PLUGIN,
-    ISA_META_ASSAY_DISPLAY_NAME,
-)
+import samplesheets.constants as sc
 from samplesheets.utils import (
     get_alt_names,
     get_comment,
@@ -72,7 +68,6 @@ SPECIAL_FIELD_ATTRS = [
 
 GENERIC_MATERIAL_CHOICES = [(k, v) for k, v in GENERIC_MATERIAL_TYPES.items()]
 NOT_AVAILABLE_STR = '(N/A)'
-CONFIG_LABEL_CREATE = 'Created With Configuration'
 
 ISATAB_TAGS = {
     'IMPORT': 'Imported from an ISA-Tab archive',
@@ -278,9 +273,11 @@ class Investigation(BaseSampleSheet):
     def get_configuration(self) -> Optional[str]:
         """Return used configuration as string if found"""
         # TODO: Do this with a nice regex instead, too tired now
-        if CONFIG_LABEL_CREATE not in self.comments:
+        if sc.ISA_COMM_STUDY_CONFIG_CREATE not in self.comments:
             return None
-        return get_config_name(get_comment(self, CONFIG_LABEL_CREATE))
+        return get_config_name(
+            get_comment(self, sc.ISA_COMM_STUDY_CONFIG_CREATE)
+        )
 
     def get_material_count(self, item_type: str) -> int:
         """Return matieral count of a certain type within the investigation"""
@@ -422,7 +419,7 @@ class Study(BaseSampleSheet):
         from samplesheets.plugins import SampleSheetStudyPluginPoint
 
         inv_config = self.investigation.get_configuration()
-        study_override = self.comments.get(ISA_META_STUDY_PLUGIN)
+        study_override = self.comments.get(sc.ISA_META_STUDY_PLUGIN)
         if study_override:
             try:
                 return SampleSheetStudyPluginPoint.get_plugin(
@@ -577,11 +574,11 @@ class Assay(BaseSampleSheet):
 
     def save(self, *args, **kwargs):
         """Custom validation and saving method"""
-        if self.comments.get(ISA_META_ASSAY_DISPLAY_NAME, '').strip():
+        if self.comments.get(sc.ISA_META_ASSAY_DISPLAY_NAME, '').strip():
             for a in self.study.assays.exclude(sodar_uuid=self.sodar_uuid):
                 if (
-                    a.comments.get(ISA_META_ASSAY_DISPLAY_NAME)
-                    == self.comments[ISA_META_ASSAY_DISPLAY_NAME]
+                    a.comments.get(sc.ISA_META_ASSAY_DISPLAY_NAME)
+                    == self.comments[sc.ISA_META_ASSAY_DISPLAY_NAME]
                 ):
                     raise ValidationError(ASSAY_DISPLAY_NAME_UNIQUE_MSG)
         super().save(*args, **kwargs)
@@ -594,8 +591,8 @@ class Assay(BaseSampleSheet):
 
     def get_display_name(self) -> str:
         """Return display name for assay"""
-        if self.comments.get(ISA_META_ASSAY_DISPLAY_NAME, '').strip():
-            return self.comments[ISA_META_ASSAY_DISPLAY_NAME]
+        if self.comments.get(sc.ISA_META_ASSAY_DISPLAY_NAME, '').strip():
+            return self.comments[sc.ISA_META_ASSAY_DISPLAY_NAME]
         return ' '.join(s for s in self.get_name().split('_')).title()
 
     def get_plugin(self) -> Any:
@@ -604,15 +601,15 @@ class Assay(BaseSampleSheet):
         from samplesheets.plugins import SampleSheetAssayPluginPoint
 
         # Check override in assay comments
-        if self.comments.get(ISA_META_ASSAY_PLUGIN):
+        if self.comments.get(sc.ISA_META_ASSAY_PLUGIN):
             try:
                 return SampleSheetAssayPluginPoint.get_plugin(
-                    self.comments[ISA_META_ASSAY_PLUGIN]
+                    self.comments[sc.ISA_META_ASSAY_PLUGIN]
                 )
             except Exception as ex:
                 logger.error(
                     f'Exception raised retrieving assay plugin with name '
-                    f'"{self.comments[ISA_META_ASSAY_PLUGIN]}": {ex}'
+                    f'"{self.comments[sc.ISA_META_ASSAY_PLUGIN]}": {ex}'
                 )
 
         # If not found, select by measurement/technology type

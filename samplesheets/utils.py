@@ -20,7 +20,7 @@ from projectroles.app_settings import AppSettingAPI
 from projectroles.models import Project, SODARUser
 from projectroles.plugins import PluginAPI
 
-from samplesheets.constants import DEFAULT_EXTERNAL_LINK_LABELS
+import samplesheets.constants as sc
 
 # NOTE: Can't import samplesheets models for type hints due to circular import
 # TODO: Refactor utils into models and/or other modules where applicable
@@ -31,8 +31,6 @@ plugin_api = PluginAPI()
 
 # Local constants
 ALT_NAMES_COUNT = 3  # Needed for ArrayField hack
-CONFIG_LABEL_CREATE = 'Created With Configuration'
-CONFIG_LABEL_OPEN = 'Last Opened With Configuration'
 NAME_FIELDS = ['name', 'protocol']
 
 
@@ -216,8 +214,8 @@ def get_comments(obj: Any) -> Optional[dict]:
         if k in ret:
             ret[k] = get_config_name(ret[k])
 
-    _clean_config(CONFIG_LABEL_CREATE)
-    _clean_config(CONFIG_LABEL_OPEN)
+    _clean_config(sc.ISA_COMM_STUDY_CONFIG_CREATE)
+    _clean_config(sc.ISA_COMM_STUDY_CONFIG_OPEN)
     return ret
 
 
@@ -392,7 +390,7 @@ def get_ext_link_labels() -> dict:
     if ext_path and os.path.exists(ext_path):
         with open(ext_path, 'r') as f:
             return json.load(f)
-    return DEFAULT_EXTERNAL_LINK_LABELS
+    return sc.DEFAULT_EXTERNAL_LINK_LABELS
 
 
 def get_latest_file_path(paths: list[str]) -> str:

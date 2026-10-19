@@ -29,11 +29,7 @@ from projectroles.tests.test_models import (
 )
 from projectroles.utils import build_secret
 
-from samplesheets.constants import (
-    ISA_META_ASSAY_DISPLAY_NAME,
-    ISA_META_ASSAY_PLUGIN,
-    ISA_META_STUDY_PLUGIN,
-)
+import samplesheets.constants as sc
 from samplesheets.models import (
     Investigation,
     Study,
@@ -45,7 +41,6 @@ from samplesheets.models import (
     IrodsAccessTicket,
     IrodsDataRequest,
     NOT_AVAILABLE_STR,
-    CONFIG_LABEL_CREATE,
     IRODS_REQUEST_ACTION_DELETE,
     IRODS_REQUEST_STATUS_ACTIVE,
 )
@@ -382,7 +377,7 @@ class SampleSheetModelMixin:
         cls, investigation: Investigation, config_name: str
     ) -> Investigation:
         """Set the configuration for an investigation"""
-        investigation.comments[CONFIG_LABEL_CREATE] = {
+        investigation.comments[sc.ISA_COMM_STUDY_CONFIG_CREATE] = {
             'unit': None,
             'value': config_name,
         }
@@ -648,7 +643,9 @@ class TestStudy(SamplesheetsModelTestBase):
 
     def test_get_plugin_investigation(self):
         """Test get_plugin() with config set in investigation"""
-        self.investigation.comments = {CONFIG_LABEL_CREATE: 'bih_germline'}
+        self.investigation.comments = {
+            sc.ISA_COMM_STUDY_CONFIG_CREATE: 'bih_germline'
+        }
         self.assertIsInstance(
             self.study.get_plugin(),
             SampleSheetStudyPluginPoint.get_plugin(
@@ -659,7 +656,7 @@ class TestStudy(SamplesheetsModelTestBase):
     def test_get_plugin_override(self):
         """Test get_plugin() with config set in study override"""
         self.study.comments = {
-            ISA_META_STUDY_PLUGIN: 'samplesheets_study_germline'
+            sc.ISA_META_STUDY_PLUGIN: 'samplesheets_study_germline'
         }
         self.assertIsInstance(
             self.study.get_plugin(),
@@ -671,15 +668,17 @@ class TestStudy(SamplesheetsModelTestBase):
     def test_get_plugin_override_invalid(self):
         """Test get_plugin() with invalid config name set in study override"""
         self.study.comments = {
-            ISA_META_STUDY_PLUGIN: 'samplesheets_study_NONEXISTENT_NAME'
+            sc.ISA_META_STUDY_PLUGIN: 'samplesheets_study_NONEXISTENT_NAME'
         }
         self.assertIsNone(self.study.get_plugin())
 
     def test_get_plugin_both(self):
         """Test get_plugin() with investigation and study configs"""
-        self.investigation.comments = {CONFIG_LABEL_CREATE: 'bih_germline'}
+        self.investigation.comments = {
+            sc.ISA_COMM_STUDY_CONFIG_CREATE: 'bih_germline'
+        }
         self.study.comments = {
-            ISA_META_STUDY_PLUGIN: 'samplesheets_study_cancer'
+            sc.ISA_META_STUDY_PLUGIN: 'samplesheets_study_cancer'
         }
         self.assertIsInstance(
             self.study.get_plugin(),
@@ -801,13 +800,15 @@ class TestAssay(SamplesheetsModelTestBase):
 
     def test_get_display_name_custom(self):
         """Test get_display_name() with custom name in comments"""
-        self.assay.comments = {ISA_META_ASSAY_DISPLAY_NAME: 'Custom Assay Name'}
+        self.assay.comments = {
+            sc.ISA_META_ASSAY_DISPLAY_NAME: 'Custom Assay Name'
+        }
         self.assertEqual(self.assay.get_display_name(), 'Custom Assay Name')
 
     def test_get_display_name_custom_empty(self):
         """Test get_display_name() with empty custom name"""
         # Testing with a whitespace as that also counts as empty
-        self.assay.comments = {ISA_META_ASSAY_DISPLAY_NAME: ' '}
+        self.assay.comments = {sc.ISA_META_ASSAY_DISPLAY_NAME: ' '}
         # We should return the generated name
         self.assertEqual(self.assay.get_display_name(), 'Assay')
 
@@ -833,7 +834,9 @@ class TestAssay(SamplesheetsModelTestBase):
 
     def test_get_plugin_force(self):
         """Test get_plugin() with forced plugin in assay comments"""
-        self.assay.comments = {ISA_META_ASSAY_PLUGIN: PLUGIN_NAME_GENERIC_RAW}
+        self.assay.comments = {
+            sc.ISA_META_ASSAY_PLUGIN: PLUGIN_NAME_GENERIC_RAW
+        }
         plugin = self.assay.get_plugin()
         self.assertIsNotNone(plugin)
         self.assertEqual(plugin.name, PLUGIN_NAME_GENERIC_RAW)
@@ -850,7 +853,9 @@ class TestAssay(SamplesheetsModelTestBase):
             'accession': None,
             'ontology_name': None,
         }
-        self.assay.comments = {ISA_META_ASSAY_PLUGIN: PLUGIN_NAME_GENERIC_RAW}
+        self.assay.comments = {
+            sc.ISA_META_ASSAY_PLUGIN: PLUGIN_NAME_GENERIC_RAW
+        }
         plugin = self.assay.get_plugin()
         self.assertIsNotNone(plugin)
         self.assertEqual(plugin.name, PLUGIN_NAME_GENERIC_RAW)
@@ -876,9 +881,9 @@ class TestAssay(SamplesheetsModelTestBase):
             tech_type=ASSAY_TECH_TYPE,
             measurement_type=ASSAY_MEASURE_TYPE,
             arcs=[],
-            comments={ISA_META_ASSAY_DISPLAY_NAME: 'Assay Name'},
+            comments={sc.ISA_META_ASSAY_DISPLAY_NAME: 'Assay Name'},
         )
-        self.assay.comments = {ISA_META_ASSAY_DISPLAY_NAME: 'Assay Name'}
+        self.assay.comments = {sc.ISA_META_ASSAY_DISPLAY_NAME: 'Assay Name'}
         with self.assertRaises(ValidationError):
             self.assay.save()
 
@@ -891,9 +896,9 @@ class TestAssay(SamplesheetsModelTestBase):
             tech_type=ASSAY_TECH_TYPE,
             measurement_type=ASSAY_MEASURE_TYPE,
             arcs=[],
-            comments={ISA_META_ASSAY_DISPLAY_NAME: 'Assay Name2'},
+            comments={sc.ISA_META_ASSAY_DISPLAY_NAME: 'Assay Name2'},
         )
-        self.assay.comments = {ISA_META_ASSAY_DISPLAY_NAME: 'Assay Name'}
+        self.assay.comments = {sc.ISA_META_ASSAY_DISPLAY_NAME: 'Assay Name'}
         self.assay.save()  # No exception should be raised
 
     def test_get_save_display_name_dupe_empty(self):
@@ -905,9 +910,9 @@ class TestAssay(SamplesheetsModelTestBase):
             tech_type=ASSAY_TECH_TYPE,
             measurement_type=ASSAY_MEASURE_TYPE,
             arcs=[],
-            comments={ISA_META_ASSAY_DISPLAY_NAME: ''},
+            comments={sc.ISA_META_ASSAY_DISPLAY_NAME: ''},
         )
-        self.assay.comments = {ISA_META_ASSAY_DISPLAY_NAME: ''}
+        self.assay.comments = {sc.ISA_META_ASSAY_DISPLAY_NAME: ''}
         self.assay.save()  # No exception should be raised
 
     def test_get_save_display_name_dupe_other_study(self):
@@ -927,9 +932,9 @@ class TestAssay(SamplesheetsModelTestBase):
             tech_type=ASSAY_TECH_TYPE,
             measurement_type=ASSAY_MEASURE_TYPE,
             arcs=[],
-            comments={ISA_META_ASSAY_DISPLAY_NAME: 'Assay Name'},
+            comments={sc.ISA_META_ASSAY_DISPLAY_NAME: 'Assay Name'},
         )
-        self.assay.comments = {ISA_META_ASSAY_DISPLAY_NAME: 'Assay Name'}
+        self.assay.comments = {sc.ISA_META_ASSAY_DISPLAY_NAME: 'Assay Name'}
         self.assay.save()  # No exception should be raised
 
 
