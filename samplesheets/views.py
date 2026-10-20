@@ -127,6 +127,10 @@ TRACK_HUBS_COLL = 'TrackHubs'
 RESULTS_COLL_ID = 'results_reports'
 RESULTS_COLL = 'ResultsReports'
 REPLACE_DUPE_UUID_MSG = 'Duplicate {obj} UUID in metadata'
+REPLACE_NO_MATCH_MSG = (
+    'iRODS collections exist but studies and assays do not match: unable to '
+    'replace investigation'
+)
 IRODS_REQUEST_EVENT_ACCEPT = 'irods_request_accept'
 IRODS_REQUEST_EVENT_CREATE = 'irods_request_create'
 IRODS_REQUEST_EVENT_DELETE = 'irods_request_delete'
@@ -255,6 +259,7 @@ class SheetImportMixin:
             return False
         return True
 
+    # TODO: Update to support changed names and metadata UUID
     @classmethod
     def _update_relations(cls, investigation: Investigation):
         """
@@ -290,6 +295,7 @@ class SheetImportMixin:
                 f'"{ticket.ticket}" ({ticket.sodar_uuid})'
             )
 
+    # TODO: Review and potentially update
     def _update_sheet_configs(
         self,
         project: Project,
@@ -484,23 +490,27 @@ class SheetImportMixin:
         new_assay_count = Assay.objects.filter(
             study__investigation=investigation
         ).count()
+        use_meta_uuids = investigation.comments.get(
+            sc.ISA_META_PROJECT_UUID
+        ) == str(project.sodar_uuid)
 
-        # Ensure existing studies and assays are found in new inv
-        compare_ok = self._compare_invs(old_inv, investigation)
         try:
+            # Ensure existing studies and assays are found in new inv
+            compare_ok = self._compare_invs(old_inv, investigation)
             if old_inv.irods_status and not compare_ok:
-                raise ValueError(
-                    'iRODS collections exist but studies and assays '
-                    'do not match: unable to replace investigation'
-                )
+                raise ValueError(REPLACE_NO_MATCH_MSG)
 
             # Save UUIDs
-            # TODO: Update mapping to support renaming study/assay files
             old_inv_uuid = old_inv.sodar_uuid
-            for study in old_inv.studies.all():
-                old_study_uuids[study.identifier] = study.sodar_uuid
-                for assay in study.assays.all():
-                    old_assay_uuids[assay.get_name()] = assay.sodar_uuid
+            if (
+                not use_meta_uuids
+            ):  # We can skip the rest if metadata is present
+                for old_study in old_inv.studies.all():
+                    old_study_uuids[old_study.identifier] = old_study.sodar_uuid
+                    for old_assay in old_study.assays.all():
+                        old_assay_uuids[old_assay.get_name()] = (
+                            old_assay.sodar_uuid
+                        )
 
             # Set irods_status to our previous sheet's state
             investigation.irods_status = old_inv.irods_status
@@ -534,13 +544,11 @@ class SheetImportMixin:
             invs = Investigation.objects.filter(project=project).order_by('-pk')
             old_inv = None
             if invs:
-                # Activate previous investigation
                 if invs.count() > 1:
                     invs[1].active = True
-                    invs[1].save()
+                    invs[1].save()  # Activate previous investigation
                     old_inv = invs[1]
-                    # Delete failed import
-                    invs[0].delete()
+                    invs[0].delete()  # Delete failed import
             # Just in case, delete remaining ones from the db
             if old_inv:
                 Investigation.objects.filter(project=project).exclude(
@@ -557,13 +565,19 @@ class SheetImportMixin:
             investigation.sodar_uuid = old_inv_uuid
             investigation.save()
             for study in investigation.studies.all():
-                if study.identifier in old_study_uuids:
+                study_meta_uuid = study.comments.get(sc.ISA_META_STUDY_UUID)
+                if use_meta_uuids and study_meta_uuid:
+                    study.sodar_uuid = study_meta_uuid
+                elif study.identifier in old_study_uuids:
                     study.sodar_uuid = old_study_uuids[study.identifier]
-                    study.save()
+                study.save()
                 for assay in study.assays.all():
-                    if assay.get_name() in old_assay_uuids:
+                    assay_meta_uuid = assay.comments.get(sc.ISA_META_ASSAY_UUID)
+                    if use_meta_uuids and assay_meta_uuid:
+                        assay.sodar_uuid = assay_meta_uuid
+                    elif assay.get_name() in old_assay_uuids:
                         assay.sodar_uuid = old_assay_uuids[assay.get_name()]
-                        assay.save()
+                    assay.save()
         return investigation
 
     def handle_import_exception(

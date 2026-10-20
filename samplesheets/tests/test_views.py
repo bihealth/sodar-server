@@ -128,6 +128,7 @@ SHEET_NAME_EMPTY_ASSAY = 'i_small_assay_empty.zip'
 SHEET_PATH_EMPTY_ASSAY = SHEET_DIR_SPECIAL + SHEET_NAME_EMPTY_ASSAY
 SHEET_NAME_NO_PLUGIN_ASSAY = 'i_small_assay_no_plugin.zip'
 SHEET_PATH_NO_PLUGIN_ASSAY = SHEET_DIR_SPECIAL + SHEET_NAME_NO_PLUGIN_ASSAY
+SHEET_PATH_META = SHEET_DIR_SPECIAL + 'i_small2_export_metadata.zip'
 SHEET_VERSION_DESC = 'description'
 SOURCE_NAME = '0815'
 SOURCE_NAME_FAIL = 'oop5Choo'
@@ -149,6 +150,11 @@ with open(CONFIG_PATH_DEFAULT) as fp:
     CONFIG_DATA_DEFAULT = json.load(fp)
 BACKEND_PLUGINS_NO_TPL = settings.ENABLED_BACKEND_PLUGINS.copy()
 BACKEND_PLUGINS_NO_TPL.remove('isatemplates_backend')
+# Dummy metadata UUIDs as saved in i_small2_export_metadata.zip
+META_PROJECT_UUID = '00000000-0000-0000-0000-000000000000'
+META_INV_UUID = '11111111-1111-1111-1111-111111111111'
+META_STUDY_UUID = '22222222-2222-2222-2222-222222222222'
+META_ASSAY_UUID = '33333333-3333-3333-3333-333333333333'
 
 
 # TODO: Add testing for study table cache updates
@@ -496,6 +502,23 @@ class TestSheetImportView(
 ):
     """Tests for SheetImportView"""
 
+    def _update_replace_uuids(self, inv: Investigation):
+        """Update UUIDs for sheet replace"""
+        self.project.sodar_uuid = META_PROJECT_UUID
+        self.project.save()
+        inv.sodar_uuid = META_INV_UUID
+        inv.save()
+        study = inv.studies.first()
+        study.sodar_uuid = META_STUDY_UUID
+        study.save()
+        assay = study.assays.first()
+        assay.sodar_uuid = META_ASSAY_UUID
+        assay.save()
+        self.url = reverse(
+            'samplesheets:import',
+            kwargs={'project': self.project.sodar_uuid},
+        )  # Update URL to point to the correct UUID
+
     def setUp(self):
         super().setUp()
         self.timeline = plugin_api.get_backend_api('timeline_backend')
@@ -541,7 +564,7 @@ class TestSheetImportView(
         )
 
     def test_post_replace(self):
-        """Test POST to replace replacing existing investigation"""
+        """Test POST to replace existing investigation"""
         inv = self.import_isa_from_file(SHEET_PATH, self.project)
         uuid = inv.sodar_uuid
         old_inv_pk = inv.pk
@@ -800,6 +823,65 @@ class TestSheetImportView(
         cache_item = self.cache_backend.get_cache_item(*cache_args)
         self.assertIsNone(cache_item)
         self.assertEqual(JSONCacheItem.objects.count(), 0)
+
+    def test_post_replace_metadata(self):
+        """Test POST to replace with metadata"""
+        inv = self.import_isa_from_file(SHEET_PATH, self.project)
+        self._update_replace_uuids(inv)
+
+        old_inv_pk = inv.pk
+        app_settings.set(
+            'samplesheets',
+            'display_config',
+            {},
+            project=self.project,
+            user=self.user,
+        )
+        self.assertEqual(Investigation.objects.count(), 1)
+        self.assertEqual(ISATab.objects.count(), 1)
+        self.assertEqual(
+            AppSetting.objects.filter(name='display_config').count(), 1
+        )
+
+        with open(SHEET_PATH_META, 'rb') as file:
+            post_data = {'file_upload': file}
+            with self.login(self.user):
+                response = self.client.post(self.url, post_data)
+
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(Investigation.objects.count(), 1)
+        inv = Investigation.objects.get(project=self.project, active=True)
+        self.assertEqual(str(inv.sodar_uuid), META_INV_UUID)
+        self.assertNotEqual(inv.pk, old_inv_pk)  # Db id should have changed
+        self.assertEqual(ISATab.objects.count(), 2)
+        self.assertListEqual(
+            ISATab.objects.all().order_by('-pk').first().tags,
+            ['IMPORT', 'REPLACE'],
+        )
+        self.assertIsNotNone(
+            ISATab.objects.all().order_by('-pk').first().data['sheet_config']
+        )
+        self.assertIsNotNone(
+            ISATab.objects.all().order_by('-pk').first().data['display_config']
+        )
+        self.assertEqual(
+            AppSetting.objects.filter(name='display_config').count(), 0
+        )
+        # Assert study render table cache
+        inv = Investigation.objects.first()
+        cache_name = STUDY_TABLE_CACHE_ITEM.format(
+            study=inv.studies.first().sodar_uuid
+        )
+        self.assertIsNone(
+            self.cache_backend.get_cache_item(
+                APP_NAME, cache_name, self.project
+            )
+        )
+
+    # TODO: Test replace with metadata and landing zone
+    # TODO: Test replace with metadata and iRODS ticket
+    # TODO: Test with other combinations and metadata (see tests above)
+    # TODO: TBD: What to test here and what in TestSheetImportMixin?
 
     def test_post_import_critical_warnings(self):
         """Test POST with critical warnings raised in altamISA"""
