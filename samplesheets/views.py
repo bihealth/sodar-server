@@ -209,14 +209,14 @@ class SheetImportMixin:
         # NOTE: Project UUID and all study/assay UUIDs must be present in
         #       comments for UUID comparison to be attempted
         # TODO: Move mapping out of the func? I think we need it elsewhere..
-        new_uuids = {}  # In form of {study: {obj: Study, assays: []}
+        u_map = {}  # Format: {study_uuid: {obj: Study, assays: [assay_uuid]}
         if new_inv.comments.get(sc.ISA_META_PROJECT_UUID) == str(
             old_inv.project.sodar_uuid
         ):
             for new_study in new_inv.studies.all():
                 s_uuid = new_study.comments.get(sc.ISA_META_STUDY_UUID)
                 if s_uuid:
-                    if s_uuid in new_uuids:
+                    if s_uuid in u_map:
                         raise ValueError(
                             REPLACE_DUPE_UUID_MSG.format(obj='study')
                         )
@@ -227,29 +227,29 @@ class SheetImportMixin:
                         if a_uuid:
                             if a_uuid in a_uuids:  # Dupe within study
                                 raise ValueError(a_err)
-                            for s in new_uuids.values():
+                            for s in u_map.values():
                                 if a_uuid in s['assays']:  # Dupe in other study
                                     raise ValueError(a_err)
                             a_uuids.append(a_uuid)
-                    new_uuids[s_uuid] = {'obj': new_study, 'assays': a_uuids}
-        try:
+                    u_map[s_uuid] = {'obj': new_study, 'assays': a_uuids}
+        try:  # Compare existing studies and assays to new ones
             for old_study in old_inv.studies.all():
                 s_uuid = str(old_study.sodar_uuid)
-                if s_uuid not in new_uuids:
+                if s_uuid not in u_map:
                     new_study = new_inv.studies.get(
                         identifier=old_study.identifier,
                         file_name=old_study.file_name,
                     )
                 else:
-                    new_study = new_uuids[s_uuid]['obj']
+                    new_study = u_map[s_uuid]['obj']
                 for old_assay in old_study.assays.all():
                     a_uuid = str(old_assay.sodar_uuid)
                     if (
-                        s_uuid in new_uuids
-                        and a_uuid not in new_uuids[s_uuid]['assays']
+                        s_uuid in u_map
+                        and a_uuid not in u_map[s_uuid]['assays']
                     ):
                         return False
-                    if s_uuid not in new_uuids:
+                    if s_uuid not in u_map:
                         new_study.assays.get(file_name=old_assay.file_name)
         except Exception:
             return False
