@@ -120,6 +120,8 @@ SHEET_NAME_SMALL2_ALT = 'i_small2_alt.zip'
 SHEET_PATH_SMALL2_ALT = SHEET_DIR + SHEET_NAME_SMALL2_ALT
 SHEET_NAME_MINIMAL = 'i_minimal.zip'
 SHEET_PATH_MINIMAL = SHEET_DIR + SHEET_NAME_MINIMAL
+SHEET_NAME_MULTI = 'BII-I-1_edited.zip'
+SHEET_PATH_MULTI = SHEET_DIR + SHEET_NAME_MULTI
 SHEET_NAME_CRITICAL = 'BII-I-1_critical.zip'
 SHEET_PATH_CRITICAL = SHEET_DIR_SPECIAL + SHEET_NAME_CRITICAL
 SHEET_NAME_EMPTY_ASSAY = 'i_small_assay_empty.zip'
@@ -293,10 +295,16 @@ class TestSheetImportMixin(SampleSheetModelMixin, SamplesheetsViewTestBase):
                 a2.save()
 
     def test_compare(self):
-        """Test _compare_inv_replace()"""
+        """Test _compare_invs()"""
         inv1 = self.import_isa_from_file(SHEET_PATH, project=self.project)
         inv2 = self.import_isa_from_file(SHEET_PATH, project=self.project)
         self.assertEqual(inv2.comments.get(sc.ISA_META_PROJECT_UUID), None)
+        self.assertEqual(SheetImportMixin._compare_invs(inv1, inv2), True)
+
+    def test_compare_multi(self):
+        """Test compare with multi-study and multi-assay investigation"""
+        inv1 = self.import_isa_from_file(SHEET_PATH_MULTI, project=self.project)
+        inv2 = self.import_isa_from_file(SHEET_PATH_MULTI, project=self.project)
         self.assertEqual(SheetImportMixin._compare_invs(inv1, inv2), True)
 
     def test_compare_inserted_rows(self):
@@ -377,6 +385,13 @@ class TestSheetImportMixin(SampleSheetModelMixin, SamplesheetsViewTestBase):
             inv2.comments.get(sc.ISA_META_PROJECT_UUID),
             str(self.project.sodar_uuid),
         )
+        self.assertEqual(SheetImportMixin._compare_invs(inv1, inv2), True)
+
+    def test_compare_metadata_multi(self):
+        """Test compare with metadata and multi-study/assay investigation"""
+        inv1 = self.import_isa_from_file(SHEET_PATH_MULTI, project=self.project)
+        inv2 = self.import_isa_from_file(SHEET_PATH_MULTI, project=self.project)
+        self._setup_metadata(inv1, inv2)
         self.assertEqual(SheetImportMixin._compare_invs(inv1, inv2), True)
 
     def test_compare_metadata_study_id(self):
