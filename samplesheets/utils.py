@@ -63,26 +63,6 @@ def get_sample_colls(investigation: Any) -> list[str]:
     return ret
 
 
-def compare_inv_replace(inv1: Any, inv2: Any) -> bool:
-    """
-    Compare investigations for critical differences for replacing.
-
-    :param inv1: Investigation object
-    :param inv2: Investigation object
-    :return: Bool
-    """
-    try:
-        for study1 in inv1.studies.all():
-            study2 = inv2.studies.get(
-                identifier=study1.identifier, file_name=study1.file_name
-            )
-            for assay1 in study1.assays.all():
-                study2.assays.get(file_name=assay1.file_name)
-    except Exception:
-        return False
-    return True
-
-
 def get_index_by_header(
     render_table: dict,
     header_value: str,

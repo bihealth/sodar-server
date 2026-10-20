@@ -34,6 +34,7 @@ Changed
     - Move ISA-Tab SODAR metadata constants into ``constants.py`` (#2589)
     - Vue3app ``VersionSaveModal`` button layout (#2595)
     - Refactor legacy ISA-Tab metadata constants (#2594)
+    - Move ``compare_inv_replace()`` functionality to ``SheetImportMixin`` (#2950)
 
 Fixed
 -----
@@ -52,6 +53,7 @@ Removed
 - **Samplesheets**
     - Legacy Vue2 app from ``vueapp`` (#2393)
     - ``use_vue3_app`` app setting (#2393)
+    - ``utils.compare_inv_replace()`` helper (#2950)
 
 
 v1.3.3 (2026-09-25)

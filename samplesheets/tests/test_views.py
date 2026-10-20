@@ -2,6 +2,7 @@
 
 import json
 import os
+import uuid
 
 from cubi_isa_templates import IsaTabTemplate, _TEMPLATES as ISA_TEMPLATES
 from zipfile import ZipFile
@@ -273,6 +274,203 @@ class TestProjectSheetsView(SamplesheetsViewTestBase):
         self.assertIsNone(response.context['investigation'])
         self.assertNotIn('study', response.context)
         self.assertNotIn('tables', response.context)
+
+
+class TestSheetImportMixin(SampleSheetModelMixin, SamplesheetsViewTestBase):
+    """Tests for SheetImportMixin"""
+
+    def _setup_metadata(self, inv1: Investigation, inv2: Investigation):
+        """Set up inv2 SODAR metadata to match inv1 UUIDs"""
+        inv2.comments[sc.ISA_META_PROJECT_UUID] = str(self.project.sodar_uuid)
+        inv2.save()
+        for s1 in inv1.studies.all():
+            s2 = inv2.studies.get(identifier=s1.identifier)
+            s2.comments[sc.ISA_META_STUDY_UUID] = str(s1.sodar_uuid)
+            s2.save()
+            for a1 in s1.assays.all():
+                a2 = s2.assays.get(file_name=a1.file_name)
+                a2.comments[sc.ISA_META_ASSAY_UUID] = str(a1.sodar_uuid)
+                a2.save()
+
+    def test_compare(self):
+        """Test _compare_inv_replace()"""
+        inv1 = self.import_isa_from_file(SHEET_PATH, project=self.project)
+        inv2 = self.import_isa_from_file(SHEET_PATH, project=self.project)
+        self.assertEqual(inv2.comments.get(sc.ISA_META_PROJECT_UUID), None)
+        self.assertEqual(SheetImportMixin._compare_invs(inv1, inv2), True)
+
+    def test_compare_inserted_rows(self):
+        """Test compare with inserted rows"""
+        inv1 = self.import_isa_from_file(SHEET_PATH, project=self.project)
+        inv2 = self.import_isa_from_file(
+            SHEET_PATH_INSERTED, project=self.project
+        )
+        self.assertEqual(SheetImportMixin._compare_invs(inv1, inv2), True)
+
+    def test_compare_modified_sheet(self):
+        """Test compare with modified studies/assays"""
+        inv1 = self.import_isa_from_file(
+            SHEET_PATH_SMALL2, project=self.project
+        )
+        inv2 = self.import_isa_from_file(
+            SHEET_PATH_SMALL2_ALT, project=self.project
+        )
+        self.assertEqual(SheetImportMixin._compare_invs(inv1, inv2), False)
+
+    def test_compare_different_sheet(self):
+        """Test compare with different sheet"""
+        inv1 = self.import_isa_from_file(SHEET_PATH, project=self.project)
+        inv2 = self.import_isa_from_file(
+            SHEET_PATH_SMALL2, project=self.project
+        )
+        self.assertEqual(SheetImportMixin._compare_invs(inv1, inv2), False)
+
+    def test_compare_missing_assay(self):
+        """Test compare with missing assay"""
+        inv1 = self.import_isa_from_file(SHEET_PATH, project=self.project)
+        inv2 = self.import_isa_from_file(SHEET_PATH, project=self.project)
+        inv2.studies.first().assays.first().delete()
+        self.assertEqual(SheetImportMixin._compare_invs(inv1, inv2), False)
+
+    def test_compare_missing_study(self):
+        """Test compare with missing study"""
+        inv1 = self.import_isa_from_file(SHEET_PATH, project=self.project)
+        inv2 = self.import_isa_from_file(SHEET_PATH, project=self.project)
+        inv2.studies.first().delete()
+        self.assertEqual(SheetImportMixin._compare_invs(inv1, inv2), False)
+
+    def test_compare_study_id(self):
+        """Test compare with different study identifier"""
+        inv1 = self.import_isa_from_file(SHEET_PATH, project=self.project)
+        inv2 = self.import_isa_from_file(SHEET_PATH, project=self.project)
+        study2 = inv2.studies.first()
+        study2.identifier = 'UPDATED-IDENTIFIER'
+        study2.save()
+        # Should fail
+        self.assertEqual(SheetImportMixin._compare_invs(inv1, inv2), False)
+
+    def test_compare_study_file_name(self):
+        """Test compare with different study file name"""
+        inv1 = self.import_isa_from_file(SHEET_PATH, project=self.project)
+        inv2 = self.import_isa_from_file(SHEET_PATH, project=self.project)
+        study2 = inv2.studies.first()
+        study2.file_name = 's_updated_study_name.txt'
+        study2.save()
+        self.assertEqual(SheetImportMixin._compare_invs(inv1, inv2), False)
+
+    def test_compare_assay_file_name(self):
+        """Test compare with and different assay file name"""
+        inv1 = self.import_isa_from_file(SHEET_PATH, project=self.project)
+        inv2 = self.import_isa_from_file(SHEET_PATH, project=self.project)
+        study2 = inv2.studies.first()
+        assay2 = study2.assays.first()
+        assay2.file_name = 'a_updated_assay_name.txt'
+        assay2.save()
+        self.assertEqual(SheetImportMixin._compare_invs(inv1, inv2), False)
+
+    def test_compare_metadata(self):
+        """Test compare with metadata"""
+        inv1 = self.import_isa_from_file(SHEET_PATH, project=self.project)
+        inv2 = self.import_isa_from_file(SHEET_PATH, project=self.project)
+        self._setup_metadata(inv1, inv2)
+        self.assertEqual(
+            inv2.comments.get(sc.ISA_META_PROJECT_UUID),
+            str(self.project.sodar_uuid),
+        )
+        self.assertEqual(SheetImportMixin._compare_invs(inv1, inv2), True)
+
+    def test_compare_metadata_study_id(self):
+        """Test compare with metadata and different study identifier"""
+        inv1 = self.import_isa_from_file(SHEET_PATH, project=self.project)
+        inv2 = self.import_isa_from_file(SHEET_PATH, project=self.project)
+        self._setup_metadata(inv1, inv2)
+        study2 = inv2.studies.first()
+        study2.identifier = 'UPDATED-IDENTIFIER'
+        study2.save()
+        # Should still succeed
+        self.assertEqual(SheetImportMixin._compare_invs(inv1, inv2), True)
+
+    def test_compare_metadata_study_file_name(self):
+        """Test compare with metadata and different study file name"""
+        inv1 = self.import_isa_from_file(SHEET_PATH, project=self.project)
+        inv2 = self.import_isa_from_file(SHEET_PATH, project=self.project)
+        self._setup_metadata(inv1, inv2)
+        study2 = inv2.studies.first()
+        study2.file_name = 's_updated_study_name.txt'
+        study2.save()
+        self.assertEqual(SheetImportMixin._compare_invs(inv1, inv2), True)
+
+    def test_compare_metadata_assay_file_name(self):
+        """Test compare with metadata and different assay file name"""
+        inv1 = self.import_isa_from_file(SHEET_PATH, project=self.project)
+        inv2 = self.import_isa_from_file(SHEET_PATH, project=self.project)
+        self._setup_metadata(inv1, inv2)
+        study2 = inv2.studies.first()
+        assay2 = study2.assays.first()
+        assay2.file_name = 'a_updated_assay_name.txt'
+        assay2.save()
+        self.assertEqual(SheetImportMixin._compare_invs(inv1, inv2), True)
+
+    def test_compare_metadata_dupe_study_uuid(self):
+        """Test compare with metadata and duplicate study UUID"""
+        inv1 = self.import_isa_from_file(SHEET_PATH, project=self.project)
+        inv2 = self.import_isa_from_file(SHEET_PATH, project=self.project)
+        self._setup_metadata(inv1, inv2)
+        study_uuid = str(inv1.studies.first().sodar_uuid)
+        self.make_study(
+            identifier='study-id-here',
+            file_name='s_another_study.txt',
+            investigation=inv2,
+            title='Study Title',
+            description='',
+            comments={sc.ISA_META_STUDY_UUID: study_uuid},
+        )
+        with self.assertRaises(ValueError):
+            SheetImportMixin._compare_invs(inv1, inv2)
+
+    def test_compare_metadata_dupe_assay_uuid(self):
+        """Test compare with metadata and duplicate assay UUID"""
+        inv1 = self.import_isa_from_file(SHEET_PATH, project=self.project)
+        inv2 = self.import_isa_from_file(SHEET_PATH, project=self.project)
+        self._setup_metadata(inv1, inv2)
+        assay_uuid = str(inv1.studies.first().assays.first().sodar_uuid)
+        self.make_assay(
+            file_name='a_another_assay.txt',
+            study=inv2.studies.first(),
+            tech_platform='',
+            tech_type={},
+            measurement_type={},
+            arcs=[],
+            comments={sc.ISA_META_ASSAY_UUID: assay_uuid},
+        )
+        with self.assertRaises(ValueError):
+            SheetImportMixin._compare_invs(inv1, inv2)
+
+    def test_compare_metadata_dupe_assay_uuid_other_study(self):
+        """Test compare with metadata and dupe assay UUID in another study"""
+        inv1 = self.import_isa_from_file(SHEET_PATH, project=self.project)
+        inv2 = self.import_isa_from_file(SHEET_PATH, project=self.project)
+        self._setup_metadata(inv1, inv2)
+        assay_uuid = str(inv1.studies.first().assays.first().sodar_uuid)
+        study2b = self.make_study(
+            identifier='study-id-here',
+            file_name='s_another_study.txt',
+            investigation=inv2,
+            title='Study Title',
+            description='',
+            comments={sc.ISA_META_STUDY_UUID: str(uuid.uuid4())},
+        )  # Imaginary UUID, but we don't know it at this point in time
+        self.make_assay(
+            file_name='a_another_assay.txt',
+            study=study2b,
+            tech_platform='',
+            tech_type={},
+            measurement_type={},
+            arcs=[],
+            comments={sc.ISA_META_ASSAY_UUID: assay_uuid},
+        )
+        with self.assertRaises(ValueError):
+            SheetImportMixin._compare_invs(inv1, inv2)
 
 
 class TestSheetImportView(

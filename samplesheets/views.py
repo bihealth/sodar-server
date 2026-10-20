@@ -67,6 +67,7 @@ from projectroles.views import (
 from landingzones.constants import ZONE_STATUS_MOVED, ZONE_STATUS_DELETED
 from landingzones.models import LandingZone
 
+import samplesheets.constants as sc
 from samplesheets.forms import (
     SheetImportForm,
     SheetTemplateCreateForm,
@@ -96,7 +97,6 @@ from samplesheets.rendering import SampleSheetTableBuilder, EMPTY_VALUE
 from samplesheets.sheet_config import SheetConfigAPI
 from samplesheets.utils import (
     get_sample_colls,
-    compare_inv_replace,
     get_sheets_url,
     write_excel_table,
     get_isa_field_name,
@@ -126,6 +126,7 @@ MISC_FILES_COLL = 'MiscFiles'
 TRACK_HUBS_COLL = 'TrackHubs'
 RESULTS_COLL_ID = 'results_reports'
 RESULTS_COLL = 'ResultsReports'
+REPLACE_DUPE_UUID_MSG = 'Duplicate {obj} UUID in metadata'
 IRODS_REQUEST_EVENT_ACCEPT = 'irods_request_accept'
 IRODS_REQUEST_EVENT_CREATE = 'irods_request_create'
 IRODS_REQUEST_EVENT_DELETE = 'irods_request_delete'
@@ -191,6 +192,68 @@ class SheetImportMixin:
 
     #: TimelineAPI
     timeline = None
+
+    @classmethod
+    def _compare_invs(
+        cls, old_inv: Investigation, new_inv: Investigation
+    ) -> bool:
+        """
+        Compare investigations for critical differences for replacing.
+
+        :param old_inv: Investigation object to be replaced
+        :param new_inv: Investigation object replacing old_inv
+        :return: Bool
+        :raise: ValueError with invalid study or assay metadata comments
+        """
+        # Collect metadata UUIDs from new_inv
+        # NOTE: Project UUID and all study/assay UUIDs must be present in
+        #       comments for UUID comparison to be attempted
+        # TODO: Move mapping out of the func? I think we need it elsewhere..
+        new_uuids = {}  # In form of {study: {obj: Study, assays: []}
+        if new_inv.comments.get(sc.ISA_META_PROJECT_UUID) == str(
+            old_inv.project.sodar_uuid
+        ):
+            for new_study in new_inv.studies.all():
+                s_uuid = new_study.comments.get(sc.ISA_META_STUDY_UUID)
+                if s_uuid:
+                    if s_uuid in new_uuids:
+                        raise ValueError(
+                            REPLACE_DUPE_UUID_MSG.format(obj='study')
+                        )
+                    a_uuids = []
+                    for new_assay in new_study.assays.all():
+                        a_uuid = new_assay.comments.get(sc.ISA_META_ASSAY_UUID)
+                        a_err = REPLACE_DUPE_UUID_MSG.format(obj='assay')
+                        if a_uuid:
+                            if a_uuid in a_uuids:  # Dupe within study
+                                raise ValueError(a_err)
+                            for s in new_uuids.values():
+                                if a_uuid in s['assays']:  # Dupe in other study
+                                    raise ValueError(a_err)
+                            a_uuids.append(a_uuid)
+                    new_uuids[s_uuid] = {'obj': new_study, 'assays': a_uuids}
+        try:
+            for old_study in old_inv.studies.all():
+                s_uuid = str(old_study.sodar_uuid)
+                if s_uuid not in new_uuids:
+                    new_study = new_inv.studies.get(
+                        identifier=old_study.identifier,
+                        file_name=old_study.file_name,
+                    )
+                else:
+                    new_study = new_uuids[s_uuid]['obj']
+                for old_assay in old_study.assays.all():
+                    a_uuid = str(old_assay.sodar_uuid)
+                    if (
+                        s_uuid in new_uuids
+                        and a_uuid not in new_uuids[s_uuid]['assays']
+                    ):
+                        return False
+                    if s_uuid not in new_uuids:
+                        new_study.assays.get(file_name=old_assay.file_name)
+        except Exception:
+            return False
+        return True
 
     @classmethod
     def _update_relations(cls, investigation: Investigation):
@@ -423,7 +486,7 @@ class SheetImportMixin:
         ).count()
 
         # Ensure existing studies and assays are found in new inv
-        compare_ok = compare_inv_replace(old_inv, investigation)
+        compare_ok = self._compare_invs(old_inv, investigation)
         try:
             if old_inv.irods_status and not compare_ok:
                 raise ValueError(
@@ -432,6 +495,7 @@ class SheetImportMixin:
                 )
 
             # Save UUIDs
+            # TODO: Update mapping to support renaming study/assay files
             old_inv_uuid = old_inv.sodar_uuid
             for study in old_inv.studies.all():
                 old_study_uuids[study.identifier] = study.sodar_uuid
