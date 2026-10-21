@@ -22,6 +22,7 @@ Added
     - ``ISATab`` ``sodar_version`` field (#2596)
     - SODAR version in ``SheetVersionListView`` (#2596)
     - SODAR metadata UUID support in sheet replace (#2590)
+    - Study and assay renaming support in sheet replace (#2590)
 
 Changed
 -------
