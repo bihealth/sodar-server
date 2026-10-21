@@ -416,9 +416,7 @@ class SheetImportAPIView(
         if old_inv:
             try:
                 investigation = self.handle_replace(
-                    investigation=investigation,
-                    old_inv=old_inv,
-                    tl_event=tl_event,
+                    new_inv=investigation, old_inv=old_inv, tl_event=tl_event
                 )
                 ex_msg = None
             except Exception as ex:

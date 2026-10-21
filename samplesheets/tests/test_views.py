@@ -827,7 +827,7 @@ class TestSheetImportView(
     def test_post_replace_metadata(self):
         """Test POST to replace with metadata"""
         inv = self.import_isa_from_file(SHEET_PATH, self.project)
-        self._update_replace_uuids(inv)
+        self._update_replace_uuids(inv)  # Update UUIDS to match metadata
 
         old_inv_pk = inv.pk
         app_settings.set(
@@ -877,8 +877,58 @@ class TestSheetImportView(
                 APP_NAME, cache_name, self.project
             )
         )
+        # TODO: Assert stripped metadata
 
-    # TODO: Test replace with metadata and landing zone
+    def test_post_replace_metadata_zone(self):
+        """Test POST to replace with metadata and existing landing zone"""
+        inv = self.import_isa_from_file(SHEET_PATH, self.project)
+        inv.irods_status = True
+        inv.save()
+        self._update_replace_uuids(inv)
+
+        uuid = inv.sodar_uuid
+        app_settings.set(
+            'samplesheets',
+            'display_config',
+            {},
+            project=self.project,
+            user=self.user,
+        )
+        conf_api.get_sheet_config(inv)
+        zone = self.make_landing_zone(
+            'new_zone',
+            self.project,
+            self.user,
+            inv.get_assays().first(),
+            status=ZONE_STATUS_ACTIVE,
+        )
+
+        self.assertEqual(Investigation.objects.count(), 1)
+        self.assertEqual(ISATab.objects.count(), 1)
+        self.assertEqual(
+            AppSetting.objects.filter(name='display_config').count(), 1
+        )
+
+        with open(SHEET_PATH_META, 'rb') as file:
+            post_data = {'file_upload': file}
+            with self.login(self.user):
+                response = self.client.post(self.url, post_data)
+
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(Investigation.objects.count(), 1)
+        self.assertEqual(uuid, str(Investigation.objects.first().sodar_uuid))
+        self.assertEqual(ISATab.objects.count(), 2)
+        inv = Investigation.objects.get(project=self.project, active=True)
+        zone.refresh_from_db()
+        self.assertEqual(
+            LandingZone.objects.get(assay__study__investigation=inv),
+            zone,
+        )
+        self.assertEqual(
+            zone.assay,
+            Assay.objects.filter(study__investigation=inv).first(),
+        )
+
     # TODO: Test replace with metadata and iRODS ticket
     # TODO: Test with other combinations and metadata (see tests above)
     # TODO: TBD: What to test here and what in TestSheetImportMixin?

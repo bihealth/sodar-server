@@ -212,7 +212,6 @@ class SheetImportMixin:
         # Collect metadata UUIDs from new_inv
         # NOTE: Project UUID and all study/assay UUIDs must be present in
         #       comments for UUID comparison to be attempted
-        # TODO: Move mapping out of the func? I think we need it elsewhere..
         u_map = {}  # Format: {study_uuid: {obj: Study, assays: [assay_uuid]}
         if new_inv.comments.get(sc.ISA_META_PROJECT_UUID) == str(
             old_inv.project.sodar_uuid
@@ -259,43 +258,49 @@ class SheetImportMixin:
             return False
         return True
 
-    # TODO: Update to support changed names and metadata UUID
     @classmethod
-    def _update_relations(cls, investigation: Investigation):
+    def _update_relations(cls, new_inv: Investigation, meta: bool):
         """
         Update object foreign key relations on sheet replace.
 
-        :param investigation: New Investigation object
+        :param new_inv: New Investigation object
+        :param meta: Use assay UUIDs from SODAR metadata (bool)
         """
-        project = investigation.project
-        assay_lookup = {a.get_name(): a for a in investigation.get_assays()}
+        project = new_inv.project
+        assay_lookup = {
+            (
+                a.comments.get(sc.ISA_META_ASSAY_UUID) if meta else a.get_name()
+            ): a
+            for a in new_inv.get_assays()
+        }
 
         # Update unfinished landing zones to point to new assays
-        for zone in LandingZone.objects.filter(project=project):
-            zone.assay = assay_lookup[zone.assay.get_name()]
-            zone.save()
+        for z in LandingZone.objects.filter(project=project):
+            k = str(z.assay.sodar_uuid) if meta else z.assay.get_name()
+            z.assay = assay_lookup[k]
+            z.save()
             logger.debug(
-                f'Updated assay foreign key for landing zone '
-                f'"{zone.title}" ({zone.sodar_uuid})'
+                f'Updated assay foreign key for landing zone "{z.title}" '
+                f'({z.sodar_uuid})'
             )
 
         # Update iRODS access tickets
-        for ticket in IrodsAccessTicket.objects.filter(
+        for t in IrodsAccessTicket.objects.filter(
             study__investigation__project=project
         ):
             # NOTE: This assumes all tickets are on assay level, which is true
             #       right now. If we ever change that, make sure to update this.
             #       (Technically, the assay field is optional in the model)
-            assay = assay_lookup[ticket.assay.get_name()]
-            ticket.assay = assay
-            ticket.study = assay.study
-            ticket.save()
+            k = str(t.assay.sodar_uuid) if meta else t.assay.get_name()
+            assay = assay_lookup[k]
+            t.assay = assay
+            t.study = assay.study
+            t.save()
             logger.debug(
                 f'Updated study and assay foreign keys for iRODS access ticket '
-                f'"{ticket.ticket}" ({ticket.sodar_uuid})'
+                f'"{t.ticket}" ({t.sodar_uuid})'
             )
 
-    # TODO: Review and potentially update
     def _update_sheet_configs(
         self,
         project: Project,
@@ -395,6 +400,47 @@ class SheetImportMixin:
         logger.info('Sheet configurations updated')
 
     @classmethod
+    def _strip_isa_comments(
+        cls, obj: Union[Investigation, Study, Assay], keys: list[str]
+    ):
+        """
+        Strip comments and headers matching specific keys from an Investigation,
+        Study or Assay file. Saves the object if updated.
+
+        :param obj: Investigation, Study or Assay object
+        :param keys: List of keys to strip
+        """
+        # NOTE: If there is use for this elsewhere, it can be made more generic
+        #       and moved to e.g. samplesheets.io.
+        found_meta = {}
+        for k in keys:
+            if k in obj.comments:
+                v = obj.comments.pop(k, None)
+                found_meta[k] = v
+            h = f'Comment[{k}]'
+            if h in obj.headers:
+                obj.headers.remove(h)
+        if found_meta:
+            msg = 'Comments and headers removed: '
+            msg += '; '.join([f'{k} = {v}' for k, v in found_meta.items()])
+            logger.debug(msg)
+            obj.save()
+
+    @classmethod
+    def _strip_meta_comments(cls, new_inv: Investigation):
+        """
+        Strip SODAR export-only metadata from an imported Investigation,
+        including related Study and Assay objects.
+
+        :param new_inv: Investigation
+        """
+        cls._strip_isa_comments(new_inv, sc.ISA_META_INV_EXPORT_KEYS)
+        for s in new_inv.studies.all():
+            cls._strip_isa_comments(s, sc.ISA_META_STUDY_EXPORT_KEYS)
+            for a in s.assays.all():
+                cls._strip_isa_comments(a, sc.ISA_META_ASSAY_EXPORT_KEYS)
+
+    @classmethod
     def _get_ui_success_msg(
         cls,
         investigation: Investigation,
@@ -467,36 +513,36 @@ class SheetImportMixin:
 
     def handle_replace(
         self,
-        investigation: Investigation,
+        new_inv: Investigation,
         old_inv: Investigation,
         tl_event: Any = None,
     ) -> Optional[Investigation]:
         """
         Handle sheet replacing.
 
-        :param investigation: Investigation object for new investigation
+        :param new_inv: Investigation object for new investigation
         :param old_inv: Investigation object for old investigation
         :param tl_event: TimelineEvent or None
         :return: Investigation or None
         """
-        project = investigation.project
+        project = new_inv.project
         old_study_uuids = {}
         old_assay_uuids = {}
         old_study_count = old_inv.studies.count()
         old_assay_count = Assay.objects.filter(
             study__investigation=old_inv
         ).count()
-        new_study_count = investigation.studies.count()
+        new_study_count = new_inv.studies.count()
         new_assay_count = Assay.objects.filter(
-            study__investigation=investigation
+            study__investigation=new_inv
         ).count()
-        use_meta_uuids = investigation.comments.get(
-            sc.ISA_META_PROJECT_UUID
-        ) == str(project.sodar_uuid)
+        use_meta_uuids = new_inv.comments.get(sc.ISA_META_PROJECT_UUID) == str(
+            project.sodar_uuid
+        )
 
         try:
             # Ensure existing studies and assays are found in new inv
-            compare_ok = self._compare_invs(old_inv, investigation)
+            compare_ok = self._compare_invs(old_inv, new_inv)
             if old_inv.irods_status and not compare_ok:
                 raise ValueError(REPLACE_NO_MATCH_MSG)
 
@@ -513,12 +559,12 @@ class SheetImportMixin:
                         )
 
             # Set irods_status to our previous sheet's state
-            investigation.irods_status = old_inv.irods_status
-            investigation.save()
+            new_inv.irods_status = old_inv.irods_status
+            new_inv.save()
 
             # Check if we can keep existing configurations
             if (
-                table_builder.get_headers(investigation)
+                table_builder.get_headers(new_inv)
                 == table_builder.get_headers(old_inv)
                 and compare_ok
                 and old_study_count == new_study_count
@@ -528,7 +574,7 @@ class SheetImportMixin:
 
             # Update foreign key relations to point to new sheets
             try:
-                self._update_relations(investigation)
+                self._update_relations(new_inv, use_meta_uuids)
             except Exception as ex:
                 raise Exception(f'Exception in updating object relations: {ex}')
 
@@ -562,9 +608,9 @@ class SheetImportMixin:
 
         # If all went well, update UUIDs
         if old_inv:
-            investigation.sodar_uuid = old_inv_uuid
-            investigation.save()
-            for study in investigation.studies.all():
+            new_inv.sodar_uuid = old_inv_uuid
+            new_inv.save()
+            for study in new_inv.studies.all():
                 study_meta_uuid = study.comments.get(sc.ISA_META_STUDY_UUID)
                 if use_meta_uuids and study_meta_uuid:
                     study.sodar_uuid = study_meta_uuid
@@ -578,7 +624,12 @@ class SheetImportMixin:
                     elif assay.get_name() in old_assay_uuids:
                         assay.sodar_uuid = old_assay_uuids[assay.get_name()]
                     assay.save()
-        return investigation
+        # Strip SODAR export-only metadata from import if present
+        try:  # Catching exception just in case, we don't want to fail here
+            self._strip_meta_comments(new_inv)
+        except Exception as ex:
+            logger.error(f'Exception in removing metadata comments: {ex}')
+        return new_inv
 
     def handle_import_exception(
         self, ex: Exception, tl_event: Any = None, ui_mode: bool = True
@@ -1495,9 +1546,7 @@ class SheetRemoteSyncAPI(SheetImportMixin):
         # Handle replace
         if replace:
             investigation = self.handle_replace(
-                investigation=investigation,
-                old_inv=old_inv,
-                tl_event=None,
+                new_inv=investigation, old_inv=old_inv, tl_event=None
             )
         # Activate investigation
         investigation.active = True
@@ -1643,7 +1692,7 @@ class SheetImportView(
         if form_action == 'replace' and old_inv:
             # NOTE: This function handles error/timeline reporting internally
             self.object = self.handle_replace(
-                investigation=self.object, old_inv=old_inv, tl_event=tl_event
+                new_inv=self.object, old_inv=old_inv, tl_event=tl_event
             )
 
         # If all went well, finalize import
@@ -2313,7 +2362,7 @@ class SheetVersionRestoreView(
 
         if new_inv:
             new_inv = self.handle_replace(
-                investigation=new_inv, old_inv=old_inv, tl_event=tl_event
+                new_inv=new_inv, old_inv=old_inv, tl_event=tl_event
             )
         if new_inv:
             self.finalize_import(

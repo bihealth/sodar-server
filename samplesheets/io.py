@@ -541,33 +541,6 @@ class SampleSheetIO:
         db_parent.save()
         logger.debug(f'Added {len(arc_vals)} arcs to "{db_parent.get_name()}"')
 
-    @classmethod
-    def _update_isa_import_comments(
-        cls, comments: dict, headers: list, keys: list
-    ) -> tuple[dict, list]:
-        """
-        Update comments and headers for importing an Investigation, Study or
-        Assay object. Remove export-only SODAR metadata if present.
-
-        :param comments: Dict
-        :param headers: List
-        :param keys: List
-        :return: Tuple of comments dict, headers list
-        """
-        found_meta = {}
-        for k in keys:
-            if k in comments:
-                v = comments.pop(k, None)
-                found_meta[k] = v
-            h = f'Comment[{k}]'
-            if h in headers:
-                headers.remove(h)
-        if found_meta:
-            msg = 'SODAR metadata removed: '
-            msg += '; '.join([f'{k} = {v}' for k, v in found_meta.items()])
-            logger.debug(msg)
-        return comments, headers
-
     @transaction.atomic
     def import_isa(
         self,
@@ -615,11 +588,6 @@ class SampleSheetIO:
             InvestigationValidator(isa_inv).validate()
 
         # Create investigation
-        comments, headers = self._update_isa_import_comments(
-            self._import_comments(isa_inv.info.comments),
-            isa_inv.info.headers,
-            sc.ISA_META_INV_EXPORT_KEYS,
-        )  # Strip SODAR export-only metadata
         values = {
             'project': project,
             'identifier': isa_inv.info.identifier,
@@ -631,8 +599,8 @@ class SampleSheetIO:
             ),
             'publications': self._import_publications(isa_inv.publications),
             'contacts': self._import_contacts(isa_inv.contacts),
-            'headers': headers,
-            'comments': comments,
+            'headers': isa_inv.info.headers,
+            'comments': self._import_comments(isa_inv.info.comments),
             'submission_date': isa_inv.info.submission_date,
             'public_release_date': isa_inv.info.public_release_date,
             'parser_version': altamisa.__version__,
@@ -687,11 +655,6 @@ class SampleSheetIO:
                     logger.error(ex_msg)
                     raise Exception(ex_msg)
 
-            comments, headers = self._update_isa_import_comments(
-                self._import_comments(isa_study.info.comments),
-                isa_study.info.headers,
-                sc.ISA_META_STUDY_EXPORT_KEYS,
-            )  # Strip SODAR export-only metadata
             values = {
                 'identifier': isa_study.info.identifier,
                 'file_name': isa_study.info.path,
@@ -706,10 +669,10 @@ class SampleSheetIO:
                 'factors': {
                     k: attr.asdict(v) for k, v in isa_study.factors.items()
                 },
-                'comments': comments,
+                'comments': self._import_comments(isa_study.info.comments),
                 'submission_date': isa_study.info.submission_date,
                 'public_release_date': isa_study.info.public_release_date,
-                'headers': headers,
+                'headers': isa_study.info.headers,
             }
             db_study = Study.objects.create(**values)
             db_studies.append(db_study)
@@ -805,11 +768,6 @@ class SampleSheetIO:
                         raise Exception(ex_msg)
                 logger.debug('altamISA assay import OK')
 
-                comments, headers = self._update_isa_import_comments(
-                    self._import_comments(isa_assay.comments),
-                    isa_assay.headers,
-                    sc.ISA_META_ASSAY_EXPORT_KEYS,
-                )  # Strip SODAR export-only metadata
                 values = {
                     'file_name': isa_assay.path,
                     'study': db_study,
@@ -820,8 +778,8 @@ class SampleSheetIO:
                         isa_assay.technology_type
                     ),
                     'technology_platform': isa_assay.platform,
-                    'comments': comments,
-                    'headers': headers,
+                    'comments': self._import_comments(isa_assay.comments),
+                    'headers': isa_assay.headers,
                 }
                 db_assay = Assay.objects.create(**values)
                 # Handle parser warnings for assay
