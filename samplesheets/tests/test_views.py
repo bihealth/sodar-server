@@ -504,6 +504,16 @@ class TestSheetImportView(
 ):
     """Tests for SheetImportView"""
 
+    def _clear_display_config(self):
+        """Clear display config for self.user in self.project"""
+        app_settings.set(
+            'samplesheets',
+            'display_config',
+            {},
+            project=self.project,
+            user=self.user,
+        )
+
     def _update_replace_uuids(self, inv: Investigation):
         """Update UUIDs for sheet replace"""
         self.project.sodar_uuid = META_PROJECT_UUID
@@ -571,13 +581,8 @@ class TestSheetImportView(
         inv = self.import_isa_from_file(SHEET_PATH, self.project)
         uuid = inv.sodar_uuid
         old_inv_pk = inv.pk
-        app_settings.set(
-            'samplesheets',
-            'display_config',
-            {},
-            project=self.project,
-            user=self.user,
-        )
+        self._clear_display_config()
+
         self.assertEqual(Investigation.objects.count(), 1)
         self.assertEqual(ISATab.objects.count(), 1)
         self.assertEqual(
@@ -682,13 +687,7 @@ class TestSheetImportView(
         inv.irods_status = True
         inv.save()
         uuid = inv.sodar_uuid
-        app_settings.set(
-            'samplesheets',
-            'display_config',
-            {},
-            project=self.project,
-            user=self.user,
-        )
+        self._clear_display_config()
         conf_api.get_sheet_config(inv)
         zone = self.make_landing_zone(
             'new_zone',
@@ -731,13 +730,7 @@ class TestSheetImportView(
         inv.save()
         old_inv_pk = inv.pk
         uuid = inv.sodar_uuid
-        app_settings.set(
-            'samplesheets',
-            'display_config',
-            {},
-            project=self.project,
-            user=self.user,
-        )
+        self._clear_display_config()
         conf_api.get_sheet_config(inv)
 
         study = inv.studies.first()
@@ -834,13 +827,7 @@ class TestSheetImportView(
         self._update_replace_uuids(inv)  # Update UUIDS to match metadata
 
         old_inv_pk = inv.pk
-        app_settings.set(
-            'samplesheets',
-            'display_config',
-            {},
-            project=self.project,
-            user=self.user,
-        )
+        self._clear_display_config()
 
         with open(SHEET_PATH_META, 'rb') as file:
             post_data = {'file_upload': file}
@@ -894,13 +881,7 @@ class TestSheetImportView(
         inv.save()
 
         uuid = inv.sodar_uuid
-        app_settings.set(
-            'samplesheets',
-            'display_config',
-            {},
-            project=self.project,
-            user=self.user,
-        )
+        self._clear_display_config()
         conf_api.get_sheet_config(inv)
         zone = self.make_landing_zone(
             'new_zone',
@@ -939,13 +920,7 @@ class TestSheetImportView(
 
         old_inv_pk = inv.pk
         uuid = inv.sodar_uuid
-        app_settings.set(
-            'samplesheets',
-            'display_config',
-            {},
-            project=self.project,
-            user=self.user,
-        )
+        self._clear_display_config()
         conf_api.get_sheet_config(inv)
 
         study = inv.studies.first()
@@ -982,13 +957,7 @@ class TestSheetImportView(
         self._update_replace_uuids(inv)  # Update UUIDS to match metadata
 
         old_inv_pk = inv.pk
-        app_settings.set(
-            'samplesheets',
-            'display_config',
-            {},
-            project=self.project,
-            user=self.user,
-        )
+        self._clear_display_config()
 
         with open(SHEET_PATH_RENAME, 'rb') as file:
             post_data = {'file_upload': file}
