@@ -128,6 +128,8 @@ a success message. SODAR will also update the project cache, which happens
 asynchronously in the background.
 
 
+.. _app_samplesheets_create_replace:
+
 Replace ISA-Tab
 ===============
 
