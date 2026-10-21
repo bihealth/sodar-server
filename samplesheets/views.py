@@ -439,6 +439,7 @@ class SheetImportMixin:
             cls._strip_isa_comments(s, sc.ISA_META_STUDY_EXPORT_KEYS)
             for a in s.assays.all():
                 cls._strip_isa_comments(a, sc.ISA_META_ASSAY_EXPORT_KEYS)
+        logger.info('Export-only SODAR metadata removed from imported sheets')
 
     @classmethod
     def _get_ui_success_msg(
