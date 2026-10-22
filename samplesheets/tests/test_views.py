@@ -1692,11 +1692,8 @@ class TestSheetVersionRestoreView(SamplesheetsViewTestBase):
 
     def setUp(self):
         super().setUp()
-        self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
-        self.study = self.investigation.studies.first()
-        self.isatab = ISATab.objects.get(
-            investigation_uuid=self.investigation.sodar_uuid
-        )
+        self.inv = self.import_isa_from_file(SHEET_PATH_SMALL2, self.project)
+        self.isatab = ISATab.objects.get(investigation_uuid=self.inv.sodar_uuid)
         # Set up helpers
         self.cache_backend = plugin_api.get_backend_api('sodar_cache')
         self.timeline = plugin_api.get_backend_api('timeline_backend')
@@ -1718,8 +1715,8 @@ class TestSheetVersionRestoreView(SamplesheetsViewTestBase):
         """Test POST"""
         isatab_new = self.sheet_io.save_isa(
             project=self.project,
-            inv_uuid=self.investigation.sodar_uuid,
-            isa_data=self.sheet_io.export_isa(self.investigation),
+            inv_uuid=self.inv.sodar_uuid,
+            isa_data=self.sheet_io.export_isa(self.inv),
         )
         self.assertEqual(Investigation.objects.count(), 1)
         self.assertEqual(ISATab.objects.count(), 2)
@@ -1749,12 +1746,13 @@ class TestSheetVersionRestoreView(SamplesheetsViewTestBase):
         """Test POST with cached study table"""
         isatab_new = self.sheet_io.save_isa(
             project=self.project,
-            inv_uuid=self.investigation.sodar_uuid,
-            isa_data=self.sheet_io.export_isa(self.investigation),
+            inv_uuid=self.inv.sodar_uuid,
+            isa_data=self.sheet_io.export_isa(self.inv),
         )
 
-        study_tables = table_builder.build_study_tables(self.study)
-        cache_name = STUDY_TABLE_CACHE_ITEM.format(study=self.study.sodar_uuid)
+        study = self.inv.studies.first()
+        study_tables = table_builder.build_study_tables(study)
+        cache_name = STUDY_TABLE_CACHE_ITEM.format(study=study.sodar_uuid)
         self.cache_backend.set_cache_item(
             APP_NAME, cache_name, study_tables, 'json', self.project
         )
@@ -1780,8 +1778,8 @@ class TestSheetVersionRestoreView(SamplesheetsViewTestBase):
         """Test POST with SODAR export metadata"""
         isatab_new = self.sheet_io.save_isa(
             project=self.project,
-            inv_uuid=self.investigation.sodar_uuid,
-            isa_data=self.sheet_io.export_isa(self.investigation, True),
+            inv_uuid=self.inv.sodar_uuid,
+            isa_data=self.sheet_io.export_isa(self.inv, True),
         )
         self.assertEqual(Investigation.objects.count(), 1)
         self.assertEqual(ISATab.objects.count(), 2)
@@ -1812,18 +1810,15 @@ class TestSheetVersionRestoreView(SamplesheetsViewTestBase):
         """Test POST with failed restore"""
         isatab_new = self.sheet_io.save_isa(
             project=self.project,
-            inv_uuid=self.investigation.sodar_uuid,
-            isa_data=self.sheet_io.export_isa(self.investigation),
+            inv_uuid=self.inv.sodar_uuid,
+            isa_data=self.sheet_io.export_isa(self.inv),
         )
         # Replace project investigation with another one from different sheets
-        self.investigation.delete()
-        self.investigation = self.import_isa_from_file(
-            SHEET_PATH_MINIMAL, self.project
-        )
-        self.study = self.investigation.studies.first()
+        self.inv.delete()
+        self.inv = self.import_isa_from_file(SHEET_PATH_MINIMAL, self.project)
         # Set irods_status to True to force extra checks
-        self.investigation.irods_status = True
-        self.investigation.save()
+        self.inv.irods_status = True
+        self.inv.save()
 
         self.assertEqual(Investigation.objects.count(), 1)
         version_count = ISATab.objects.count()
