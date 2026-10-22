@@ -516,6 +516,7 @@ class SheetImportMixin:
         self,
         new_inv: Investigation,
         old_inv: Investigation,
+        restore: bool = False,
         tl_event: Any = None,
     ) -> Optional[Investigation]:
         """
@@ -524,6 +525,7 @@ class SheetImportMixin:
         :param new_inv: Investigation object for new investigation
         :param old_inv: Investigation object for old investigation
         :param tl_event: TimelineEvent or None
+        :param restore: Called for restore action
         :return: Investigation or None
         """
         project = new_inv.project
@@ -601,9 +603,10 @@ class SheetImportMixin:
                 Investigation.objects.filter(project=project).exclude(
                     pk=old_inv.pk
                 ).delete()
-                ISATab.objects.filter(project=project).order_by(
-                    '-pk'
-                ).first().delete()
+                if not restore:  # Delete ISATab version if new upload
+                    ISATab.objects.filter(project=project).order_by(
+                        '-pk'
+                    ).first().delete()
             self.handle_import_exception(ex, tl_event)
             return None
 
@@ -1549,7 +1552,10 @@ class SheetRemoteSyncAPI(SheetImportMixin):
         # Handle replace
         if replace:
             investigation = self.handle_replace(
-                new_inv=investigation, old_inv=old_inv, tl_event=None
+                new_inv=investigation,
+                old_inv=old_inv,
+                restore=False,
+                tl_event=None,
             )
         # Activate investigation
         investigation.active = True
@@ -1695,7 +1701,10 @@ class SheetImportView(
         if form_action == 'replace' and old_inv:
             # NOTE: This function handles error/timeline reporting internally
             self.object = self.handle_replace(
-                new_inv=self.object, old_inv=old_inv, tl_event=tl_event
+                new_inv=self.object,
+                old_inv=old_inv,
+                restore=False,
+                tl_event=tl_event,
             )
 
         # If all went well, finalize import
@@ -2365,7 +2374,10 @@ class SheetVersionRestoreView(
 
         if new_inv:
             new_inv = self.handle_replace(
-                new_inv=new_inv, old_inv=old_inv, tl_event=tl_event
+                new_inv=new_inv,
+                old_inv=old_inv,
+                restore=True,  # Avoid deleting ISATab on failure
+                tl_event=tl_event,
             )
         if new_inv:
             self.finalize_import(

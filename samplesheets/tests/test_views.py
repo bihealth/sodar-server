@@ -1685,6 +1685,11 @@ class TestSheetVersionListView(SamplesheetsViewTestBase):
 class TestSheetVersionRestoreView(SamplesheetsViewTestBase):
     """Tests for SheetVersionRestoreView"""
 
+    @classmethod
+    def _get_tl_events(cls):
+        """Return timeline events for sheet restore"""
+        return TimelineEvent.objects.filter(event_name='sheet_restore')
+
     def setUp(self):
         super().setUp()
         self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
@@ -1718,9 +1723,7 @@ class TestSheetVersionRestoreView(SamplesheetsViewTestBase):
         )
         self.assertEqual(Investigation.objects.count(), 1)
         self.assertEqual(ISATab.objects.count(), 2)
-        self.assertEqual(
-            TimelineEvent.objects.filter(event_name='sheet_restore').count(), 0
-        )
+        self.assertEqual(self._get_tl_events().count(), 0)
 
         with self.login(self.user):
             response = self.client.post(
@@ -1737,10 +1740,9 @@ class TestSheetVersionRestoreView(SamplesheetsViewTestBase):
         )
         self.assertEqual(Investigation.objects.count(), 1)
         self.assertEqual(ISATab.objects.count(), 2)
-        self.assertEqual(
-            TimelineEvent.objects.filter(event_name='sheet_restore').count(), 1
-        )
-        e = TimelineEvent.objects.filter(event_name='sheet_restore').first()
+        tl_events = self._get_tl_events()
+        self.assertEqual(tl_events.count(), 1)
+        e = tl_events.first()
         self.assertEqual(e.get_status().status_type, self.timeline.TL_STATUS_OK)
 
     def test_post_study_cache(self):
@@ -1805,6 +1807,47 @@ class TestSheetVersionRestoreView(SamplesheetsViewTestBase):
         self.assertNotIn(sc.ISA_META_PROJECT_UUID, inv.comments)
         self.assertNotIn(sc.ISA_META_STUDY_UUID, study.comments)
         self.assertNotIn(sc.ISA_META_ASSAY_UUID, assay.comments)
+
+    def test_post_fail(self):
+        """Test POST with failed restore"""
+        isatab_new = self.sheet_io.save_isa(
+            project=self.project,
+            inv_uuid=self.investigation.sodar_uuid,
+            isa_data=self.sheet_io.export_isa(self.investigation),
+        )
+        # Replace project investigation with another one from different sheets
+        self.investigation.delete()
+        self.investigation = self.import_isa_from_file(
+            SHEET_PATH_MINIMAL, self.project
+        )
+        self.study = self.investigation.studies.first()
+        # Set irods_status to True to force extra checks
+        self.investigation.irods_status = True
+        self.investigation.save()
+
+        self.assertEqual(Investigation.objects.count(), 1)
+        version_count = ISATab.objects.count()
+        self.assertEqual(self._get_tl_events().count(), 0)
+
+        with self.login(self.user):
+            response = self.client.post(
+                reverse(
+                    'samplesheets:version_restore',
+                    kwargs={'isatab': isatab_new.sodar_uuid},
+                )
+            )
+
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(Investigation.objects.count(), 1)
+        # No ISATab versions should be added or removed
+        self.assertEqual(ISATab.objects.count(), version_count)
+        tl_events = self._get_tl_events()
+        self.assertEqual(tl_events.count(), 1)
+        # Timeline event should denote failure
+        self.assertEqual(
+            tl_events.first().get_status().status_type,
+            self.timeline.TL_STATUS_FAILED,
+        )
 
 
 class TestSheetVersionUpdateView(SamplesheetsViewTestBase):
