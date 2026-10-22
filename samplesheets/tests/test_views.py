@@ -564,9 +564,25 @@ class TestSheetImportView(
         self.assertListEqual(isa_version.tags, ['IMPORT'])
         self.assertIsNotNone(isa_version.data['sheet_config'])
         self.assertIsNotNone(isa_version.data['display_config'])
+
+        inv = Investigation.objects.first()
+        study = inv.studies.first()
+        assay = study.assays.first()
+        inv_data = isa_version.data['investigation']['tsv']
+
+        # Assert SODAR metadata not in db objects
+        self.assertNotIn(sc.ISA_META_PROJECT_UUID, inv.comments)
+        self.assertNotIn(f'Comment[{sc.ISA_META_PROJECT_UUID}]', inv.headers)
+        self.assertNotIn(sc.ISA_META_STUDY_UUID, study.comments)
+        self.assertNotIn(f'Comment[{sc.ISA_META_STUDY_UUID}]', study.headers)
+        self.assertNotIn(sc.ISA_META_ASSAY_UUID, assay.comments)
+        self.assertNotIn(f'Comment[{sc.ISA_META_ASSAY_UUID}]', assay.headers)
+        # Assert SODAR metadata not in version (they were not in original)
+        self.assertNotIn(f'Comment[{sc.ISA_META_PROJECT_UUID}]', inv_data)
+        self.assertNotIn(f'Comment[{sc.ISA_META_STUDY_UUID}]', inv_data)
+        self.assertNotIn(f'Comment[{sc.ISA_META_ASSAY_UUID}]', inv_data)
         # Assert study render table cache
         # NOTE: Cache item not created in this case
-        inv = Investigation.objects.first()
         cache_name = STUDY_TABLE_CACHE_ITEM.format(
             study=inv.studies.first().sodar_uuid
         )
@@ -574,6 +590,48 @@ class TestSheetImportView(
             self.cache_backend.get_cache_item(
                 APP_NAME, cache_name, self.project
             )
+        )
+
+    def test_post_metadata(self):
+        """Test POST with SODAR metadata"""
+        self.assertEqual(Investigation.objects.count(), 0)
+        self.assertEqual(ISATab.objects.count(), 0)
+
+        with open(SHEET_PATH_META, 'rb') as file:
+            post_data = {'file_upload': file}
+            with self.login(self.user):
+                response = self.client.post(self.url, post_data)
+
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(Investigation.objects.count(), 1)
+        self.assertEqual(ISATab.objects.count(), 1)
+        isa_version = ISATab.objects.first()
+        self.assertListEqual(isa_version.tags, ['IMPORT'])
+        self.assertIsNotNone(isa_version.data['sheet_config'])
+        self.assertIsNotNone(isa_version.data['display_config'])
+
+        inv = Investigation.objects.first()
+        study = inv.studies.first()
+        assay = study.assays.first()
+        inv_data = isa_version.data['investigation']['tsv']
+
+        # Assert SODAR metadata not in db objects (should be stripped)
+        self.assertNotIn(sc.ISA_META_PROJECT_UUID, inv.comments)
+        self.assertNotIn(f'Comment[{sc.ISA_META_PROJECT_UUID}]', inv.headers)
+        self.assertNotIn(sc.ISA_META_STUDY_UUID, study.comments)
+        self.assertNotIn(f'Comment[{sc.ISA_META_STUDY_UUID}]', study.headers)
+        self.assertNotIn(sc.ISA_META_ASSAY_UUID, assay.comments)
+        self.assertNotIn(f'Comment[{sc.ISA_META_ASSAY_UUID}]', assay.headers)
+        # Assert SODAR metadata in version
+        self.assertIn(
+            f'Comment[{sc.ISA_META_PROJECT_UUID}]\t{META_PROJECT_UUID}',
+            inv_data,
+        )
+        self.assertIn(
+            f'Comment[{sc.ISA_META_STUDY_UUID}]\t{META_STUDY_UUID}', inv_data
+        )
+        self.assertIn(
+            f'Comment[{sc.ISA_META_ASSAY_UUID}]\t{META_ASSAY_UUID}', inv_data
         )
 
     def test_post_replace(self):

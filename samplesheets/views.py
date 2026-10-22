@@ -625,11 +625,6 @@ class SheetImportMixin:
                     elif assay.get_name() in old_assay_uuids:
                         assay.sodar_uuid = old_assay_uuids[assay.get_name()]
                     assay.save()
-        # Strip SODAR export-only metadata from import if present
-        try:  # Catching exception just in case, we don't want to fail here
-            self._strip_meta_comments(new_inv)
-        except Exception as ex:
-            logger.error(f'Exception in removing metadata comments: {ex}')
         return new_inv
 
     def handle_import_exception(
@@ -732,6 +727,12 @@ class SheetImportMixin:
                 study.refresh_from_db()
                 table_builder.clear_study_cache(study)
 
+        # Strip SODAR export-only metadata from import if present
+        try:  # Catching exception just in case, we don't want to fail here
+            self._strip_meta_comments(investigation)
+        except Exception as ex:
+            logger.error(f'Exception in removing metadata comments: {ex}')
+
         # Update iRODS cache if replacing sheets and collections exist
         cache_updated = False
         if (
@@ -755,6 +756,7 @@ class SheetImportMixin:
                 investigation, isa_version, action, cache_updated
             )
             messages.success(self.request, mark_safe(msg))
+
         logger.info(f'Sample sheet {action} OK')
         return investigation
 
