@@ -129,8 +129,9 @@ SHEET_NAME_EMPTY_ASSAY = 'i_small_assay_empty.zip'
 SHEET_PATH_EMPTY_ASSAY = SHEET_DIR_SPECIAL + SHEET_NAME_EMPTY_ASSAY
 SHEET_NAME_NO_PLUGIN_ASSAY = 'i_small_assay_no_plugin.zip'
 SHEET_PATH_NO_PLUGIN_ASSAY = SHEET_DIR_SPECIAL + SHEET_NAME_NO_PLUGIN_ASSAY
-SHEET_PATH_META = SHEET_DIR_SPECIAL + 'i_small2_export_metadata.zip'
 SHEET_PATH_RENAME = SHEET_DIR_SPECIAL + 'i_small2_renamed_meta.zip'
+SHEET_PATH_META = SHEET_DIR_SPECIAL + 'i_small2_export_metadata.zip'
+SHEET_PATH_RENAME_META = SHEET_DIR_SPECIAL + 'i_small2_renamed_meta.zip'
 SHEET_VERSION_DESC = 'description'
 SOURCE_NAME = '0815'
 SOURCE_NAME_FAIL = 'oop5Choo'
@@ -1017,7 +1018,7 @@ class TestSheetImportView(
         old_inv_pk = inv.pk
         self._clear_display_config()
 
-        with open(SHEET_PATH_RENAME, 'rb') as file:
+        with open(SHEET_PATH_RENAME_META, 'rb') as file:
             post_data = {'file_upload': file}
             with self.login(self.user):
                 response = self.client.post(self.url, post_data)
@@ -1739,8 +1740,10 @@ class TestSheetVersionRestoreView(SamplesheetsViewTestBase):
         self.assertEqual(ISATab.objects.count(), 2)
         tl_events = self._get_tl_events()
         self.assertEqual(tl_events.count(), 1)
-        e = tl_events.first()
-        self.assertEqual(e.get_status().status_type, self.timeline.TL_STATUS_OK)
+        self.assertEqual(
+            tl_events.first().get_status().status_type,
+            self.timeline.TL_STATUS_OK,
+        )
 
     def test_post_study_cache(self):
         """Test POST with cached study table"""
@@ -1842,6 +1845,72 @@ class TestSheetVersionRestoreView(SamplesheetsViewTestBase):
         self.assertEqual(
             tl_events.first().get_status().status_type,
             self.timeline.TL_STATUS_FAILED,
+        )
+
+    def test_post_rename(self):
+        """Test POST with renamed study and assay files without metadata"""
+        isatab_new = self.sheet_io.save_isa(
+            project=self.project,
+            inv_uuid=self.inv.sodar_uuid,
+            isa_data=self.sheet_io.export_isa(self.inv),
+        )
+        # Save sheet config for version to be restored
+        isatab_new.data['sheet_config'] = conf_api.get_sheet_config(self.inv)
+        isatab_new.save()
+        # Delete investigation and import a new one with renamed files
+        self.inv.delete()
+        self.inv = self.import_isa_from_file(SHEET_PATH_RENAME, self.project)
+
+        self.assertEqual(Investigation.objects.count(), 1)
+        self.assertEqual(ISATab.objects.count(), 3)
+        self.assertEqual(self._get_tl_events().count(), 0)
+        dc_kwargs = {
+            'name': 'display_config',
+            'project': self.project,
+            'user': self.user,
+        }
+        self.assertIsNone(AppSetting.objects.filter(**dc_kwargs).first())
+
+        with self.login(self.user):
+            response = self.client.post(
+                reverse(
+                    'samplesheets:version_restore',
+                    kwargs={'isatab': isatab_new.sodar_uuid},
+                )
+            )
+
+        self.assertEqual(response.status_code, 302)
+        isatab_latest = ISATab.objects.all().order_by('-date_created').first()
+        self.assertNotEqual(
+            isatab_latest.date_created, self.isatab.date_created
+        )
+        self.assertEqual(Investigation.objects.count(), 1)
+        self.assertEqual(ISATab.objects.count(), 3)
+
+        # Assert sheet config and display configs
+        self.inv = Investigation.objects.get(project=self.project, active=True)
+        study = self.inv.studies.first()
+        study_uuid = str(study.sodar_uuid)
+        assay_uuid = str(study.assays.first().sodar_uuid)
+        sheet_config = app_settings.get(
+            APP_NAME, 'sheet_config', project=self.project
+        )
+        self.assertIn(assay_uuid, sheet_config['studies'][study_uuid]['assays'])
+        display_config = app_settings.get(
+            APP_NAME, 'display_config_default', project=self.project
+        )
+        self.assertIn(
+            assay_uuid, display_config['studies'][study_uuid]['assays']
+        )
+        # User display config should still be undefined (created when navigating
+        # to view)
+        self.assertIsNone(AppSetting.objects.filter(**dc_kwargs).first())
+
+        tl_events = self._get_tl_events()
+        self.assertEqual(tl_events.count(), 1)
+        self.assertEqual(
+            tl_events.first().get_status().status_type,
+            self.timeline.TL_STATUS_OK,
         )
 
 

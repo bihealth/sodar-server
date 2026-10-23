@@ -47,6 +47,8 @@ Fixed
     - ``IrodsDataRequestAcceptBatchView`` redundant cache updates (#2586)
     - ``TestFixIrodsTickets`` sporadic output assertion errors (#2597)
     - Unwanted ``ISATab`` deletion on sheet restore failure (#2599)
+    - Uncaught exceptions in sheet config restore (#2602)
+    - User ``display_config`` settings not cleared on display config rebuild (#2602)
 
 Removed
 -------

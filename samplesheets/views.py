@@ -340,6 +340,7 @@ class SheetImportMixin:
                 display_config = app_settings.get(
                     APP_NAME, 'display_config_default', project=project
                 )
+        # Only restore configurations if studies and assays match
         elif isa_version and action == 'restore':
             logger.debug('Restoring previous edit and display configurations')
             sheet_config = isa_version.data.get('sheet_config')
@@ -348,13 +349,19 @@ class SheetImportMixin:
                 inv_tables = table_builder.build_inv_tables(
                     investigation, use_config=False
                 )
+            validate_ok = False
             try:
                 conf_api.validate_sheet_config(sheet_config)
+                validate_ok = True
                 conf_api.restore_sheet_config(
                     investigation, inv_tables, sheet_config
                 )
-            except ValueError:
+            except Exception as ex:
                 sheet_config_valid = False
+                # Set current display_config to none to rebuild default
+                display_config = None
+                err_label = 'restoring' if validate_ok else 'validating'
+                logger.error(f'Exception {err_label} sheet config: {ex}')
 
         if not sheet_config or not sheet_config_valid or not display_config:
             if not inv_tables:
@@ -369,6 +376,8 @@ class SheetImportMixin:
                 # TODO: Delete possible cached sheets here
             if not display_config:
                 logger.debug('Building new display configuration')
+                # Clear existing user display configs
+                app_settings.delete(APP_NAME, 'display_config', project=project)
                 display_config = conf_api.build_display_config(
                     inv_tables, sheet_config
                 )
