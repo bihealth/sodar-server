@@ -21,6 +21,8 @@ Added
     - ``SheetISAExportAPIView`` ``include_meta`` field (#614)
     - ``ISATab`` ``sodar_version`` field (#2596)
     - SODAR version in ``SheetVersionListView`` (#2596)
+    - SODAR metadata UUID support in sheet replace (#2590)
+    - Study and assay renaming support in sheet replace (#2590)
 
 Changed
 -------
@@ -34,6 +36,7 @@ Changed
     - Move ISA-Tab SODAR metadata constants into ``constants.py`` (#2589)
     - Vue3app ``VersionSaveModal`` button layout (#2595)
     - Refactor legacy ISA-Tab metadata constants (#2594)
+    - Move ``compare_inv_replace()`` functionality to ``SheetImportMixin`` (#2590)
 
 Fixed
 -----
@@ -43,6 +46,9 @@ Fixed
     - ``IrodsDirModal`` responsiveness with long data object paths (#2569)
     - ``IrodsDataRequestAcceptBatchView`` redundant cache updates (#2586)
     - ``TestFixIrodsTickets`` sporadic output assertion errors (#2597)
+    - Unwanted ``ISATab`` deletion on sheet restore failure (#2599)
+    - Uncaught exceptions in sheet config restore (#2602)
+    - User ``display_config`` settings not cleared on display config rebuild (#2602)
 
 Removed
 -------
@@ -52,6 +58,7 @@ Removed
 - **Samplesheets**
     - Legacy Vue2 app from ``vueapp`` (#2393)
     - ``use_vue3_app`` app setting (#2393)
+    - ``utils.compare_inv_replace()`` helper (#2590)
 
 
 v1.3.3 (2026-09-25)

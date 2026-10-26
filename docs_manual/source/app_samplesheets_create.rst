@@ -1,6 +1,6 @@
 .. _app_samplesheets_create:
 
-Importing and Creating Sheets
+Creating and Importing Sheets
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 To provide your sample sheets into SODAR, you can either import them from
@@ -128,6 +128,8 @@ a success message. SODAR will also update the project cache, which happens
 asynchronously in the background.
 
 
+.. _app_samplesheets_create_replace:
+
 Replace ISA-Tab
 ===============
 
@@ -149,10 +151,19 @@ investigation or the replacing will fail.
 
 If iRODS collections have not been created yet, there are no limitations for
 what the contents of the replaced sheets are. However, if iRODS collections
-already exist, we currently enforce the following rules:
+exist, SODAR enforces the following rules:
 
 - Studies and assays from the previous versions must remain in the ISA-Tab.
 - New studies, assays, columns and rows **can** be introduced.
+- Existing studies and assays **can** be renamed (see below).
+
+.. note::
+
+    Renaming existing study and assay files is supported, but only if
+    :ref:`SODAR metadata <metadata_advanced_sodar_export>` is present on the
+    ISA-tab being imported. Make sure your ISA-Tab has been exported from SODAR
+    v1.4 or greater if you wish to rename replace sheets with modified file
+    names. This also applies for modifying the `identifier` field in a study.
 
 There are certain notable effects for replacing the sample sheets:
 

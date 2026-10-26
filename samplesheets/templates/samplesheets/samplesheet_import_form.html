@@ -45,15 +45,22 @@
   </div>
   {% if replace_sheets and irods_status %}
     <div class="alert alert-warning">
-      <strong>Warning:</strong> Because iRODS collections have already been
-      created, replacing the ISA-Tab will only be accepted if studies and assays
-      have not been removed. Adding new studies or assays or modifying content
-      within existing studies and assays is accepted.
-    </div>
-    <div class="alert alert-warning">
-      <strong>Note:</strong> If you have added new studies or assays, you must
-      select <strong>Update iRODS Collections</strong> from the Zone Operations
-      menu after replace has completed.
+      <p>
+        <strong>Warning:</strong> Because iRODS collections exist in the
+        project, replacing the ISA-Tab will only be accepted if studies and
+        assays have not been removed. Adding new studies or assays or modifying
+        content within existing studies and assays is accepted.
+      </p>
+      <p>
+        If you have added new studies or assays, you must select
+        <em>"Update iRODS Collections"</em> from the Zone Operations
+        dropdown after replace has completed.
+      </p>
+      <p class="mb-0">
+        Study and assay identifiers and file names can be modified if SODAR
+        metadata UUIDs are present in the imported ISA-Tab. This requires the
+        ISA-Tab to have been originally exported from SODAR v1.4 or newer.
+      </p>
     </div>
     {% if zones_exist %}
       <div class="alert alert-warning">
@@ -63,22 +70,6 @@
         the sample sheets may not work as expected.
       </div>
     {% endif %}
-    <div class="alert alert-danger">
-      <p>
-        <strong>Warning:</strong> Please note that at the moment we do not
-        automatically move iRODS files according to changes in replaced sample
-        sheets.
-      </p>
-      <p>
-        <strong>This means that iRODS links to existing files will no longer work
-        if you change any of the following:</strong>
-      </p>
-      <ul class="mb-0">
-        <li>Study identifier field</li>
-        <li>Names of sources, samples and/or libraries associated with existing files</li>
-        <li>File name of an existing assay</li>
-      </ul>
-    </div>
   {% endif %}
 
   <form method="post" enctype="multipart/form-data">

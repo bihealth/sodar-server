@@ -2,6 +2,7 @@
 
 import json
 import os
+import uuid
 
 from cubi_isa_templates import IsaTabTemplate, _TEMPLATES as ISA_TEMPLATES
 from zipfile import ZipFile
@@ -110,6 +111,7 @@ PROJECT_TYPE_PROJECT = SODAR_CONSTANTS['PROJECT_TYPE_PROJECT']
 
 # Local constants
 APP_NAME = 'samplesheets'
+# TODO: Cleanup name/path constants where applicable
 SHEET_NAME = 'i_small.zip'
 SHEET_PATH = SHEET_DIR + SHEET_NAME
 SHEET_PATH_INSERTED = SHEET_DIR_SPECIAL + 'i_small_insert.zip'
@@ -119,12 +121,17 @@ SHEET_NAME_SMALL2_ALT = 'i_small2_alt.zip'
 SHEET_PATH_SMALL2_ALT = SHEET_DIR + SHEET_NAME_SMALL2_ALT
 SHEET_NAME_MINIMAL = 'i_minimal.zip'
 SHEET_PATH_MINIMAL = SHEET_DIR + SHEET_NAME_MINIMAL
+SHEET_NAME_MULTI = 'BII-I-1_edited.zip'
+SHEET_PATH_MULTI = SHEET_DIR + SHEET_NAME_MULTI
 SHEET_NAME_CRITICAL = 'BII-I-1_critical.zip'
 SHEET_PATH_CRITICAL = SHEET_DIR_SPECIAL + SHEET_NAME_CRITICAL
 SHEET_NAME_EMPTY_ASSAY = 'i_small_assay_empty.zip'
 SHEET_PATH_EMPTY_ASSAY = SHEET_DIR_SPECIAL + SHEET_NAME_EMPTY_ASSAY
 SHEET_NAME_NO_PLUGIN_ASSAY = 'i_small_assay_no_plugin.zip'
 SHEET_PATH_NO_PLUGIN_ASSAY = SHEET_DIR_SPECIAL + SHEET_NAME_NO_PLUGIN_ASSAY
+SHEET_PATH_RENAME = SHEET_DIR_SPECIAL + 'i_small2_renamed_meta.zip'
+SHEET_PATH_META = SHEET_DIR_SPECIAL + 'i_small2_export_metadata.zip'
+SHEET_PATH_RENAME_META = SHEET_DIR_SPECIAL + 'i_small2_renamed_meta.zip'
 SHEET_VERSION_DESC = 'description'
 SOURCE_NAME = '0815'
 SOURCE_NAME_FAIL = 'oop5Choo'
@@ -146,6 +153,11 @@ with open(CONFIG_PATH_DEFAULT) as fp:
     CONFIG_DATA_DEFAULT = json.load(fp)
 BACKEND_PLUGINS_NO_TPL = settings.ENABLED_BACKEND_PLUGINS.copy()
 BACKEND_PLUGINS_NO_TPL.remove('isatemplates_backend')
+# Dummy metadata UUIDs as saved in i_small2_export_metadata.zip
+META_PROJECT_UUID = '00000000-0000-0000-0000-000000000000'
+META_INV_UUID = '11111111-1111-1111-1111-111111111111'
+META_STUDY_UUID = '22222222-2222-2222-2222-222222222222'
+META_ASSAY_UUID = '33333333-3333-3333-3333-333333333333'
 
 
 # TODO: Add testing for study table cache updates
@@ -275,6 +287,216 @@ class TestProjectSheetsView(SamplesheetsViewTestBase):
         self.assertNotIn('tables', response.context)
 
 
+class TestSheetImportMixin(SampleSheetModelMixin, SamplesheetsViewTestBase):
+    """Tests for SheetImportMixin"""
+
+    def _setup_metadata(self, inv1: Investigation, inv2: Investigation):
+        """Set up inv2 SODAR metadata to match inv1 UUIDs"""
+        inv2.comments[sc.ISA_META_PROJECT_UUID] = str(self.project.sodar_uuid)
+        inv2.save()
+        for s1 in inv1.studies.all():
+            s2 = inv2.studies.get(identifier=s1.identifier)
+            s2.comments[sc.ISA_META_STUDY_UUID] = str(s1.sodar_uuid)
+            s2.save()
+            for a1 in s1.assays.all():
+                a2 = s2.assays.get(file_name=a1.file_name)
+                a2.comments[sc.ISA_META_ASSAY_UUID] = str(a1.sodar_uuid)
+                a2.save()
+
+    def test_compare(self):
+        """Test _compare_invs()"""
+        inv1 = self.import_isa_from_file(SHEET_PATH, project=self.project)
+        inv2 = self.import_isa_from_file(SHEET_PATH, project=self.project)
+        self.assertEqual(inv2.comments.get(sc.ISA_META_PROJECT_UUID), None)
+        self.assertEqual(SheetImportMixin._compare_invs(inv1, inv2), True)
+
+    def test_compare_multi(self):
+        """Test compare with multi-study and multi-assay investigation"""
+        inv1 = self.import_isa_from_file(SHEET_PATH_MULTI, project=self.project)
+        inv2 = self.import_isa_from_file(SHEET_PATH_MULTI, project=self.project)
+        self.assertEqual(SheetImportMixin._compare_invs(inv1, inv2), True)
+
+    def test_compare_inserted_rows(self):
+        """Test compare with inserted rows"""
+        inv1 = self.import_isa_from_file(SHEET_PATH, project=self.project)
+        inv2 = self.import_isa_from_file(
+            SHEET_PATH_INSERTED, project=self.project
+        )
+        self.assertEqual(SheetImportMixin._compare_invs(inv1, inv2), True)
+
+    def test_compare_modified_sheet(self):
+        """Test compare with modified studies/assays"""
+        inv1 = self.import_isa_from_file(
+            SHEET_PATH_SMALL2, project=self.project
+        )
+        inv2 = self.import_isa_from_file(
+            SHEET_PATH_SMALL2_ALT, project=self.project
+        )
+        self.assertEqual(SheetImportMixin._compare_invs(inv1, inv2), False)
+
+    def test_compare_different_sheet(self):
+        """Test compare with different sheet"""
+        inv1 = self.import_isa_from_file(SHEET_PATH, project=self.project)
+        inv2 = self.import_isa_from_file(
+            SHEET_PATH_SMALL2, project=self.project
+        )
+        self.assertEqual(SheetImportMixin._compare_invs(inv1, inv2), False)
+
+    def test_compare_missing_assay(self):
+        """Test compare with missing assay"""
+        inv1 = self.import_isa_from_file(SHEET_PATH, project=self.project)
+        inv2 = self.import_isa_from_file(SHEET_PATH, project=self.project)
+        inv2.studies.first().assays.first().delete()
+        self.assertEqual(SheetImportMixin._compare_invs(inv1, inv2), False)
+
+    def test_compare_missing_study(self):
+        """Test compare with missing study"""
+        inv1 = self.import_isa_from_file(SHEET_PATH, project=self.project)
+        inv2 = self.import_isa_from_file(SHEET_PATH, project=self.project)
+        inv2.studies.first().delete()
+        self.assertEqual(SheetImportMixin._compare_invs(inv1, inv2), False)
+
+    def test_compare_study_id(self):
+        """Test compare with different study identifier"""
+        inv1 = self.import_isa_from_file(SHEET_PATH, project=self.project)
+        inv2 = self.import_isa_from_file(SHEET_PATH, project=self.project)
+        study2 = inv2.studies.first()
+        study2.identifier = 'UPDATED-IDENTIFIER'
+        study2.save()
+        # Should fail
+        self.assertEqual(SheetImportMixin._compare_invs(inv1, inv2), False)
+
+    def test_compare_study_file_name(self):
+        """Test compare with different study file name"""
+        inv1 = self.import_isa_from_file(SHEET_PATH, project=self.project)
+        inv2 = self.import_isa_from_file(SHEET_PATH, project=self.project)
+        study2 = inv2.studies.first()
+        study2.file_name = 's_updated_study_name.txt'
+        study2.save()
+        self.assertEqual(SheetImportMixin._compare_invs(inv1, inv2), False)
+
+    def test_compare_assay_file_name(self):
+        """Test compare with and different assay file name"""
+        inv1 = self.import_isa_from_file(SHEET_PATH, project=self.project)
+        inv2 = self.import_isa_from_file(SHEET_PATH, project=self.project)
+        study2 = inv2.studies.first()
+        assay2 = study2.assays.first()
+        assay2.file_name = 'a_updated_assay_name.txt'
+        assay2.save()
+        self.assertEqual(SheetImportMixin._compare_invs(inv1, inv2), False)
+
+    def test_compare_metadata(self):
+        """Test compare with metadata"""
+        inv1 = self.import_isa_from_file(SHEET_PATH, project=self.project)
+        inv2 = self.import_isa_from_file(SHEET_PATH, project=self.project)
+        self._setup_metadata(inv1, inv2)
+        self.assertEqual(
+            inv2.comments.get(sc.ISA_META_PROJECT_UUID),
+            str(self.project.sodar_uuid),
+        )
+        self.assertEqual(SheetImportMixin._compare_invs(inv1, inv2), True)
+
+    def test_compare_metadata_multi(self):
+        """Test compare with metadata and multi-study/assay investigation"""
+        inv1 = self.import_isa_from_file(SHEET_PATH_MULTI, project=self.project)
+        inv2 = self.import_isa_from_file(SHEET_PATH_MULTI, project=self.project)
+        self._setup_metadata(inv1, inv2)
+        self.assertEqual(SheetImportMixin._compare_invs(inv1, inv2), True)
+
+    def test_compare_metadata_study_id(self):
+        """Test compare with metadata and different study identifier"""
+        inv1 = self.import_isa_from_file(SHEET_PATH, project=self.project)
+        inv2 = self.import_isa_from_file(SHEET_PATH, project=self.project)
+        self._setup_metadata(inv1, inv2)
+        study2 = inv2.studies.first()
+        study2.identifier = 'UPDATED-IDENTIFIER'
+        study2.save()
+        # Should still succeed
+        self.assertEqual(SheetImportMixin._compare_invs(inv1, inv2), True)
+
+    def test_compare_metadata_study_file_name(self):
+        """Test compare with metadata and different study file name"""
+        inv1 = self.import_isa_from_file(SHEET_PATH, project=self.project)
+        inv2 = self.import_isa_from_file(SHEET_PATH, project=self.project)
+        self._setup_metadata(inv1, inv2)
+        study2 = inv2.studies.first()
+        study2.file_name = 's_updated_study_name.txt'
+        study2.save()
+        self.assertEqual(SheetImportMixin._compare_invs(inv1, inv2), True)
+
+    def test_compare_metadata_assay_file_name(self):
+        """Test compare with metadata and different assay file name"""
+        inv1 = self.import_isa_from_file(SHEET_PATH, project=self.project)
+        inv2 = self.import_isa_from_file(SHEET_PATH, project=self.project)
+        self._setup_metadata(inv1, inv2)
+        study2 = inv2.studies.first()
+        assay2 = study2.assays.first()
+        assay2.file_name = 'a_updated_assay_name.txt'
+        assay2.save()
+        self.assertEqual(SheetImportMixin._compare_invs(inv1, inv2), True)
+
+    def test_compare_metadata_dupe_study_uuid(self):
+        """Test compare with metadata and duplicate study UUID"""
+        inv1 = self.import_isa_from_file(SHEET_PATH, project=self.project)
+        inv2 = self.import_isa_from_file(SHEET_PATH, project=self.project)
+        self._setup_metadata(inv1, inv2)
+        study_uuid = str(inv1.studies.first().sodar_uuid)
+        self.make_study(
+            identifier='study-id-here',
+            file_name='s_another_study.txt',
+            investigation=inv2,
+            title='Study Title',
+            description='',
+            comments={sc.ISA_META_STUDY_UUID: study_uuid},
+        )
+        with self.assertRaises(ValueError):
+            SheetImportMixin._compare_invs(inv1, inv2)
+
+    def test_compare_metadata_dupe_assay_uuid(self):
+        """Test compare with metadata and duplicate assay UUID"""
+        inv1 = self.import_isa_from_file(SHEET_PATH, project=self.project)
+        inv2 = self.import_isa_from_file(SHEET_PATH, project=self.project)
+        self._setup_metadata(inv1, inv2)
+        assay_uuid = str(inv1.studies.first().assays.first().sodar_uuid)
+        self.make_assay(
+            file_name='a_another_assay.txt',
+            study=inv2.studies.first(),
+            tech_platform='',
+            tech_type={},
+            measurement_type={},
+            arcs=[],
+            comments={sc.ISA_META_ASSAY_UUID: assay_uuid},
+        )
+        with self.assertRaises(ValueError):
+            SheetImportMixin._compare_invs(inv1, inv2)
+
+    def test_compare_metadata_dupe_assay_uuid_other_study(self):
+        """Test compare with metadata and dupe assay UUID in another study"""
+        inv1 = self.import_isa_from_file(SHEET_PATH, project=self.project)
+        inv2 = self.import_isa_from_file(SHEET_PATH, project=self.project)
+        self._setup_metadata(inv1, inv2)
+        assay_uuid = str(inv1.studies.first().assays.first().sodar_uuid)
+        study2b = self.make_study(
+            identifier='study-id-here',
+            file_name='s_another_study.txt',
+            investigation=inv2,
+            title='Study Title',
+            description='',
+            comments={sc.ISA_META_STUDY_UUID: str(uuid.uuid4())},
+        )  # Imaginary UUID, but we don't know it at this point in time
+        self.make_assay(
+            file_name='a_another_assay.txt',
+            study=study2b,
+            tech_platform='',
+            tech_type={},
+            measurement_type={},
+            arcs=[],
+            comments={sc.ISA_META_ASSAY_UUID: assay_uuid},
+        )
+        with self.assertRaises(ValueError):
+            SheetImportMixin._compare_invs(inv1, inv2)
+
+
 class TestSheetImportView(
     SheetImportMixin,
     LandingZoneMixin,
@@ -282,6 +504,33 @@ class TestSheetImportView(
     SamplesheetsViewTestBase,
 ):
     """Tests for SheetImportView"""
+
+    def _clear_display_config(self):
+        """Clear display config for self.user in self.project"""
+        app_settings.set(
+            'samplesheets',
+            'display_config',
+            {},
+            project=self.project,
+            user=self.user,
+        )
+
+    def _update_replace_uuids(self, inv: Investigation):
+        """Update UUIDs for sheet replace"""
+        self.project.sodar_uuid = META_PROJECT_UUID
+        self.project.save()
+        inv.sodar_uuid = META_INV_UUID
+        inv.save()
+        study = inv.studies.first()
+        study.sodar_uuid = META_STUDY_UUID
+        study.save()
+        assay = study.assays.first()
+        assay.sodar_uuid = META_ASSAY_UUID
+        assay.save()
+        self.url = reverse(
+            'samplesheets:import',
+            kwargs={'project': self.project.sodar_uuid},
+        )  # Update URL to point to the correct UUID
 
     def setUp(self):
         super().setUp()
@@ -291,6 +540,7 @@ class TestSheetImportView(
             'samplesheets:import',
             kwargs={'project': self.project.sodar_uuid},
         )
+        self.irods_backend = PluginAPI.get_backend_api('omics_irods')
 
     def test_get(self):
         """Test SheetImportView GET"""
@@ -315,9 +565,25 @@ class TestSheetImportView(
         self.assertListEqual(isa_version.tags, ['IMPORT'])
         self.assertIsNotNone(isa_version.data['sheet_config'])
         self.assertIsNotNone(isa_version.data['display_config'])
+
+        inv = Investigation.objects.first()
+        study = inv.studies.first()
+        assay = study.assays.first()
+        inv_data = isa_version.data['investigation']['tsv']
+
+        # Assert SODAR metadata not in db objects
+        self.assertNotIn(sc.ISA_META_PROJECT_UUID, inv.comments)
+        self.assertNotIn(f'Comment[{sc.ISA_META_PROJECT_UUID}]', inv.headers)
+        self.assertNotIn(sc.ISA_META_STUDY_UUID, study.comments)
+        self.assertNotIn(f'Comment[{sc.ISA_META_STUDY_UUID}]', study.headers)
+        self.assertNotIn(sc.ISA_META_ASSAY_UUID, assay.comments)
+        self.assertNotIn(f'Comment[{sc.ISA_META_ASSAY_UUID}]', assay.headers)
+        # Assert SODAR metadata not in version (they were not in original)
+        self.assertNotIn(f'Comment[{sc.ISA_META_PROJECT_UUID}]', inv_data)
+        self.assertNotIn(f'Comment[{sc.ISA_META_STUDY_UUID}]', inv_data)
+        self.assertNotIn(f'Comment[{sc.ISA_META_ASSAY_UUID}]', inv_data)
         # Assert study render table cache
         # NOTE: Cache item not created in this case
-        inv = Investigation.objects.first()
         cache_name = STUDY_TABLE_CACHE_ITEM.format(
             study=inv.studies.first().sodar_uuid
         )
@@ -327,18 +593,55 @@ class TestSheetImportView(
             )
         )
 
+    def test_post_metadata(self):
+        """Test POST with SODAR metadata"""
+        self.assertEqual(Investigation.objects.count(), 0)
+        self.assertEqual(ISATab.objects.count(), 0)
+
+        with open(SHEET_PATH_META, 'rb') as file:
+            post_data = {'file_upload': file}
+            with self.login(self.user):
+                response = self.client.post(self.url, post_data)
+
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(Investigation.objects.count(), 1)
+        self.assertEqual(ISATab.objects.count(), 1)
+        isa_version = ISATab.objects.first()
+        self.assertListEqual(isa_version.tags, ['IMPORT'])
+        self.assertIsNotNone(isa_version.data['sheet_config'])
+        self.assertIsNotNone(isa_version.data['display_config'])
+
+        inv = Investigation.objects.first()
+        study = inv.studies.first()
+        assay = study.assays.first()
+        inv_data = isa_version.data['investigation']['tsv']
+
+        # Assert SODAR metadata not in db objects (should be stripped)
+        self.assertNotIn(sc.ISA_META_PROJECT_UUID, inv.comments)
+        self.assertNotIn(f'Comment[{sc.ISA_META_PROJECT_UUID}]', inv.headers)
+        self.assertNotIn(sc.ISA_META_STUDY_UUID, study.comments)
+        self.assertNotIn(f'Comment[{sc.ISA_META_STUDY_UUID}]', study.headers)
+        self.assertNotIn(sc.ISA_META_ASSAY_UUID, assay.comments)
+        self.assertNotIn(f'Comment[{sc.ISA_META_ASSAY_UUID}]', assay.headers)
+        # Assert SODAR metadata in version
+        self.assertIn(
+            f'Comment[{sc.ISA_META_PROJECT_UUID}]\t{META_PROJECT_UUID}',
+            inv_data,
+        )
+        self.assertIn(
+            f'Comment[{sc.ISA_META_STUDY_UUID}]\t{META_STUDY_UUID}', inv_data
+        )
+        self.assertIn(
+            f'Comment[{sc.ISA_META_ASSAY_UUID}]\t{META_ASSAY_UUID}', inv_data
+        )
+
     def test_post_replace(self):
-        """Test POST to replace replacing existing investigation"""
+        """Test POST to replace existing investigation"""
         inv = self.import_isa_from_file(SHEET_PATH, self.project)
         uuid = inv.sodar_uuid
         old_inv_pk = inv.pk
-        app_settings.set(
-            'samplesheets',
-            'display_config',
-            {},
-            project=self.project,
-            user=self.user,
-        )
+        self._clear_display_config()
+
         self.assertEqual(Investigation.objects.count(), 1)
         self.assertEqual(ISATab.objects.count(), 1)
         self.assertEqual(
@@ -443,13 +746,7 @@ class TestSheetImportView(
         inv.irods_status = True
         inv.save()
         uuid = inv.sodar_uuid
-        app_settings.set(
-            'samplesheets',
-            'display_config',
-            {},
-            project=self.project,
-            user=self.user,
-        )
+        self._clear_display_config()
         conf_api.get_sheet_config(inv)
         zone = self.make_landing_zone(
             'new_zone',
@@ -487,19 +784,12 @@ class TestSheetImportView(
 
     def test_post_replace_ticket(self):
         """Test POST to replace with existing iRODS access ticket"""
-        irods_backend = PluginAPI.get_backend_api('omics_irods')
         inv = self.import_isa_from_file(SHEET_PATH, self.project)
         inv.irods_status = True
         inv.save()
         old_inv_pk = inv.pk
         uuid = inv.sodar_uuid
-        app_settings.set(
-            'samplesheets',
-            'display_config',
-            {},
-            project=self.project,
-            user=self.user,
-        )
+        self._clear_display_config()
         conf_api.get_sheet_config(inv)
 
         study = inv.studies.first()
@@ -507,7 +797,9 @@ class TestSheetImportView(
         ticket = self.make_irods_ticket(
             study=study,
             assay=assay,
-            path=os.path.join(irods_backend.get_path(assay), MISC_FILES_COLL),
+            path=os.path.join(
+                self.irods_backend.get_path(assay), MISC_FILES_COLL
+            ),
             user=self.user,
         )
         self.assertEqual(Investigation.objects.count(), 1)
@@ -522,9 +814,9 @@ class TestSheetImportView(
         self.assertEqual(uuid, Investigation.objects.first().sodar_uuid)
         inv = Investigation.objects.get(project=self.project, active=True)
         self.assertNotEqual(inv.pk, old_inv_pk)
-        study = inv.studies.first()
 
         # Assert ticket still exists and refers current study/assay
+        study = inv.studies.first()
         ticket.refresh_from_db()
         self.assertEqual(ticket.study, study)
         self.assertEqual(ticket.assay, study.assays.first())
@@ -587,6 +879,232 @@ class TestSheetImportView(
         cache_item = self.cache_backend.get_cache_item(*cache_args)
         self.assertIsNone(cache_item)
         self.assertEqual(JSONCacheItem.objects.count(), 0)
+
+    def test_post_replace_metadata(self):
+        """Test POST to replace with metadata"""
+        inv = self.import_isa_from_file(SHEET_PATH, self.project)
+        self._update_replace_uuids(inv)  # Update UUIDS to match metadata
+
+        old_inv_pk = inv.pk
+        self._clear_display_config()
+
+        with open(SHEET_PATH_META, 'rb') as file:
+            post_data = {'file_upload': file}
+            with self.login(self.user):
+                response = self.client.post(self.url, post_data)
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(Investigation.objects.count(), 1)
+
+        inv = Investigation.objects.get(project=self.project, active=True)
+        study = inv.studies.first()
+        assay = study.assays.first()
+
+        self.assertEqual(str(inv.sodar_uuid), META_INV_UUID)
+        self.assertNotEqual(inv.pk, old_inv_pk)
+        self.assertEqual(ISATab.objects.count(), 2)
+        self.assertListEqual(
+            ISATab.objects.all().order_by('-pk').first().tags,
+            ['IMPORT', 'REPLACE'],
+        )
+        self.assertIsNotNone(
+            ISATab.objects.all().order_by('-pk').first().data['sheet_config']
+        )
+        self.assertIsNotNone(
+            ISATab.objects.all().order_by('-pk').first().data['display_config']
+        )
+        self.assertEqual(
+            AppSetting.objects.filter(name='display_config').count(), 0
+        )
+        # Assert study render table cache
+        cache_name = STUDY_TABLE_CACHE_ITEM.format(
+            study=inv.studies.first().sodar_uuid
+        )
+        self.assertIsNone(
+            self.cache_backend.get_cache_item(
+                APP_NAME, cache_name, self.project
+            )
+        )
+        # Assert SODAR metadata has been stripped
+        self.assertNotIn(sc.ISA_META_PROJECT_UUID, inv.comments)
+        self.assertNotIn(f'Comment[{sc.ISA_META_PROJECT_UUID}]', inv.headers)
+        self.assertNotIn(sc.ISA_META_STUDY_UUID, study.comments)
+        self.assertNotIn(f'Comment[{sc.ISA_META_STUDY_UUID}]', study.headers)
+        self.assertNotIn(sc.ISA_META_ASSAY_UUID, assay.comments)
+        self.assertNotIn(f'Comment[{sc.ISA_META_ASSAY_UUID}]', assay.headers)
+
+    def test_post_replace_metadata_zone(self):
+        """Test POST to replace with metadata and existing landing zone"""
+        inv = self.import_isa_from_file(SHEET_PATH, self.project)
+        self._update_replace_uuids(inv)
+        inv.irods_status = True
+        inv.save()
+
+        uuid = inv.sodar_uuid
+        self._clear_display_config()
+        conf_api.get_sheet_config(inv)
+        zone = self.make_landing_zone(
+            'new_zone',
+            self.project,
+            self.user,
+            inv.get_assays().first(),
+            status=ZONE_STATUS_ACTIVE,
+        )
+
+        with open(SHEET_PATH_META, 'rb') as file:
+            post_data = {'file_upload': file}
+            with self.login(self.user):
+                response = self.client.post(self.url, post_data)
+
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(Investigation.objects.count(), 1)
+        self.assertEqual(uuid, str(Investigation.objects.first().sodar_uuid))
+        self.assertEqual(ISATab.objects.count(), 2)
+        inv = Investigation.objects.get(project=self.project, active=True)
+        zone.refresh_from_db()
+        self.assertEqual(
+            LandingZone.objects.get(assay__study__investigation=inv),
+            zone,
+        )
+        self.assertEqual(
+            zone.assay,
+            Assay.objects.filter(study__investigation=inv).first(),
+        )
+
+    def test_post_replace_metadata_ticket(self):
+        """Test POST to replace with metadata and iRODS access ticket"""
+        inv = self.import_isa_from_file(SHEET_PATH, self.project)
+        self._update_replace_uuids(inv)
+        inv.irods_status = True
+        inv.save()
+
+        old_inv_pk = inv.pk
+        uuid = inv.sodar_uuid
+        self._clear_display_config()
+        conf_api.get_sheet_config(inv)
+
+        study = inv.studies.first()
+        assay = study.assays.first()
+        ticket = self.make_irods_ticket(
+            study=study,
+            assay=assay,
+            path=os.path.join(
+                self.irods_backend.get_path(assay), MISC_FILES_COLL
+            ),
+            user=self.user,
+        )
+
+        with open(SHEET_PATH_INSERTED, 'rb') as file:
+            post_data = {'file_upload': file}
+            with self.login(self.user):
+                response = self.client.post(self.url, post_data)
+
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(Investigation.objects.count(), 1)
+        self.assertEqual(uuid, str(Investigation.objects.first().sodar_uuid))
+        inv = Investigation.objects.get(project=self.project, active=True)
+        self.assertNotEqual(inv.pk, old_inv_pk)
+
+        # Assert ticket still exists and refers current study/assay
+        study = inv.studies.first()
+        ticket.refresh_from_db()
+        self.assertEqual(ticket.study, study)
+        self.assertEqual(ticket.assay, study.assays.first())
+
+    def test_post_replace_metadata_rename(self):
+        """Test POST to replace with metadata and renamed study/assay files"""
+        inv = self.import_isa_from_file(SHEET_PATH, self.project)
+        self._update_replace_uuids(inv)  # Update UUIDS to match metadata
+
+        old_inv_pk = inv.pk
+        self._clear_display_config()
+
+        with open(SHEET_PATH_RENAME_META, 'rb') as file:
+            post_data = {'file_upload': file}
+            with self.login(self.user):
+                response = self.client.post(self.url, post_data)
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(Investigation.objects.count(), 1)
+
+        inv = Investigation.objects.get(project=self.project, active=True)
+        study = inv.studies.first()
+        assay = study.assays.first()
+
+        self.assertEqual(str(inv.sodar_uuid), META_INV_UUID)
+        self.assertNotEqual(inv.pk, old_inv_pk)
+        self.assertEqual(ISATab.objects.count(), 2)
+        self.assertIsNotNone(
+            ISATab.objects.all().order_by('-pk').first().data['sheet_config']
+        )
+        self.assertIsNotNone(
+            ISATab.objects.all().order_by('-pk').first().data['display_config']
+        )
+        self.assertEqual(
+            AppSetting.objects.filter(name='display_config').count(), 0
+        )
+        cache_name = STUDY_TABLE_CACHE_ITEM.format(
+            study=inv.studies.first().sodar_uuid
+        )
+        self.assertIsNone(
+            self.cache_backend.get_cache_item(
+                APP_NAME, cache_name, self.project
+            )
+        )
+        # Study and assay filenames should be updated
+        self.assertEqual(study.file_name, 's_small2_renamed.txt')
+        self.assertEqual(assay.file_name, 'a_small2_renamed.txt')
+
+    def test_post_replace_irods_rename_meta(self):
+        """Test POST to replace with iRODS, renamed tables and metadata"""
+        inv = self.import_isa_from_file(SHEET_PATH_META, self.project)
+        self._update_replace_uuids(inv)  # Update UUIDS to match metadata
+        inv.irods_status = True  # Enable iRODS colls
+        inv.save()
+        sheet_config = conf_api.get_sheet_config(inv)
+        app_settings.set(
+            'samplesheets', 'sheet_config', sheet_config, project=self.project
+        )
+        old_inv_pk = inv.pk
+        self._clear_display_config()
+
+        with open(SHEET_PATH_RENAME_META, 'rb') as file:
+            post_data = {'file_upload': file}
+            with self.login(self.user):
+                response = self.client.post(self.url, post_data)
+
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(Investigation.objects.count(), 1)
+        inv = Investigation.objects.get(project=self.project, active=True)
+        self.assertEqual(str(inv.sodar_uuid), META_INV_UUID)
+        self.assertNotEqual(inv.pk, old_inv_pk)
+        self.assertEqual(inv.irods_status, True)
+        self.assertEqual(ISATab.objects.count(), 2)
+
+    def test_post_replace_irods_rename_meta_invalid(self):
+        """Test POST to replace with iRODS, renamed tables and invalid metadata"""
+        inv = self.import_isa_from_file(SHEET_PATH_META, self.project)
+        # NOTE: No UUID update so metadata will not match
+        inv.irods_status = True  # Enable iRODS colls
+        inv.save()
+        sheet_config = conf_api.get_sheet_config(inv)
+        app_settings.set(
+            'samplesheets', 'sheet_config', sheet_config, project=self.project
+        )
+        old_inv_pk = inv.pk
+        self._clear_display_config()
+
+        with open(SHEET_PATH_RENAME_META, 'rb') as file:
+            post_data = {'file_upload': file}
+            with self.login(self.user):
+                response = self.client.post(self.url, post_data)
+
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(Investigation.objects.count(), 1)
+        inv = Investigation.objects.get(project=self.project, active=True)
+        # Replace should have failed
+        self.assertNotEqual(str(inv.sodar_uuid), META_INV_UUID)
+        self.assertEqual(inv.pk, old_inv_pk)
+        self.assertEqual(inv.irods_status, True)
+        self.assertEqual(ISATab.objects.count(), 1)
 
     def test_post_import_critical_warnings(self):
         """Test POST with critical warnings raised in altamISA"""
@@ -1221,13 +1739,54 @@ class TestSheetVersionListView(SamplesheetsViewTestBase):
 class TestSheetVersionRestoreView(SamplesheetsViewTestBase):
     """Tests for SheetVersionRestoreView"""
 
+    @classmethod
+    def _get_table_uuids(cls, inv: Investigation) -> (str, str):
+        """Return study and assay UUIDs for a single study/assay inv"""
+        study = inv.studies.first()
+        ret_study = str(study.sodar_uuid)
+        ret_assay = str(study.assays.first().sodar_uuid)
+        return (ret_study, ret_assay)
+
+    @classmethod
+    def _get_tl_events(cls):
+        """Return timeline events for sheet restore"""
+        return TimelineEvent.objects.filter(event_name='sheet_restore')
+
+    @classmethod
+    def _get_url(cls, isa: ISATab) -> str:
+        """Return SheetVersionRestoreView URL for given ISATab object"""
+        return reverse(
+            'samplesheets:version_restore', kwargs={'isatab': isa.sodar_uuid}
+        )
+
+    def _import_isa(self, path: str):
+        """Import ISA-Tab and retrieve ISATab version"""
+        self.inv = self.import_isa_from_file(path, self.project)
+        self.isatab = ISATab.objects.get(investigation_uuid=self.inv.sodar_uuid)
+
+    def _update_replace_uuids(self, inv: Investigation):
+        """Update UUIDs for sheet replace"""
+        # TODO: Combine with helper in TestSheetImportView to reduce repetition
+        self.project.sodar_uuid = META_PROJECT_UUID
+        self.project.save()
+        inv.sodar_uuid = META_INV_UUID
+        inv.save()
+        study = inv.studies.first()
+        study.sodar_uuid = META_STUDY_UUID
+        study.save()
+        assay = study.assays.first()
+        assay.sodar_uuid = META_ASSAY_UUID
+        assay.save()
+
     def setUp(self):
         super().setUp()
-        self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
-        self.study = self.investigation.studies.first()
-        self.isatab = ISATab.objects.get(
-            investigation_uuid=self.investigation.sodar_uuid
-        )
+        self.inv = None  # Set in _import_isa()
+        self.isatab = None  # Set in _import_isa()
+        self.dc_kwargs = {
+            'name': 'display_config',
+            'project': self.project,
+            'user': self.user,
+        }
         # Set up helpers
         self.cache_backend = plugin_api.get_backend_api('sodar_cache')
         self.timeline = plugin_api.get_backend_api('timeline_backend')
@@ -1235,36 +1794,26 @@ class TestSheetVersionRestoreView(SamplesheetsViewTestBase):
 
     def test_get(self):
         """Test SheetVersionRestoreView GET"""
+        self._import_isa(SHEET_PATH_SMALL2)
         with self.login(self.user):
-            response = self.client.get(
-                reverse(
-                    'samplesheets:version_restore',
-                    kwargs={'isatab': self.isatab.sodar_uuid},
-                )
-            )
+            response = self.client.get(self._get_url(self.isatab))
         self.assertEqual(response.status_code, 200)
         self.assertIsNotNone(response.context['sheet_version'])
 
     def test_post(self):
         """Test POST"""
+        self._import_isa(SHEET_PATH_SMALL2)
         isatab_new = self.sheet_io.save_isa(
             project=self.project,
-            inv_uuid=self.investigation.sodar_uuid,
-            isa_data=self.sheet_io.export_isa(self.investigation),
+            inv_uuid=self.inv.sodar_uuid,
+            isa_data=self.sheet_io.export_isa(self.inv),
         )
         self.assertEqual(Investigation.objects.count(), 1)
         self.assertEqual(ISATab.objects.count(), 2)
-        self.assertEqual(
-            TimelineEvent.objects.filter(event_name='sheet_restore').count(), 0
-        )
+        self.assertEqual(self._get_tl_events().count(), 0)
 
         with self.login(self.user):
-            response = self.client.post(
-                reverse(
-                    'samplesheets:version_restore',
-                    kwargs={'isatab': isatab_new.sodar_uuid},
-                )
-            )
+            response = self.client.post(self._get_url(isatab_new))
 
         self.assertEqual(response.status_code, 302)
         isatab_latest = ISATab.objects.all().order_by('-date_created').first()
@@ -1273,22 +1822,25 @@ class TestSheetVersionRestoreView(SamplesheetsViewTestBase):
         )
         self.assertEqual(Investigation.objects.count(), 1)
         self.assertEqual(ISATab.objects.count(), 2)
+        tl_events = self._get_tl_events()
+        self.assertEqual(tl_events.count(), 1)
         self.assertEqual(
-            TimelineEvent.objects.filter(event_name='sheet_restore').count(), 1
+            tl_events.first().get_status().status_type,
+            self.timeline.TL_STATUS_OK,
         )
-        e = TimelineEvent.objects.filter(event_name='sheet_restore').first()
-        self.assertEqual(e.get_status().status_type, self.timeline.TL_STATUS_OK)
 
     def test_post_study_cache(self):
         """Test POST with cached study table"""
+        self._import_isa(SHEET_PATH_SMALL2)
         isatab_new = self.sheet_io.save_isa(
             project=self.project,
-            inv_uuid=self.investigation.sodar_uuid,
-            isa_data=self.sheet_io.export_isa(self.investigation),
+            inv_uuid=self.inv.sodar_uuid,
+            isa_data=self.sheet_io.export_isa(self.inv),
         )
 
-        study_tables = table_builder.build_study_tables(self.study)
-        cache_name = STUDY_TABLE_CACHE_ITEM.format(study=self.study.sodar_uuid)
+        study = self.inv.studies.first()
+        study_tables = table_builder.build_study_tables(study)
+        cache_name = STUDY_TABLE_CACHE_ITEM.format(study=study.sodar_uuid)
         self.cache_backend.set_cache_item(
             APP_NAME, cache_name, study_tables, 'json', self.project
         )
@@ -1298,12 +1850,7 @@ class TestSheetVersionRestoreView(SamplesheetsViewTestBase):
         self.assertEqual(JSONCacheItem.objects.count(), 1)
 
         with self.login(self.user):
-            response = self.client.post(
-                reverse(
-                    'samplesheets:version_restore',
-                    kwargs={'isatab': isatab_new.sodar_uuid},
-                )
-            )
+            response = self.client.post(self._get_url(isatab_new))
 
         self.assertEqual(response.status_code, 302)
         cache_item = self.cache_backend.get_cache_item(*cache_args)
@@ -1312,21 +1859,17 @@ class TestSheetVersionRestoreView(SamplesheetsViewTestBase):
 
     def test_post_metadata(self):
         """Test POST with SODAR export metadata"""
+        self._import_isa(SHEET_PATH_SMALL2)
         isatab_new = self.sheet_io.save_isa(
             project=self.project,
-            inv_uuid=self.investigation.sodar_uuid,
-            isa_data=self.sheet_io.export_isa(self.investigation, True),
+            inv_uuid=self.inv.sodar_uuid,
+            isa_data=self.sheet_io.export_isa(self.inv, True),
         )
         self.assertEqual(Investigation.objects.count(), 1)
         self.assertEqual(ISATab.objects.count(), 2)
 
         with self.login(self.user):
-            response = self.client.post(
-                reverse(
-                    'samplesheets:version_restore',
-                    kwargs={'isatab': isatab_new.sodar_uuid},
-                )
-            )
+            response = self.client.post(self._get_url(isatab_new))
 
         self.assertEqual(response.status_code, 302)
         isatab_latest = ISATab.objects.all().order_by('-date_created').first()
@@ -1341,6 +1884,344 @@ class TestSheetVersionRestoreView(SamplesheetsViewTestBase):
         self.assertNotIn(sc.ISA_META_PROJECT_UUID, inv.comments)
         self.assertNotIn(sc.ISA_META_STUDY_UUID, study.comments)
         self.assertNotIn(sc.ISA_META_ASSAY_UUID, assay.comments)
+
+    def test_post_rename(self):
+        """Test POST with renamed study and assay files without metadata"""
+        self._import_isa(SHEET_PATH_SMALL2)
+        og_study_uuid, og_assay_uuid = self._get_table_uuids(self.inv)
+
+        isatab_new = self.sheet_io.save_isa(
+            project=self.project,
+            inv_uuid=self.inv.sodar_uuid,
+            isa_data=self.sheet_io.export_isa(self.inv),
+        )
+        # Save sheet config for version to be restored
+        isatab_new.data['sheet_config'] = conf_api.get_sheet_config(self.inv)
+        isatab_new.save()
+
+        # Delete investigation and import new one with renamed files
+        self.inv.delete()
+        self.inv = self.import_isa_from_file(SHEET_PATH_RENAME, self.project)
+
+        self.assertEqual(Investigation.objects.count(), 1)
+        self.assertEqual(ISATab.objects.count(), 3)
+        self.assertEqual(self._get_tl_events().count(), 0)
+        self.assertIsNone(AppSetting.objects.filter(**self.dc_kwargs).first())
+
+        with self.login(self.user):
+            response = self.client.post(self._get_url(isatab_new))
+
+        self.assertEqual(response.status_code, 302)
+        isatab_latest = ISATab.objects.all().order_by('-date_created').first()
+        self.assertNotEqual(
+            isatab_latest.date_created, self.isatab.date_created
+        )
+        self.assertEqual(Investigation.objects.count(), 1)
+        self.assertEqual(ISATab.objects.count(), 3)
+
+        self.inv = Investigation.objects.get(project=self.project, active=True)
+        study_uuid, assay_uuid = self._get_table_uuids(self.inv)
+        # Study/assay UUIDs are changed, since we can't know they are the same
+        self.assertNotEqual(study_uuid, og_study_uuid)
+        self.assertNotEqual(assay_uuid, og_assay_uuid)
+
+        # Assert sheet config and display configs
+        s_conf = app_settings.get(
+            APP_NAME, 'sheet_config', project=self.project
+        )
+        self.assertIn(assay_uuid, s_conf['studies'][study_uuid]['assays'])
+        d_conf = app_settings.get(
+            APP_NAME, 'display_config_default', project=self.project
+        )
+        self.assertIn(assay_uuid, d_conf['studies'][study_uuid]['assays'])
+        # User display config should be None (created when navigating to view)
+        self.assertIsNone(AppSetting.objects.filter(**self.dc_kwargs).first())
+
+        tl_events = self._get_tl_events()
+        self.assertEqual(tl_events.count(), 1)
+        self.assertEqual(
+            tl_events.first().get_status().status_type,
+            self.timeline.TL_STATUS_OK,
+        )
+
+    def test_post_rename_metadata(self):
+        """Test POST with renamed files and metadata"""
+        self._import_isa(SHEET_PATH_META)  # Import with metadata and OG naming
+        self._update_replace_uuids(self.inv)  # Replace UUIDs for metadata
+
+        self.assertEqual(self.project.sodar_uuid, META_PROJECT_UUID)
+        inv_data = self.isatab.data['investigation']['tsv']
+        self.assertIn(
+            f'Comment[{sc.ISA_META_PROJECT_UUID}]\t{META_PROJECT_UUID}',
+            inv_data,
+        )
+        s_conf = conf_api.get_sheet_config(self.inv)
+        self.assertNotIn(
+            'editable',
+            s_conf['studies'][META_STUDY_UUID]['nodes'][0]['fields'][0],
+        )
+        s_conf['studies'][META_STUDY_UUID]['nodes'][0]['fields'][0][
+            'editable'
+        ] = True  # Update sheet config to verify restore later
+        self.isatab.data['sheet_config'] = s_conf
+        self.isatab.save()  # Save sheet config for version to be restored
+
+        self.inv.delete()  # Replace current investigation
+        self.inv = self.import_isa_from_file(
+            SHEET_PATH_RENAME_META, self.project
+        )
+        self.assertEqual(
+            self.inv.studies.first().file_name, 's_small2_renamed.txt'
+        )
+
+        with self.login(self.user):  # Restore original version
+            response = self.client.post(self._get_url(self.isatab))
+
+        self.assertEqual(response.status_code, 302)
+        self.inv = Investigation.objects.get(project=self.project, active=True)
+        self.assertEqual(self.inv.studies.first().file_name, 's_small2.txt')
+        # Assert sheet config and display configs
+        self.inv = Investigation.objects.get(project=self.project, active=True)
+        s_conf = app_settings.get(
+            APP_NAME, 'sheet_config', project=self.project
+        )
+        self.assertIn(
+            META_ASSAY_UUID, s_conf['studies'][META_STUDY_UUID]['assays']
+        )
+        self.assertTrue(
+            s_conf['studies'][META_STUDY_UUID]['nodes'][0]['fields'][0][
+                'editable'
+            ]
+        )  # Edited value should be restored
+        d_conf = app_settings.get(
+            APP_NAME, 'display_config_default', project=self.project
+        )
+        self.assertIn(
+            META_ASSAY_UUID, d_conf['studies'][META_STUDY_UUID]['assays']
+        )
+        self.assertEqual(
+            self._get_tl_events().first().get_status().status_type,
+            self.timeline.TL_STATUS_OK,
+        )
+
+    def test_post_rename_metadata_other_project(self):
+        """Test POST with renamed files and metadata from other project"""
+        self._import_isa(SHEET_PATH_META)
+        og_study_uuid, og_assay_uuid = self._get_table_uuids(self.inv)
+        # NOTE: No UUID update, so the ones in the version won't match
+
+        self.assertNotEqual(self.project.sodar_uuid, META_PROJECT_UUID)
+        inv_data = self.isatab.data['investigation']['tsv']
+        self.assertIn(
+            f'Comment[{sc.ISA_META_PROJECT_UUID}]\t{META_PROJECT_UUID}',
+            inv_data,
+        )
+        s_conf = conf_api.get_sheet_config(self.inv)
+        s_conf['studies'][og_study_uuid]['nodes'][0]['fields'][0][
+            'editable'
+        ] = True
+        self.isatab.data['sheet_config'] = s_conf
+        self.isatab.save()  # Save sheet config for version to be restored
+
+        self.inv.delete()  # Replace current investigation
+        self.inv = self.import_isa_from_file(
+            SHEET_PATH_RENAME_META, self.project
+        )
+        self.assertEqual(
+            self.inv.studies.first().file_name, 's_small2_renamed.txt'
+        )
+
+        with self.login(self.user):  # Restore original version
+            response = self.client.post(self._get_url(self.isatab))
+
+        self.assertEqual(response.status_code, 302)
+        self.inv = Investigation.objects.get(project=self.project, active=True)
+        self.assertEqual(self.inv.studies.first().file_name, 's_small2.txt')
+        self.inv = Investigation.objects.get(project=self.project, active=True)
+        study_uuid, assay_uuid = self._get_table_uuids(self.inv)
+        self.assertNotEqual(study_uuid, og_study_uuid)
+        self.assertNotEqual(assay_uuid, og_assay_uuid)
+
+        # Assert sheet config and display configs
+        s_conf = app_settings.get(
+            APP_NAME, 'sheet_config', project=self.project
+        )
+        self.assertNotIn(
+            'editable', s_conf['studies'][study_uuid]['nodes'][0]['fields'][0]
+        )  # Config should be recreated = no edited value present
+        d_conf = app_settings.get(
+            APP_NAME, 'display_config_default', project=self.project
+        )
+        self.assertIn(assay_uuid, d_conf['studies'][study_uuid]['assays'])
+        self.assertEqual(
+            self._get_tl_events().first().get_status().status_type,
+            self.timeline.TL_STATUS_OK,
+        )
+
+    def test_post_irods_different_sheet(self):
+        """Test POST with iRODS and different sample sheet"""
+        self._import_isa(SHEET_PATH_SMALL2)
+        isatab_new = self.sheet_io.save_isa(
+            project=self.project,
+            inv_uuid=self.inv.sodar_uuid,
+            isa_data=self.sheet_io.export_isa(self.inv),
+        )
+        # Replace project investigation with another one from different sheets
+        self.inv.delete()
+        self.inv = self.import_isa_from_file(SHEET_PATH_MINIMAL, self.project)
+        # Set irods_status to True to force extra checks
+        self.inv.irods_status = True
+        self.inv.save()
+
+        self.assertEqual(Investigation.objects.count(), 1)
+        self.assertEqual(self._get_tl_events().count(), 0)
+        version_count = ISATab.objects.count()
+
+        with self.login(self.user):
+            response = self.client.post(self._get_url(isatab_new))
+
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(Investigation.objects.count(), 1)
+        # No ISATab versions should be added or removed
+        self.assertEqual(ISATab.objects.count(), version_count)
+        tl_events = self._get_tl_events()
+        self.assertEqual(tl_events.count(), 1)
+        # Timeline event should denote failure
+        self.assertEqual(
+            tl_events.first().get_status().status_type,
+            self.timeline.TL_STATUS_FAILED,
+        )
+
+    def test_post_irods_rename(self):
+        """Test POST with iRODS and renamed tables"""
+        self._import_isa(SHEET_PATH_SMALL2)
+        # og_study_uuid, og_assay_uuid = self._get_table_uuids(self.inv)
+        isatab_new = self.sheet_io.save_isa(
+            project=self.project,
+            inv_uuid=self.inv.sodar_uuid,
+            isa_data=self.sheet_io.export_isa(self.inv),
+        )
+
+        self.inv.delete()
+        self.inv = self.import_isa_from_file(SHEET_PATH_RENAME, self.project)
+        self.inv.irods_status = True  # Enable iRODS colls
+        self.inv.save()
+        s_conf_old = conf_api.get_sheet_config(self.inv)
+        app_settings.set(
+            APP_NAME, 'sheet_config', value=s_conf_old, project=self.project
+        )
+
+        with self.login(self.user):
+            response = self.client.post(self._get_url(isatab_new))
+
+        self.assertEqual(response.status_code, 302)
+        s_conf = app_settings.get(
+            APP_NAME, 'sheet_config', project=self.project
+        )
+        self.assertEqual(s_conf, s_conf_old)  # Sheet config should be unchanged
+        self.assertEqual(
+            self._get_tl_events().first().get_status().status_type,
+            self.timeline.TL_STATUS_FAILED,
+        )
+
+    def test_post_irods_rename_metadata(self):
+        """Test POST with iRODS, renamed files and metadata"""
+        self._import_isa(SHEET_PATH_META)
+        self._update_replace_uuids(self.inv)
+
+        self.assertEqual(self.project.sodar_uuid, META_PROJECT_UUID)
+        inv_data = self.isatab.data['investigation']['tsv']
+        self.assertIn(
+            f'Comment[{sc.ISA_META_PROJECT_UUID}]\t{META_PROJECT_UUID}',
+            inv_data,
+        )
+        s_conf = conf_api.get_sheet_config(self.inv)
+        self.assertNotIn(
+            'editable',
+            s_conf['studies'][META_STUDY_UUID]['nodes'][0]['fields'][0],
+        )
+        s_conf['studies'][META_STUDY_UUID]['nodes'][0]['fields'][0][
+            'editable'
+        ] = True
+        self.isatab.data['sheet_config'] = s_conf
+        self.isatab.save()
+
+        self.inv.delete()  # Replace current investigation
+        self.inv = self.import_isa_from_file(
+            SHEET_PATH_RENAME_META, self.project
+        )
+        self.assertEqual(
+            self.inv.studies.first().file_name, 's_small2_renamed.txt'
+        )
+        self.inv.irods_status = True  # Enable iRODS colls
+        self.inv.save()
+        self._update_replace_uuids(self.inv)  # Make sure UUIDs still match
+
+        with self.login(self.user):  # Restore original version
+            response = self.client.post(self._get_url(self.isatab))
+
+        self.assertEqual(response.status_code, 302)
+        self.inv = Investigation.objects.get(project=self.project, active=True)
+        self.assertEqual(self.inv.studies.first().file_name, 's_small2.txt')
+        # Assert sheet config and display configs
+        self.inv = Investigation.objects.get(project=self.project, active=True)
+        s_conf = app_settings.get(
+            APP_NAME, 'sheet_config', project=self.project
+        )
+        self.assertIn(
+            META_ASSAY_UUID, s_conf['studies'][META_STUDY_UUID]['assays']
+        )
+        self.assertTrue(
+            s_conf['studies'][META_STUDY_UUID]['nodes'][0]['fields'][0][
+                'editable'
+            ]
+        )  # Edited value should be restored
+        d_conf = app_settings.get(
+            APP_NAME, 'display_config_default', project=self.project
+        )
+        self.assertIn(
+            META_ASSAY_UUID, d_conf['studies'][META_STUDY_UUID]['assays']
+        )
+        self.assertEqual(
+            self._get_tl_events().first().get_status().status_type,
+            self.timeline.TL_STATUS_OK,
+        )
+
+    def test_post_irods_rename_metadata_other_project(self):
+        """Test POST with iRODS, renamed files and metadata from other project"""
+        self._import_isa(SHEET_PATH_META)
+        # NOTE: No UUID update
+        s_conf_old = conf_api.get_sheet_config(self.inv)
+        self.isatab.data['sheet_config'] = s_conf_old
+        self.isatab.save()
+
+        self.inv.delete()  # Replace current investigation
+        self.inv = self.import_isa_from_file(
+            SHEET_PATH_RENAME_META, self.project
+        )
+        self.assertEqual(
+            self.inv.studies.first().file_name, 's_small2_renamed.txt'
+        )
+        self.inv.irods_status = True  # Enable iRODS colls
+        self.inv.save()
+        # NOTE: No UUID update here either, metadata UUIDs will not match
+
+        with self.login(self.user):  # Restore original version
+            response = self.client.post(self._get_url(self.isatab))
+
+        self.assertEqual(response.status_code, 302)
+        self.inv = Investigation.objects.get(project=self.project, active=True)
+        self.assertEqual(
+            self.inv.studies.first().file_name, 's_small2_renamed.txt'
+        )  # Should still be the second sheet
+        s_conf = app_settings.get(
+            APP_NAME, 'sheet_config', project=self.project
+        )
+        self.assertEqual(s_conf, s_conf_old)  # Sheet config should be unchanged
+        self.assertEqual(
+            self._get_tl_events().first().get_status().status_type,
+            self.timeline.TL_STATUS_FAILED,
+        )
 
 
 class TestSheetVersionUpdateView(SamplesheetsViewTestBase):

@@ -24,7 +24,6 @@ from samplesheets.utils import (
     get_sample_colls,
     get_index_by_header,
     get_last_material_name,
-    compare_inv_replace,
     get_webdav_url,
     get_ext_link_labels,
     get_latest_file_path,
@@ -114,36 +113,6 @@ class TestGetSampleColls(SamplesheetsUtilsTestBase):
             self.irods_backend.get_sub_path(self.assay),
         ]
         self.assertEqual(get_sample_colls(self.investigation), expected)
-
-
-class TestCompareInvReplace(SamplesheetsUtilsTestBase):
-    """Tests for compare_inv_replace()"""
-
-    def test_inserted_rows(self):
-        """Test comparison with inserted rows"""
-        inv1 = self.import_isa_from_file(SHEET_PATH, project=self.project)
-        inv2 = self.import_isa_from_file(
-            SHEET_PATH_INSERTED, project=self.project
-        )
-        self.assertTrue(compare_inv_replace(inv1, inv2))
-
-    def test_modified_sheet(self):
-        """Test comparison with modified studies/assays (should fail)"""
-        inv1 = self.import_isa_from_file(
-            SHEET_PATH_SMALL2, project=self.project
-        )
-        inv2 = self.import_isa_from_file(
-            SHEET_PATH_SMALL2_ALT, project=self.project
-        )
-        self.assertFalse(compare_inv_replace(inv1, inv2))
-
-    def test_different_sheet(self):
-        """Test comparison with a different sheet (should fail)"""
-        inv1 = self.import_isa_from_file(SHEET_PATH, project=self.project)
-        inv2 = self.import_isa_from_file(
-            SHEET_PATH_SMALL2, project=self.project
-        )
-        self.assertFalse(compare_inv_replace(inv1, inv2))
 
 
 class TestGetIndexByHeader(SamplesheetsUtilsTestBase):

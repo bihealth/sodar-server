@@ -11,7 +11,6 @@ from typing import Optional
 from zipfile import ZipFile
 
 import altamisa
-from altamisa.constants import investigation_headers as ih
 from altamisa.exceptions import (
     ModerateIsaValidationWarning,
     AdvisoryIsaValidationWarning,
@@ -496,37 +495,18 @@ class TestSampleSheetIOImport(SampleSheetIOTestBase):
         out_data = self.sheet_io._import_publications(in_data)
         self.assertEqual(len(out_data), len(in_data))
 
-    def test_update_isa_import_comments(self):
-        """Test _update_isa_import_comments()"""
-        comments = {
-            sc.ISA_COMM_STUDY_CONFIG_CREATE: 'bih_germline',
-            sc.ISA_META_PROJECT_UUID: str(self.project.sodar_uuid),
-        }
-        headers = [
-            ih.INVESTIGATION_IDENTIFIER,
-            f'Comment[{sc.ISA_COMM_STUDY_CONFIG_CREATE}]'
-            f'Comment[{sc.ISA_META_PROJECT_UUID}]',
-        ]
-        ret_c, ret_h = self.sheet_io._update_isa_import_comments(
-            comments, headers, sc.ISA_META_INV_EXPORT_KEYS
-        )
-        self.assertEqual(
-            ret_c, {sc.ISA_COMM_STUDY_CONFIG_CREATE: 'bih_germline'}
-        )
-        self.assertEqual(ret_h, headers[:2])
-
     def test_import_isa_metadata(self):
         """Test import_isa() with SODAR metadata"""
         sheet_io = SampleSheetIO(warn=False, allow_critical=True)
         zf = ZipFile(os.fsdecode(SHEET_PATH_META))
-        investigation = sheet_io.import_isa(
+        inv = sheet_io.import_isa(
             sheet_io.get_isa_from_zip(zf),
             self.project,
             archive_name=zf.filename,
             user=self.user_owner,
             save_isa=False,
         )
-        study = investigation.studies.first()
+        study = inv.studies.first()
         assay = study.assays.first()
 
         # Sanity check for a non-metadata field
@@ -534,15 +514,13 @@ class TestSampleSheetIOImport(SampleSheetIOTestBase):
         self.assertIn(grant_key, study.comments)
         self.assertIn(f'Comment[{grant_key}]', study.headers)
 
-        # SODAR export-only metadata should be stripped
-        self.assertNotIn(sc.ISA_META_PROJECT_UUID, investigation.comments)
-        self.assertNotIn(
-            f'Comment[{sc.ISA_META_PROJECT_UUID}', investigation.headers
-        )
-        self.assertNotIn(sc.ISA_META_STUDY_UUID, study.comments)
-        self.assertNotIn(f'Comment[{sc.ISA_META_STUDY_UUID}', study.headers)
-        self.assertNotIn(sc.ISA_META_ASSAY_UUID, assay.comments)
-        self.assertNotIn(f'Comment[{sc.ISA_META_ASSAY_UUID}', assay.headers)
+        # SODAR export-only metadata (included now, stripped at end of import)
+        self.assertIn(sc.ISA_META_PROJECT_UUID, inv.comments)
+        self.assertIn(f'Comment[{sc.ISA_META_PROJECT_UUID}]', inv.headers)
+        self.assertIn(sc.ISA_META_STUDY_UUID, study.comments)
+        self.assertIn(f'Comment[{sc.ISA_META_STUDY_UUID}]', study.headers)
+        self.assertIn(sc.ISA_META_ASSAY_UUID, assay.comments)
+        self.assertIn(f'Comment[{sc.ISA_META_ASSAY_UUID}]', assay.headers)
 
     def test_import_isa_metadata_version(self):
         """Test import_isa() with SODAR metadata and saved version"""
@@ -551,7 +529,7 @@ class TestSampleSheetIOImport(SampleSheetIOTestBase):
 
         sheet_io = SampleSheetIO(warn=False, allow_critical=True)
         zf = ZipFile(os.fsdecode(SHEET_PATH_META))
-        investigation = sheet_io.import_isa(
+        inv = sheet_io.import_isa(
             sheet_io.get_isa_from_zip(zf),
             self.project,
             archive_name=zf.filename,
@@ -560,12 +538,9 @@ class TestSampleSheetIOImport(SampleSheetIOTestBase):
         )
 
         # SODAR export-only metadata should be stripped
-        self.assertNotIn(sc.ISA_META_PROJECT_UUID, investigation.comments)
-        self.assertNotIn(
-            f'Comment[{sc.ISA_META_PROJECT_UUID}', investigation.headers
-        )
-
-        # Despite stripped from active sheets, fields should appear in version
+        self.assertIn(sc.ISA_META_PROJECT_UUID, inv.comments)
+        self.assertIn(f'Comment[{sc.ISA_META_PROJECT_UUID}]', inv.headers)
+        # Fields should also appear in saved version
         self.assertEqual(ISATab.objects.count(), 1)
         isa_ver = ISATab.objects.first()
         inv_data = isa_ver.data['investigation']['tsv']
