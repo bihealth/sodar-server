@@ -311,26 +311,42 @@ ISA Templates Settings
 SODAR Docker Compose Settings
 =============================
 
-Settings specific to the
+Important settings specific to the
 `sodar-docker-compose <https://github.com/bihealth/sodar-docker-compose>`_
 repository are described here.
 
-``SODAR_SERVER_VERSION``
-    Version of the SODAR server. Should be the latest release tag (e.g.
-    ``0.12.0-0``) or the latest development version ``dev-0``. For production it
-    is strongly recommended to use the latest tagged release.
+``DAVRODS_VERSON``
+    Version of `davrods-docker <https://github.com/bihealth/davrods-docker>`_
+    to be used. Corresponds to the repository package and build version, e.g.
+    ``4.3.5_1.5.2-1``.
 ``IRODS_VERSION``
-    Version of the CUBI
-    `irods-docker <https://github.com/bihealth/irods-docker>`_ image to use.
-    Corresponds to the iRODS package version, e.g. ``4.2.11-1``.
+    Version of `irods-docker <https://github.com/bihealth/irods-docker>`_ to be
+    used. Corresponds to the repository package and build version, e.g.
+    ``4.3.5-3``.
+``SODAR_SERVER_VERSION``
+    Version of the SODAR Server. Should be the latest release tag (e.g.
+    ``1.3.3-0``) or the latest development version ``dev-0``. For production it
+    is strongly recommended to use a specific tagged release. The development
+    build may introduce breaking changes in environment requirements and it can
+    be unstable.
 ``SSSD_VERSION``
-    SSSD version if using LDAP logins.
-``IRODS_SSSD_AUTH``
-    Enable SSSD-based logins for iRODS.
-``IRODS_SODAR_AUTH``
-    Enable PAM logins via the SODAR server for iRODS.
+    SSSD version when using LDAP authentication with iRODS. In most cases, this
+    should be the version recommended in the environment examples of the current
+    SODAR Docker Compose release.
 ``IRODS_SODAR_API_HOST``
-    SODAR server host for iRODS in case the previous setting is set true.
+    SODAR server host URL for iRODS authentication. Required to be filled out if
+    ``IRODS_SODAR_AUTH`` is set true.
+``IRODS_SODAR_AUTH``
+    Enable iRODS PAM logins via a basic auth endpoint on the SODAR Server.
+    Needed for token-based iRODS authentication for OIDC users, as well as local
+    SODAR users if enabled. This setting should be disabled if OIDC or local
+    users are not supported.
+``IRODS_SSSD_AUTH``
+    Enable SSSD-based authentication for iRODS. Required for LDAP authentication
+    from iRODS and Davrods.
+
+For a full list of settings with examples, see the SODAR Docker Compose
+repository.
 
 
 .. _admin_settings_sentry:
