@@ -106,7 +106,7 @@ function getTitleTextClass (): string {
           </i>
         </BButton>
         <IrodsButtons
-            :edit-mode="appStore.editMode"
+            v-if="!appStore.editMode"
             :irods-backend-enabled="appStore.sodarContext!.irods_backend_enabled"
             :irods-path="tableContext!.irods_path"
             :irods-status="appStore.sodarContext!.irods_status"

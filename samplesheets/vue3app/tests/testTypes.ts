@@ -7,7 +7,6 @@ import {
 } from '@/types.ts'
 
 export interface IrodsButtonsProps {
-  editMode: boolean
   enabled: boolean
   extraLinks: Array<object> // TODO: Improve
   irodsBackendEnabled: boolean

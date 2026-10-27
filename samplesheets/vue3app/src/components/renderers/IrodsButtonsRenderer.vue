@@ -22,7 +22,6 @@ function getIrodsPath (params: IrodsButtonsRendererParams) {
 
 <template>
   <IrodsButtons
-      :edit-mode="false"
       :enabled="getEnabledState(params as IrodsButtonsRendererParams)"
       :irods-backend-enabled="params?.irodsBackendEnabled"
       :irods-dir-modal-ref="params?.modalRef"

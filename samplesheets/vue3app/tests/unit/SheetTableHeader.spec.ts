@@ -80,6 +80,7 @@ describe('SheetTableHeader.vue', () => {
     expect(wrapper.find('.sodar-ss-sheet-section-assay').exists()).toBe(false)
     expect(wrapper.find('.sodar-ss-table-title').text()).toContain(
       'Study: ' + appStore.sodarContext!.studies[STUDY_UUID]!.display_name)
+    expect(wrapper.find('.sodar-ss-irods-links').exists()).toBe(true)
   })
 
   test('render component for assay', async () => {
@@ -92,6 +93,7 @@ describe('SheetTableHeader.vue', () => {
     expect(wrapper.find('.sodar-ss-table-title').text()).toContain(
       'Assay: ' + appStore.sodarContext!.studies[
         STUDY_UUID]!.assays[ASSAY_UUID]!.display_name)
+    expect(wrapper.find('.sodar-ss-irods-links').exists()).toBe(true)
   })
 
   test('hide study plugin icon with no plugin', async () => {
@@ -181,6 +183,13 @@ describe('SheetTableHeader.vue', () => {
     // NOTE: The container should still exist
     expect(wrapper.find('.sodar-ss-study-title-badge').exists()).toBe(true)
     expect(wrapper.find('.' + statsBadgeClass).exists()).toBe(false)
+  })
+
+  test('hide iRODS links with editMode=true', async () => {
+    const appStore = useAppStore()
+    appStore.editMode = true
+    const wrapper = mountComponent(studyProps)
+    expect(wrapper.find('.sodar-ss-irods-links').exists()).toBe(false)
   })
 
   test('hide iRODS stats badge with view_files=false', async () => {

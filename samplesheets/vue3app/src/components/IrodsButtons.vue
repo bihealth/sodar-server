@@ -10,7 +10,6 @@ import {
 // External Data ---------------------------------------------------------------
 
 const props = defineProps([
-  'editMode',
   'enabled',
   'extraLinks',
   'irodsBackendEnabled',
@@ -32,7 +31,7 @@ function copy (content: string, msg: string) {
 }
 
 function getEnabledState (): boolean {
-  return !props.editMode && props.irodsStatus && props.enabled !== false
+  return props.irodsStatus && props.enabled !== false
 }
 </script>
 

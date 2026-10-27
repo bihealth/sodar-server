@@ -18,7 +18,6 @@ import { type IrodsButtonsProps } from '../testTypes.ts'
 // Test Data -------------------------------------------------------------------
 
 const defaultProps: IrodsButtonsProps = {
-  editMode: false,
   enabled: true,
   extraLinks: [],
   irodsBackendEnabled: true,
@@ -85,15 +84,6 @@ describe('IrodsButtons.vue', () => {
     const wrapper = mountComponent()
     expect(wrapper.findAll('.sodar-list-btn').length).toBe(3)
     expect(wrapper.find('.sodar-ss-irods-list-btn').exists()).toBe(false)
-  })
-
-  test('disable buttons with editMode=true', async () => {
-    props.editMode = true
-    const wrapper = mountComponent()
-    const buttons = wrapper.findAll('.sodar-list-btn')
-    for (let i = 0; i < 3; i++) {
-      expect(buttons[i]?.attributes().disabled).toBeDefined()
-    }
   })
 
   test('disable buttons with irodsStatus=false', async () => {

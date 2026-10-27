@@ -37,6 +37,7 @@ Changed
     - Vue3app ``VersionSaveModal`` button layout (#2595)
     - Refactor legacy ISA-Tab metadata constants (#2594)
     - Move ``compare_inv_replace()`` functionality to ``SheetImportMixin`` (#2590)
+    - Hide vue3app table header iRODS links in edit mode (#2605)
 
 Fixed
 -----
