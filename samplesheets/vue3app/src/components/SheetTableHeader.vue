@@ -19,26 +19,26 @@ const props = defineProps(['assayMode', 'editModalRef', 'tableUuid'])
 
 const tableDetailModalComponent = ref<typeof TableDetailModal | null>(null)
 const tableContext = ref<SodarContextAssay | SodarContextStudy | null>(null)
+const tableType = ref<string>('')
 
 // Internal Vars ---------------------------------------------------------------
 
-let tableType
 let tableTitle
 
 // Setup -----------------------------------------------------------------------
 
 if (!props.assayMode) {
-  tableType = 'study'
-  tableTitle = 'Study'
   tableContext.value = appStore.sodarContext!.studies[
     props.tableUuid] as SodarContextStudy
+  tableTitle = 'Study'
+  tableType.value = 'study'
 } else {
-  tableType = 'assay'
-  tableTitle = 'Assay'
   tableContext.value = appStore.sodarContext!.studies[
     appStore.currentStudyUuid]!.assays[props.tableUuid] as SodarContextAssay
+  tableTitle = 'Assay'
+  tableType.value = 'assay'
 }
-const tableIdSuffix = tableType + '-' + props.tableUuid
+const tableIdSuffix = tableType.value + '-' + props.tableUuid
 
 // Helpers ---------------------------------------------------------------------
 
@@ -120,20 +120,11 @@ function getTitleTextClass (): string {
             :notify-cb="appStore.notifyCb"
             :show-file-list="false">
         </IrodsButtons>
-        <!-- TODO: Refactor into single link once tests have been updated -->
         <BButton
-            v-if="!assayMode && appStore.editMode"
+            v-if="appStore.editMode"
             variant="info"
-            class="sodar-list-btn sodar-ss-btn-edit-study"
-            title="Update study metadata and properties"
-            @click="editModalRef!.show(tableUuid, tableContext)">
-          <i class="iconify" data-icon="mdi:lead-pencil"></i>
-        </BButton>
-        <BButton
-            v-else-if="assayMode && appStore.editMode"
-            variant="info"
-            class="sodar-list-btn sodar-ss-btn-edit-assay"
-            title="Update assay metadata and properties"
+            :class="'sodar-list-btn sodar-ss-btn-edit-' + tableType"
+            :title="'Update ' + tableType + ' metadata and properties'"
             @click="editModalRef!.show(tableUuid, tableContext)">
           <i class="iconify" data-icon="mdi:lead-pencil"></i>
         </BButton>
