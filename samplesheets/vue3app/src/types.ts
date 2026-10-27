@@ -531,6 +531,15 @@ export interface GenericResponseBody {
 
 // Edit Mode Data --------------------------------------------------------------
 
+// Study Edit metadata
+export interface StudyEditMeta {
+  description: string
+  fileName: string
+  identifier: string
+  title: string
+}
+
+// Unsaved row info
 export interface EditUnsavedRow {
   id: string
   tableUuid: string

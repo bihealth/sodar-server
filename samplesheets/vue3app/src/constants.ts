@@ -185,6 +185,8 @@ export const EDIT_MSG_SAVE = 'Sheet version saved'
 export const EDIT_MSG_SAVE_ERR_PREFIX = 'Error saving version: '
 export const EDIT_MSG_SAVE_FAIL_PREFIX = 'Saving version failed: '
 
+export const STUDY_UPDATE_OK_MSG = 'Study updated'
+
 export const NODE_RENAME_MSG = 'A node with the same name already exists in ' +
   'this column. Renaming will replace all values in the fields of the ' +
   'material or process. Proceed?'
