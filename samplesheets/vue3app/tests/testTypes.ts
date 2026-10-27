@@ -31,6 +31,7 @@ export interface IrodsStatsResponseBody {
 
 export interface SheetTableHeaderProps {
   assayMode: boolean
+  editModalRef?: TemplateRef
   tableUuid: string
 }
 

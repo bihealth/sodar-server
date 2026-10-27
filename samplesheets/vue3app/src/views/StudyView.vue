@@ -3,6 +3,7 @@ import { nextTick, onMounted, useTemplateRef, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useToast } from 'bootstrap-vue-next'
 
+import AssayEditModal from '@/components/modals/AssayEditModal.vue'
 import AssayShortcutCard from '@/components/AssayShortcutCard.vue'
 import ColumnConfigModal from '@/components/modals/ColumnConfigModal.vue'
 import ColumnToggleModal from '@/components/modals/ColumnToggleModal.vue'
@@ -17,6 +18,7 @@ import OntologyEditor from '@/components/editors/OntologyEditor.vue'
 import RowEditRenderer from '@/components/renderers/RowEditRenderer.vue'
 import SheetTable from '@/components/SheetTable.vue'
 import SheetTableHeader from '@/components/SheetTableHeader.vue'
+import StudyEditModal from '@/components/modals/StudyEditModal.vue'
 import StudyShortcutModal from '@/components/modals/StudyShortcutModal.vue'
 import StudyShortcutsRenderer from '@/components/renderers/StudyShortcutsRenderer.vue'
 import WaitSection from '@/components/WaitSection.vue'
@@ -56,10 +58,12 @@ const { create } = useToast()
 appStore.notifyCb = getNotifyCb(create)
 
 // Set up template references
+const assayEditCompRef = useTemplateRef('assayEditModalComponent')
 const colConfigCompRef = useTemplateRef('columnConfigModalComponent')
 const colToggleCompRef = useTemplateRef('columnToggleModalComponent')
 const irodsDirCompRef = useTemplateRef('irodsDirModalComponent')
 const ontologyEditCompRef = useTemplateRef('ontologyEditModalComponent')
+const studyEditCompRef = useTemplateRef('studyEditModalComponent')
 const studyShortcutCompRef = useTemplateRef('studyShortcutModalComponent')
 
 // Helpers ---------------------------------------------------------------------
@@ -229,6 +233,7 @@ onMounted(() => {
     <!-- Study -->
     <SheetTableHeader
         :assay-mode="false"
+        :edit-modal-ref="studyEditCompRef"
         :table-uuid="appStore.currentStudyUuid">
     </SheetTableHeader>
     <SheetTable
@@ -245,6 +250,7 @@ onMounted(() => {
          :id="'assay-anchor-' + assayUuid.toString()"></a>
       <SheetTableHeader
           :assay-mode="true"
+          :edit-modal-ref="assayEditCompRef"
           :table-uuid="assayUuid">
       </SheetTableHeader>
       <AssayShortcutCard
@@ -280,6 +286,10 @@ onMounted(() => {
   </div>
   <WaitSection v-else></WaitSection>
   <!-- Modals -->
+  <AssayEditModal
+      id="sodar-ss-assay-edit-modal-component"
+      ref="assayEditModalComponent">
+  </AssayEditModal>
   <ColumnConfigModal
       id="sodar-ss-col-config-modal-component"
       ref="columnConfigModalComponent">
@@ -296,6 +306,10 @@ onMounted(() => {
       id="sodar-ss-ontology-edit-modal-component"
       ref="ontologyEditModalComponent">
   </OntologyEditModal>
+  <StudyEditModal
+      id="sodar-ss-study-edit-modal-component"
+      ref="studyEditModalComponent">
+  </StudyEditModal>
   <StudyShortcutModal
       id="sodar-ss-study-shortcut-modal-component"
       ref="studyShortcutModalComponent">
