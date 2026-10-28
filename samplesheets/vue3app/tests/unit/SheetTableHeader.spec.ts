@@ -244,8 +244,7 @@ describe('SheetTableHeader.vue', () => {
     expect(mockEditModal.show).not.toHaveBeenCalled()
     const wrapper = mountComponent(studyProps)
     await wrapper.find('.sodar-ss-btn-edit-study').trigger('click')
-    expect(mockEditModal.show).toHaveBeenCalledWith(
-      STUDY_UUID, appStore.sodarContext!.studies[STUDY_UUID])
+    expect(mockEditModal.show).toHaveBeenCalledWith(STUDY_UUID)
   })
 
   test('display assay edit button with editMode=true', async () => {
@@ -262,8 +261,6 @@ describe('SheetTableHeader.vue', () => {
     expect(mockEditModal.show).not.toHaveBeenCalled()
     const wrapper = mountComponent(assayProps)
     await wrapper.find('.sodar-ss-btn-edit-assay').trigger('click')
-    expect(mockEditModal.show).toHaveBeenCalledWith(
-      ASSAY_UUID, appStore.sodarContext!.studies[
-        STUDY_UUID]!.assays[ASSAY_UUID])
+    expect(mockEditModal.show).toHaveBeenCalledWith(ASSAY_UUID)
   })
 })

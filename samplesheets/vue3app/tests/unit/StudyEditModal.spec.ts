@@ -6,22 +6,29 @@ import { createBootstrap } from 'bootstrap-vue-next/plugins/createBootstrap'
 
 import StudyEditModal from '@/components/modals/StudyEditModal.vue'
 import { useAppStore } from '@/stores/appStore.ts'
+import { type SodarContext } from '@/types.ts'
 import {
   AJAX_RES_OK,
   STUDY_UPDATE_OK_MSG,
   URL_STUDY_EDIT_PREFIX,
-  VARIANT_DANGER,
+  // VARIANT_DANGER,
   VARIANT_SUCCESS,
 } from '@/constants.ts'
 
 import { sodarContext } from '../data/sodarContext.ts'
 import { STUDY_UUID } from '../testConstants.ts'
+import { copy } from '../testUtils.ts'
 
 // Test Data -------------------------------------------------------------------
 
 let fetchDetail: string
 let fetchStatus: number
 const url = URL_STUDY_EDIT_PREFIX + STUDY_UUID
+
+const studyDescUp = 'Updated description'
+const studyFileUp = 's_small_update.txt'
+const studyIdUp = 'updated_id'
+const studyTitleUp = 'Updated Title'
 
 const metaIdSel = '#sodar-ss-study-input-meta-id'
 const metaTitleSel = '#sodar-ss-study-input-meta-title'
@@ -44,7 +51,7 @@ describe('StudyEditModal.vue', () => {
     )
     // Mount and return
     const wrapper = mount(StudyEditModal)
-    wrapper.vm.show(STUDY_UUID, sodarContext.studies[STUDY_UUID]!)
+    wrapper.vm.show(STUDY_UUID)
     await nextTick() // Must wait for all reactive vals to update
     return wrapper
   }
@@ -54,12 +61,14 @@ describe('StudyEditModal.vue', () => {
     setActivePinia(createPinia())
     const appStore = useAppStore()
     appStore.notifyCb = mockNotifyCb
+    appStore.sodarContext = copy(sodarContext) as SodarContext
     fetchDetail = AJAX_RES_OK
     fetchStatus = 200
   })
 
   test('render component', async () => {
-    const sc = sodarContext.studies[STUDY_UUID]!
+    const appStore = useAppStore()
+    const sc = appStore.sodarContext!.studies[STUDY_UUID]!
     const wrapper = await showModal()
     expect(wrapper.find('#sodar-ss-study-edit-content').exists()).toBe(true)
     expect(wrapper.find('#sodar-ss-study-edit-table').exists()).toBe(true)
@@ -70,20 +79,22 @@ describe('StudyEditModal.vue', () => {
   })
 
   test('update study metadata', async () => {
+    const appStore = useAppStore()
+    const sc = appStore.sodarContext!.studies[STUDY_UUID]!
     expect(fetch).not.toHaveBeenCalled()
 
     const wrapper = await showModal()
-    await wrapper.find(metaIdSel).setValue('updated_id')
-    await wrapper.find(metaTitleSel).setValue('Updated Title')
-    await wrapper.find(metaFileSel).setValue('s_small_update.txt')
-    await wrapper.find(metaDescSel).setValue('Updated description')
+    await wrapper.find(metaIdSel).setValue(studyIdUp)
+    await wrapper.find(metaTitleSel).setValue(studyTitleUp)
+    await wrapper.find(metaFileSel).setValue(studyFileUp)
+    await wrapper.find(metaDescSel).setValue(studyDescUp)
     await wrapper.find('#sodar-ss-study-edit-btn-update').trigger('click')
 
     const expMeta = {
-      description: 'Updated description',
-      file_name: 's_small_update.txt',
-      identifier: 'updated_id',
-      title: 'Updated Title',
+      description: studyDescUp,
+      file_name: studyFileUp,
+      identifier: studyIdUp,
+      title: studyTitleUp,
     }
     expect(fetch).toHaveBeenCalledWith(
       url, expect.objectContaining(
@@ -91,6 +102,11 @@ describe('StudyEditModal.vue', () => {
     expect(mockNotifyCb).toHaveBeenCalledWith(
       STUDY_UPDATE_OK_MSG, VARIANT_SUCCESS)
 
-    // TODO: Assert appStore sodarContext study update once refactored
+    expect(sc.identifier).toBe(studyIdUp)
+    expect(sc.title).toBe(studyTitleUp)
+    expect(sc.file_name).toBe(studyFileUp)
+    expect(sc.description).toBe(studyDescUp)
   })
+
+  // TODO: Test update with failed server response
 })

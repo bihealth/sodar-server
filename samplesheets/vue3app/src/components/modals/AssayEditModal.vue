@@ -3,19 +3,20 @@ import { ref, useTemplateRef } from 'vue'
 import { BModal } from 'bootstrap-vue-next'
 
 import ModalHeader from '@/components/modals/ModalHeader.vue'
-import { type SodarContextAssay } from '@/types.ts'
+// import { type SodarContextAssay } from '@/types.ts'
 
 // Refs ------------------------------------------------------------------------
 
 const modalRef = useTemplateRef('assayEditModalRef')
 const showModal = ref<boolean>(false)
-const tableContext = ref<SodarContextAssay | null>(null)
+// const tableContext = ref<SodarContextAssay | null>(null)
 const tableUuid = ref<string>('') // TODO: Do we need this as ref?
 
 // API and Life Cycle ----------------------------------------------------------
 
-function show (uuid: string, context: SodarContextAssay) {
-  tableContext.value = context
+function show (uuid: string) {
+  // TODO: Update to get tableContext from appStore
+  // tableContext.value = context
   tableUuid.value = uuid
   showModal.value = true
 }
@@ -36,9 +37,8 @@ defineExpose({ show })
       </ModalHeader>
     </template>
     <div id="sodar-ss-assay-edit-content">
-      <div v-if="tableUuid && tableContext">
+      <div v-if="tableUuid">
         <p>UUID: {{ tableUuid }}</p>
-        <p>File name: {{ tableContext!.file_name }}</p>
         <p class="mb-0">TODO: Form goes here</p>
       </div>
     </div>

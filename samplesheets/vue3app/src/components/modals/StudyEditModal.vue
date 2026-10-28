@@ -85,15 +85,14 @@ function updateTableContext () {
 
 // API and Life Cycle ----------------------------------------------------------
 
-// TODO: Refactor to retrieve context from appStore
-function show (uuid: string, context: SodarContextStudy) {
+function show (uuid: string) {
+  tableContext = appStore.sodarContext!.studies[uuid]!
   studyMeta.value = {
-    description: context.description,
-    fileName: context.file_name,
-    identifier: context.identifier,
-    title: context.title,
+    description: tableContext.description,
+    fileName: tableContext.file_name,
+    identifier: tableContext.identifier,
+    title: tableContext.title,
   }
-  tableContext = context
   tableUuid = uuid
   enableControls.value = true
   showModal.value = true

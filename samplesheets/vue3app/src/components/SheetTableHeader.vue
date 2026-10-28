@@ -125,7 +125,7 @@ function getTitleTextClass (): string {
             variant="info"
             :class="'sodar-list-btn sodar-ss-btn-edit-' + tableType"
             :title="'Update ' + tableType + ' metadata and properties'"
-            @click="editModalRef!.show(tableUuid, tableContext)">
+            @click="editModalRef!.show(tableUuid)">
           <i class="iconify" data-icon="mdi:lead-pencil"></i>
         </BButton>
       </span>
