@@ -6,25 +6,22 @@ import { createBootstrap } from 'bootstrap-vue-next/plugins/createBootstrap'
 
 import StudyEditModal from '@/components/modals/StudyEditModal.vue'
 import { useAppStore } from '@/stores/appStore.ts'
-/*
 import {
   AJAX_RES_OK,
-  EDIT_MSG_SAVE,
-  EDIT_MSG_SAVE_FAIL_PREFIX,
-  URL_VERSION_SAVE_PREFIX,
+  STUDY_UPDATE_OK_MSG,
+  URL_STUDY_EDIT_PREFIX,
   VARIANT_DANGER,
   VARIANT_SUCCESS,
 } from '@/constants.ts'
-*/
 
 import { sodarContext } from '../data/sodarContext.ts'
 import { STUDY_UUID } from '../testConstants.ts'
 
 // Test Data -------------------------------------------------------------------
 
-// let fetchDetail: string
-// let fetchStatus: number
-// const url = URL_VERSION_SAVE_PREFIX + PROJECT_UUID
+let fetchDetail: string
+let fetchStatus: number
+const url = URL_STUDY_EDIT_PREFIX + STUDY_UUID
 
 const metaIdSel = '#sodar-ss-study-input-meta-id'
 const metaTitleSel = '#sodar-ss-study-input-meta-title'
@@ -40,13 +37,11 @@ const mockNotifyCb = vi.fn()
 
 describe('StudyEditModal.vue', () => {
   async function showModal (): Promise<VueWrapper> {
-    /*
     // Mock fetch with current return data
     global.fetch = vi.fn(() => Promise.resolve({
       json: () => Promise.resolve(
         { detail: fetchDetail }), status: fetchStatus} as Response)
     )
-    */
     // Mount and return
     const wrapper = mount(StudyEditModal)
     wrapper.vm.show(STUDY_UUID, sodarContext.studies[STUDY_UUID]!)
@@ -59,8 +54,8 @@ describe('StudyEditModal.vue', () => {
     setActivePinia(createPinia())
     const appStore = useAppStore()
     appStore.notifyCb = mockNotifyCb
-    // fetchDetail = AJAX_RES_OK
-    // fetchStatus = 200
+    fetchDetail = AJAX_RES_OK
+    fetchStatus = 200
   })
 
   test('render component', async () => {
@@ -74,5 +69,28 @@ describe('StudyEditModal.vue', () => {
     expect(wrapper.find(metaDescSel).attributes().value).toBe(sc.description)
   })
 
-  // TODO: Test modal functionality as implemented
+  test('update study metadata', async () => {
+    expect(fetch).not.toHaveBeenCalled()
+
+    const wrapper = await showModal()
+    await wrapper.find(metaIdSel).setValue('updated_id')
+    await wrapper.find(metaTitleSel).setValue('Updated Title')
+    await wrapper.find(metaFileSel).setValue('s_small_update.txt')
+    await wrapper.find(metaDescSel).setValue('Updated description')
+    await wrapper.find('#sodar-ss-study-edit-btn-update').trigger('click')
+
+    const expMeta = {
+      description: 'Updated description',
+      file_name: 's_small_update.txt',
+      identifier: 'updated_id',
+      title: 'Updated Title',
+    }
+    expect(fetch).toHaveBeenCalledWith(
+      url, expect.objectContaining(
+        { body: JSON.stringify({ study_meta: expMeta })}))
+    expect(mockNotifyCb).toHaveBeenCalledWith(
+      STUDY_UPDATE_OK_MSG, VARIANT_SUCCESS)
+
+    // TODO: Assert appStore sodarContext study update once refactored
+  })
 })

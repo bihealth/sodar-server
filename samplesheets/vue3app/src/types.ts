@@ -748,6 +748,17 @@ export interface RowSaveParams {
   saveData: RowSaveData
 }
 
+export interface StudyEditRequestMetadata {
+  description: string
+  file_name: string
+  identifier: string
+  title: string
+}
+
+export interface StudyEditRequestBody {
+  study_meta: StudyEditRequestMetadata
+}
+
 // Function Callbacks ----------------------------------------------------------
 
 export interface RowEditFinishCb {

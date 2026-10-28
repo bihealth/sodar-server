@@ -10,8 +10,21 @@ import {
 
 import ModalHeader from '@/components/modals/ModalHeader.vue'
 import { useAppStore } from '@/stores/appStore.ts'
-import { type SodarContextStudy, type StudyEditMeta } from '@/types.ts'
-import { STUDY_UPDATE_OK_MSG, VARIANT_SUCCESS } from '@/constants.ts'
+import { getAjaxRequestInit } from '@/utils/appUtils.ts'
+import {
+  type GenericResponseBody,
+  type SodarContextStudy,
+  type StudyEditMeta,
+  type StudyEditRequestBody
+} from '@/types.ts'
+import {
+  AJAX_RES_OK,
+  REQ_POST,
+  STUDY_UPDATE_OK_MSG,
+  URL_STUDY_EDIT_PREFIX,
+  VARIANT_DANGER,
+  VARIANT_SUCCESS
+} from '@/constants.ts'
 
 // External Data ---------------------------------------------------------------
 
@@ -19,6 +32,7 @@ const appStore = useAppStore()
 
 // Refs ------------------------------------------------------------------------
 
+const enableControls = ref<boolean>(true)
 const modalRef = useTemplateRef('studyEditModalRef')
 const showModal = ref<boolean>(false)
 const studyMeta = ref<StudyEditMeta | null>(null)
@@ -30,10 +44,32 @@ let tableUuid: string
 
 // Helpers ---------------------------------------------------------------------
 
-// TODO: Add validation
-// TODO: 1. Identifier can't be empty and must be unique within the inv
-// TODO: 2. File name must be unique within study and start with "s_"
-// TODO: More?
+// TODO: Add validation (see Ajax view)
+
+// Post study update and handle the results
+async function updateStudy () {
+  const url = URL_STUDY_EDIT_PREFIX + tableUuid
+  const updateBody: StudyEditRequestBody = {
+    study_meta: {
+      description: studyMeta.value!.description,
+      file_name: studyMeta.value!.fileName,
+      identifier: studyMeta.value!.identifier,
+      title: studyMeta.value!.title,
+    }
+  }
+  const response = await fetch(url, getAjaxRequestInit(REQ_POST, updateBody))
+  const resBody: GenericResponseBody = await response.json()
+  if (resBody.detail == AJAX_RES_OK) {
+    updateTableContext()
+    if (appStore.notifyCb) {
+      appStore.notifyCb(STUDY_UPDATE_OK_MSG, VARIANT_SUCCESS)
+    }
+  } else {
+    const msg: string = `Study update failed: ${resBody.detail}`
+    if (appStore.notifyCb) appStore.notifyCb(msg, VARIANT_DANGER)
+    console.error(msg)
+  }
+}
 
 // Update tableContext with edited values
 function updateTableContext () {
@@ -49,6 +85,7 @@ function updateTableContext () {
 
 // API and Life Cycle ----------------------------------------------------------
 
+// TODO: Refactor to retrieve context from appStore
 function show (uuid: string, context: SodarContextStudy) {
   studyMeta.value = {
     description: context.description,
@@ -58,16 +95,19 @@ function show (uuid: string, context: SodarContextStudy) {
   }
   tableContext = context
   tableUuid = uuid
+  enableControls.value = true
   showModal.value = true
 }
 
 function hide (update: boolean) {
   if (update) {
-    // TODO: If update, call Ajax view
-    // TODO: Only update context if Ajax call was successful
-    updateTableContext()
-    if (appStore.notifyCb) {
-      appStore.notifyCb(STUDY_UPDATE_OK_MSG, VARIANT_SUCCESS)
+    enableControls.value = false
+    try {
+      updateStudy()
+    } catch (error) {
+      const msg: string = `Error updating study: ${error}`
+      if (appStore.notifyCb) appStore.notifyCb(msg, VARIANT_DANGER)
+      console.error(msg)
     }
   }
   modalRef.value?.hide()
@@ -143,6 +183,7 @@ defineExpose({ show })
         <BButton
             variant="secondary"
             id="sodar-ss-study-edit-btn-cancel"
+            :disabled="!enableControls"
             @click="hide(false)">
           <i class="iconify" data-icon="mdi:close-thick"></i> Cancel
         </BButton>
@@ -150,6 +191,7 @@ defineExpose({ show })
             variant="primary"
             id="sodar-ss-study-edit-btn-update"
             ref="updateBtn"
+            :disabled="!enableControls"
             @click="hide(true)">
           <i class="iconify" data-icon="mdi:check-bold"></i> Update
         </BButton>

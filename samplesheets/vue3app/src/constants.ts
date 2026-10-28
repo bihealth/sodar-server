@@ -30,6 +30,7 @@ export const URL_ROW_DEL_PREFIX = '/samplesheets/ajax/edit/row/delete/'
 export const URL_ROW_INS_PREFIX = '/samplesheets/ajax/edit/row/insert/'
 export const URL_STUDY_LINKS_PREFIX = '/samplesheets/ajax/study/links/'
 export const URL_VERSION_SAVE_PREFIX = '/samplesheets/ajax/version/save/'
+export const URL_STUDY_EDIT_PREFIX = '/samplesheets/ajax/edit/study/'
 
 // Color variants
 export const VARIANT_DANGER = 'danger'

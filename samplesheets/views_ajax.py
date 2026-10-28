@@ -933,7 +933,6 @@ class SheetStudyEditAjaxView(BaseSheetEditAjaxView):
             return Response({'detail': str(ex)}, status=400)
         except Exception as ex:
             return Response({'detail': str(ex)}, status=500)
-        # TODO: TBD: Trigger cache update automatically or by request?
         return Response(self.ok_data, status=200)
 
 
