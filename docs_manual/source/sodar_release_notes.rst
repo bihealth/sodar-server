@@ -13,6 +13,7 @@ v1.4.0 (WIP)
 
 Major feature release.
 
+- Add investigation, study and assay metadata editing
 - :ref:`Add custom assay display name support <metadata_advanced_assay_name>`
 - :ref:`Add SODAR metadata to ISA-Tab exports and version saving <metadata_advanced_sodar_export>`
 - Add ISA-Tab versions SODAR version storage and displaying

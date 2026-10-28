@@ -23,6 +23,8 @@ Added
     - SODAR version in ``SheetVersionListView`` (#2596)
     - SODAR metadata UUID support in sheet replace (#2590)
     - Study and assay renaming support in sheet replace (#2590)
+    - ``SheetStudyEditAjaxView`` Ajax view (#2285)
+    - Investigation/study/assay metadata editing (#2285)
 
 Changed
 -------

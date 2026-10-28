@@ -1,6 +1,7 @@
 """Ajax API views for the samplesheets app"""
 
 import json
+import re
 
 from datetime import datetime as dt
 from packaging import version
@@ -110,6 +111,14 @@ NOT_FOUND_ERROR = 'Collection not found'
 NO_AUTH_ERROR = 'User not authorized for iRODS collection'
 STUDY_PLUGIN_NOT_FOUND_MSG = 'Plugin not found for study'
 ROW_LINK_DISPLAY_COMMENT = 'SODAR Assay Row Link Display'
+
+STUDY_EDIT_ID_EMPTY_MSG = 'Empty identifier is not allowed'
+STUDY_EDIT_ID_DUPE_MSG = 'Duplicate study identifiers in investigation'
+STUDY_EDIT_FILE_INVALID_MSG = 'Invalid study file name'
+STUDY_EDIT_FILE_DUPE_MSG = 'Duplicate study file names in investigation'
+
+# NOTE: This regex is more strict than the actual ISA-Tab spec on purpose
+ISA_FILE_NAME_RE = re.compile(r'^[\w\-.]+$')
 
 
 # Base Ajax View Classes and Mixins --------------------------------------------
@@ -873,6 +882,59 @@ class SheetWarningsAjaxView(SODARBaseProjectAjaxView):
             )
         logger.debug(f'Parser Warnings: {json.dumps(inv.parser_warnings)}')
         return Response({'warnings': inv.parser_warnings}, status=200)
+
+
+class SheetStudyEditAjaxView(BaseSheetEditAjaxView):
+    """Ajax view for editing study properties"""
+
+    def _update_metadata(self, study: Study, data: dict):
+        """
+        Update Study metadata properties.
+
+        :param study: Study object
+        :param data: Study metadata from request (dict)
+        """
+        # TODO: Field checks should happen on the model level (see #2606)
+        q_kw = {'investigation': study.investigation}
+        e_kw = {'sodar_uuid': study.sodar_uuid}
+
+        d = data['identifier'].strip()
+        if not d:
+            self.raise_ex(STUDY_EDIT_ID_EMPTY_MSG)
+        if Study.objects.filter(identifier=d, **q_kw).exclude(**e_kw).exists():
+            self.raise_ex(STUDY_EDIT_ID_DUPE_MSG)
+        study.identifier = d
+
+        study.title = data['title'].strip()
+        study.description = data['description'].strip()
+
+        f = data['file_name'].strip()
+        if (
+            not f.startswith('s_')
+            or not f.endswith('.txt')
+            or ' ' in f
+            or not ISA_FILE_NAME_RE.match(f)
+        ):
+            self.raise_ex(STUDY_EDIT_FILE_INVALID_MSG)
+        if Study.objects.filter(file_name=f, **q_kw).exclude(**e_kw).exists():
+            self.raise_ex(STUDY_EDIT_FILE_DUPE_MSG)
+        study.file_name = f
+
+    def post(self, request, *args, **kwargs):
+        study = Study.objects.filter(
+            sodar_uuid=self.kwargs.get('study')
+        ).first()
+        study_meta = request.data.get('study_meta')
+        try:
+            if study_meta:
+                self._update_metadata(study, study_meta)
+            study.save()
+        except BaseSheetEditAjaxView.SheetEditException as ex:
+            return Response({'detail': str(ex)}, status=400)
+        except Exception as ex:
+            return Response({'detail': str(ex)}, status=500)
+        # TODO: TBD: Trigger cache update automatically or by request?
+        return Response(self.ok_data, status=200)
 
 
 class SheetCellEditAjaxView(BaseSheetEditAjaxView):
