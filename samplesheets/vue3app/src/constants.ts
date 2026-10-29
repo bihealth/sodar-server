@@ -158,6 +158,8 @@ export const EDIT_REGEX: { [key: string]: RegExp } = {
   integer:        /^(([1-9][0-9]*)|(0?))$/, // TODO: TBD: Allow negative?
   name:           /^([A-Za-z0-9-_/]*)$/
 }
+// Other regex not used for columns/cells
+export const EDIT_REGEX_FILE_NAME: RegExp = /^[\w\-.]+$/
 
 // Browse mode text labels
 export const COPY_MSG_SUFFIX = ' copied into clipboard'
@@ -187,6 +189,7 @@ export const EDIT_MSG_SAVE_ERR_PREFIX = 'Error saving version: '
 export const EDIT_MSG_SAVE_FAIL_PREFIX = 'Saving version failed: '
 
 export const STUDY_UPDATE_OK_MSG = 'Study updated'
+export const STUDY_UPDATE_FAIL_PREFIX = 'Study update failed: '
 
 export const NODE_RENAME_MSG = 'A node with the same name already exists in ' +
   'this column. Renaming will replace all values in the fields of the ' +

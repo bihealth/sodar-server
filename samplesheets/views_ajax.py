@@ -909,6 +909,7 @@ class SheetStudyEditAjaxView(BaseSheetEditAjaxView):
         study.description = data['description'].strip()
 
         f = data['file_name'].strip()
+        # TODO: Add check for empty filename
         if (
             not f.startswith('s_')
             or not f.endswith('.txt')

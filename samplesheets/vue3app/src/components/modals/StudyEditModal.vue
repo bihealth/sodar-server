@@ -19,7 +19,9 @@ import {
 } from '@/types.ts'
 import {
   AJAX_RES_OK,
+  EDIT_REGEX_FILE_NAME,
   REQ_POST,
+  STUDY_UPDATE_FAIL_PREFIX,
   STUDY_UPDATE_OK_MSG,
   URL_STUDY_EDIT_PREFIX,
   VARIANT_DANGER,
@@ -32,10 +34,12 @@ const appStore = useAppStore()
 
 // Refs ------------------------------------------------------------------------
 
-const enableControls = ref<boolean>(true)
+const fileNameClass = ref<string>('')
 const modalRef = useTemplateRef('studyEditModalRef')
 const showModal = ref<boolean>(false)
 const studyMeta = ref<StudyEditMeta | null>(null)
+const updating = ref<boolean>(true)
+const valid = ref<boolean>(true)
 
 // Internal Vars ---------------------------------------------------------------
 
@@ -44,17 +48,37 @@ let tableUuid: string
 
 // Helpers ---------------------------------------------------------------------
 
-// TODO: Add validation (see Ajax view)
+function enableSubmit () {
+  return !updating.value && valid.value
+}
+
+function onFileNameInput () {
+  const f = studyMeta.value!.fileName.trim()
+  if (f === '' ||
+      !f.startsWith('s_') ||
+      !f.endsWith('.txt') ||
+      !EDIT_REGEX_FILE_NAME.test(f)) {
+    fileNameClass.value = 'text-danger'
+    valid.value = false
+  } else {
+    fileNameClass.value = ''
+    valid.value = true
+  }
+}
+
+function onIdentifierInput () {
+  valid.value = studyMeta.value!.identifier.trim() !== ''
+}
 
 // Post study update and handle the results
 async function updateStudy () {
   const url = URL_STUDY_EDIT_PREFIX + tableUuid
   const updateBody: StudyEditRequestBody = {
     study_meta: {
-      description: studyMeta.value!.description,
-      file_name: studyMeta.value!.fileName,
-      identifier: studyMeta.value!.identifier,
-      title: studyMeta.value!.title,
+      description: studyMeta.value!.description.trim(),
+      file_name: studyMeta.value!.fileName.trim(),
+      identifier: studyMeta.value!.identifier.trim(),
+      title: studyMeta.value!.title.trim(),
     }
   }
   const response = await fetch(url, getAjaxRequestInit(REQ_POST, updateBody))
@@ -65,7 +89,7 @@ async function updateStudy () {
       appStore.notifyCb(STUDY_UPDATE_OK_MSG, VARIANT_SUCCESS)
     }
   } else {
-    const msg: string = `Study update failed: ${resBody.detail}`
+    const msg: string = STUDY_UPDATE_FAIL_PREFIX + resBody.detail
     if (appStore.notifyCb) appStore.notifyCb(msg, VARIANT_DANGER)
     console.error(msg)
   }
@@ -94,13 +118,14 @@ function show (uuid: string) {
     title: tableContext.title,
   }
   tableUuid = uuid
-  enableControls.value = true
+  updating.value = false
+  valid.value = true // We assume all data must be valid when opening
   showModal.value = true
 }
 
 function hide (update: boolean) {
   if (update) {
-    enableControls.value = false
+    updating.value = true
     try {
       updateStudy()
     } catch (error) {
@@ -140,7 +165,8 @@ defineExpose({ show })
             <td>
               <BFormInput
                   v-model="studyMeta.identifier"
-                  id="sodar-ss-study-input-meta-id">
+                  id="sodar-ss-study-input-meta-id"
+                  @update:model-value="onIdentifierInput()">
               </BFormInput>
             </td>
           </tr>
@@ -158,7 +184,9 @@ defineExpose({ show })
             <td>
               <BFormInput
                   v-model="studyMeta.fileName"
-                  id="sodar-ss-study-input-meta-file">
+                  :class="fileNameClass"
+                  id="sodar-ss-study-input-meta-file"
+                  @update:model-value="onFileNameInput()">
               </BFormInput>
             </td>
           </tr>
@@ -182,7 +210,7 @@ defineExpose({ show })
         <BButton
             variant="secondary"
             id="sodar-ss-study-edit-btn-cancel"
-            :disabled="!enableControls"
+            :disabled="updating"
             @click="hide(false)">
           <i class="iconify" data-icon="mdi:close-thick"></i> Cancel
         </BButton>
@@ -190,7 +218,7 @@ defineExpose({ show })
             variant="primary"
             id="sodar-ss-study-edit-btn-update"
             ref="updateBtn"
-            :disabled="!enableControls"
+            :disabled="!enableSubmit()"
             @click="hide(true)">
           <i class="iconify" data-icon="mdi:check-bold"></i> Update
         </BButton>

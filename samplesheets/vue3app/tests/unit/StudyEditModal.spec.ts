@@ -9,9 +9,10 @@ import { useAppStore } from '@/stores/appStore.ts'
 import { type SodarContext } from '@/types.ts'
 import {
   AJAX_RES_OK,
+  STUDY_UPDATE_FAIL_PREFIX,
   STUDY_UPDATE_OK_MSG,
   URL_STUDY_EDIT_PREFIX,
-  // VARIANT_DANGER,
+  VARIANT_DANGER,
   VARIANT_SUCCESS,
 } from '@/constants.ts'
 
@@ -34,6 +35,7 @@ const metaIdSel = '#sodar-ss-study-input-meta-id'
 const metaTitleSel = '#sodar-ss-study-input-meta-title'
 const metaFileSel = '#sodar-ss-study-input-meta-file'
 const metaDescSel = '#sodar-ss-study-input-meta-desc'
+const updateBtnSel = '#sodar-ss-study-edit-btn-update'
 
 // Global Setup ----------------------------------------------------------------
 
@@ -76,6 +78,7 @@ describe('StudyEditModal.vue', () => {
     expect(wrapper.find(metaTitleSel).attributes().value).toBe(sc.title)
     expect(wrapper.find(metaFileSel).attributes().value).toBe(sc.file_name)
     expect(wrapper.find(metaDescSel).attributes().value).toBe(sc.description)
+    expect(wrapper.find(updateBtnSel).attributes().disabled).not.toBeDefined()
   })
 
   test('update study metadata', async () => {
@@ -108,5 +111,92 @@ describe('StudyEditModal.vue', () => {
     expect(sc.description).toBe(studyDescUp)
   })
 
-  // TODO: Test update with failed server response
+  test('handle failed update', async () => {
+    // Suppress logging as error message is expected
+    vi.spyOn(console, 'error').mockImplementation(() => undefined)
+    const appStore = useAppStore()
+    const sc = appStore.sodarContext!.studies[STUDY_UUID]!
+    const og = sodarContext.studies[STUDY_UUID]! // Original unaltered data
+    fetchDetail = 'Error'
+    fetchStatus = 400
+    expect(fetch).not.toHaveBeenCalled()
+
+    const wrapper = await showModal()
+    await wrapper.find(metaIdSel).setValue(studyIdUp)
+    await wrapper.find(metaTitleSel).setValue(studyTitleUp)
+    await wrapper.find(metaFileSel).setValue(studyFileUp)
+    await wrapper.find(metaDescSel).setValue(studyDescUp)
+    await wrapper.find('#sodar-ss-study-edit-btn-update').trigger('click')
+
+    expect(fetch).toHaveBeenCalled()
+    expect(mockNotifyCb).toHaveBeenCalledWith(
+      STUDY_UPDATE_FAIL_PREFIX + 'Error', VARIANT_DANGER)
+
+    // Original values should be retained
+    expect(sc.identifier).toBe(og.identifier)
+    expect(sc.title).toBe(og.title)
+    expect(sc.file_name).toBe(og.file_name)
+    expect(sc.description).toBe(og.description)
+  })
+
+  test('input valid identifier', async () => {
+    const wrapper = await showModal()
+    const input = wrapper.find(metaIdSel)
+    await input.setValue('new_identifier')
+    expect(wrapper.find(updateBtnSel).attributes().disabled).not.toBeDefined()
+  })
+
+  test('input empty identifier', async () => {
+    const wrapper = await showModal()
+    const input = wrapper.find(metaIdSel)
+    await input.setValue('')
+    expect(wrapper.find(updateBtnSel).attributes().disabled).toBeDefined()
+  })
+
+  test('input valid file name', async () => {
+    const wrapper = await showModal()
+    const input = wrapper.find(metaFileSel)
+    await input.setValue('s_new_name.txt')
+    expect(input.classes()).not.toContain('text-danger')
+    expect(wrapper.find(updateBtnSel).attributes().disabled).not.toBeDefined()
+  })
+
+  test('input file name with invalid prefix', async () => {
+    const wrapper = await showModal()
+    const input = wrapper.find(metaFileSel)
+    await input.setValue('a_new_name.txt') // Not starting with "s_"
+    expect(input.classes()).toContain('text-danger')
+    expect(wrapper.find(updateBtnSel).attributes().disabled).toBeDefined()
+  })
+
+  test('input file name with invalid suffix', async () => {
+    const wrapper = await showModal()
+    const input = wrapper.find(metaFileSel)
+    await input.setValue('a_new_name.tsv') // Not ending with ".txt"
+    expect(input.classes()).toContain('text-danger')
+    expect(wrapper.find(updateBtnSel).attributes().disabled).toBeDefined()
+  })
+
+  test('input empty file name', async () => {
+    const wrapper = await showModal()
+    const input = wrapper.find(metaFileSel)
+    await input.setValue('')
+    expect(wrapper.find(updateBtnSel).attributes().disabled).toBeDefined()
+  })
+
+  test('input file name with whitespace', async () => {
+    const wrapper = await showModal()
+    const input = wrapper.find(metaFileSel)
+    await input.setValue('s_new name.txt')
+    expect(input.classes()).toContain('text-danger')
+    expect(wrapper.find(updateBtnSel).attributes().disabled).toBeDefined()
+  })
+
+  test('input file name with disallowed characters', async () => {
+    const wrapper = await showModal()
+    const input = wrapper.find(metaFileSel)
+    await input.setValue('s_(new)_name.txt')
+    expect(input.classes()).toContain('text-danger')
+    expect(wrapper.find(updateBtnSel).attributes().disabled).toBeDefined()
+  })
 })
