@@ -958,6 +958,16 @@ class TestSheetStudyEditAjaxView(
         self.study.refresh_from_db()
         self.assertEqual(self.study.file_name, 's_small.txt')
 
+    def test_post_file_name_empty(self):
+        """Test POST with empty file_name"""
+        self.post_data['study_meta']['file_name'] = ''
+        with self.login(self.user):
+            response = self.client.post(
+                self.url, json.dumps(self.post_data), **POST_KW
+            )
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.data['detail'], STUDY_EDIT_FILE_INVALID_MSG)
+
     def test_post_file_name_prefix_invalid(self):
         """Test POST with invalid file_name prefix"""
         self.post_data['study_meta']['file_name'] = 'a_small.txt'
