@@ -41,6 +41,8 @@ export const sodarContextStudy: SodarContextStudy = {
   identifier: 's_small',
   title: 'Small Germline Study',
   description: '',
+  public_release_date: '',
+  submission_date: '2026-10-15',
   comments: {
     'Study Grant Number': '',
     'Study Funding Agency': ''

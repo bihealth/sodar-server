@@ -116,9 +116,11 @@ STUDY_EDIT_ID_EMPTY_MSG = 'Empty identifier is not allowed'
 STUDY_EDIT_ID_DUPE_MSG = 'Duplicate study identifiers in investigation'
 STUDY_EDIT_FILE_INVALID_MSG = 'Invalid study file name'
 STUDY_EDIT_FILE_DUPE_MSG = 'Duplicate study file names in investigation'
+STUDY_EDIT_DATE_INVALID_MSG = 'Invalid date for {field}'
 
 # NOTE: This regex is more strict than the actual ISA-Tab spec on purpose
 ISA_FILE_NAME_RE = re.compile(r'^[\w\-.]+$')
+DATE_RE = re.compile(r'^\d{4}-(0[1-9]|1[012])-(0[1-9]|[12][0-9]|3[01])$')
 
 
 # Base Ajax View Classes and Mixins --------------------------------------------
@@ -371,12 +373,21 @@ class SheetContextAjaxView(SODARBaseProjectAjaxView):
         # NOTE: More metadata can be added if needed. Certain fields such as
         #       factors, contacs and study design need some extra formatting to
         #       be nicely human readable.
+        df = '%Y-%m-%d'
+        pub_date = ''
+        if study.public_release_date:
+            pub_date = study.public_release_date.strftime(df)
+        sub_date = ''
+        if study.submission_date:
+            sub_date = study.submission_date.strftime(df)
         return {
             'display_name': study.get_name(),
             'file_name': study.file_name,
             'identifier': study.identifier,
             'title': study.title,
             'description': study.description,
+            'public_release_date': pub_date,
+            'submission_date': sub_date,
             'comments': get_comments(study),
             'irods_path': (
                 self.irods_backend.get_path(study)
@@ -908,17 +919,23 @@ class SheetStudyEditAjaxView(BaseSheetEditAjaxView):
         study.title = data['title'].strip()
         study.description = data['description'].strip()
 
-        f = data['file_name'].strip()
+        d = data['file_name'].strip()
         if (
-            not f.startswith('s_')
-            or not f.endswith('.txt')
-            or f == ''
-            or not ISA_FILE_NAME_RE.match(f)
+            not d.startswith('s_')
+            or not d.endswith('.txt')
+            or d == ''
+            or not ISA_FILE_NAME_RE.match(d)
         ):
             self.raise_ex(STUDY_EDIT_FILE_INVALID_MSG)
-        if Study.objects.filter(file_name=f, **q_kw).exclude(**e_kw).exists():
+        if Study.objects.filter(file_name=d, **q_kw).exclude(**e_kw).exists():
             self.raise_ex(STUDY_EDIT_FILE_DUPE_MSG)
-        study.file_name = f
+        study.file_name = d
+
+        for f in ['submission_date', 'public_release_date']:
+            d = data[f].strip() or None
+            if d and not DATE_RE.match(d):
+                self.raise_ex(STUDY_EDIT_DATE_INVALID_MSG.format(field=f))
+            setattr(study, f, d)
 
     def post(self, request, *args, **kwargs):
         study = Study.objects.filter(

@@ -75,10 +75,11 @@ from samplesheets.views_ajax import (
     RENDER_HEIGHT_SCROLLBAR,
     STUDY_PLUGIN_NOT_FOUND_MSG,
     ROW_LINK_DISPLAY_COMMENT,
-    STUDY_EDIT_ID_EMPTY_MSG,
-    STUDY_EDIT_ID_DUPE_MSG,
-    STUDY_EDIT_FILE_INVALID_MSG,
+    STUDY_EDIT_DATE_INVALID_MSG,
     STUDY_EDIT_FILE_DUPE_MSG,
+    STUDY_EDIT_FILE_INVALID_MSG,
+    STUDY_EDIT_ID_DUPE_MSG,
+    STUDY_EDIT_ID_EMPTY_MSG,
 )
 
 
@@ -263,6 +264,7 @@ class TestSheetContextAjaxView(IrodsDataRequestMixin, SamplesheetsViewTestBase):
 
     def test_get(self):
         """Test SheetContextAjaxView GET"""
+        # TODO: Split into multiple tests
         self._import_investigation()
         with self.login(self.user):
             response = self.client.get(self.url)
@@ -310,6 +312,8 @@ class TestSheetContextAjaxView(IrodsDataRequestMixin, SamplesheetsViewTestBase):
                     'identifier': 's_small',
                     'title': 'Small Germline Study',
                     'description': '',
+                    'public_release_date': '',
+                    'submission_date': '',
                     'comments': {
                         'Study Funding Agency': '',
                         'Study Grant Number': '',
@@ -390,6 +394,8 @@ class TestSheetContextAjaxView(IrodsDataRequestMixin, SamplesheetsViewTestBase):
             'identifier': 'Template_Test',
             'title': 'Investigation Title',
             'description': '',
+            'public_release_date': '',
+            'submission_date': '',
             'comments': {
                 'Study Funding Agency': '',
                 'Study Grant Number': '',
@@ -880,6 +886,8 @@ class TestSheetStudyEditAjaxView(
                 'title': 'Updated Germline Study',
                 'description': 'Updated description',
                 'file_name': 's_small_updated.txt',
+                'submission_date': '2026-10-15',
+                'public_release_date': '2026-11-27',
             }
         }
         self.url = reverse(
@@ -893,6 +901,8 @@ class TestSheetStudyEditAjaxView(
         self.assertEqual(self.study.title, 'Small Germline Study')
         self.assertEqual(self.study.description, '')
         self.assertEqual(self.study.file_name, 's_small.txt')
+        self.assertEqual(self.study.submission_date, None)
+        self.assertEqual(self.study.public_release_date, None)
 
         with self.login(self.user):
             response = self.client.post(
@@ -906,6 +916,14 @@ class TestSheetStudyEditAjaxView(
         self.assertEqual(self.study.title, p_meta['title'])
         self.assertEqual(self.study.description, p_meta['description'])
         self.assertEqual(self.study.file_name, p_meta['file_name'])
+        self.assertEqual(
+            self.study.submission_date.strftime('%Y-%m-%d'),
+            p_meta['submission_date'],
+        )
+        self.assertEqual(
+            self.study.public_release_date.strftime('%Y-%m-%d'),
+            p_meta['public_release_date'],
+        )
 
     def test_post_identifier_empty(self):
         """Test POST with empty identifier"""
@@ -1019,6 +1037,58 @@ class TestSheetStudyEditAjaxView(
                 url, json.dumps(self.post_data), **POST_KW
             )
         self.assertEqual(response.status_code, 404)
+
+    def test_post_submission_date_empty(self):
+        """Test POST with empty submission_date"""
+        self.study.submission_date = '2026-01-15'
+        self.study.save()
+        self.post_data['study_meta']['submission_date'] = ''
+        with self.login(self.user):
+            response = self.client.post(
+                self.url, json.dumps(self.post_data), **POST_KW
+            )
+        self.assertEqual(response.status_code, 200)
+        self.study.refresh_from_db()
+        self.assertEqual(self.study.submission_date, None)
+
+    def test_post_submission_date_invalid(self):
+        """Test POST with invalid submission_date"""
+        self.post_data['study_meta']['submission_date'] = 'NOT-A-VALID-DATE'
+        with self.login(self.user):
+            response = self.client.post(
+                self.url, json.dumps(self.post_data), **POST_KW
+            )
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(
+            response.data['detail'],
+            STUDY_EDIT_DATE_INVALID_MSG.format(field='submission_date'),
+        )
+
+    def test_post_public_release_date_empty(self):
+        """Test POST with empty public_release_date"""
+        self.study.public_release_date = '2026-01-15'
+        self.study.save()
+        self.post_data['study_meta']['public_release_date'] = ''
+        with self.login(self.user):
+            response = self.client.post(
+                self.url, json.dumps(self.post_data), **POST_KW
+            )
+        self.assertEqual(response.status_code, 200)
+        self.study.refresh_from_db()
+        self.assertEqual(self.study.public_release_date, None)
+
+    def test_post_public_release_date_invalid(self):
+        """Test POST with invalid public_release_date"""
+        self.post_data['study_meta']['public_release_date'] = 'NOT-A-VALID-DATE'
+        with self.login(self.user):
+            response = self.client.post(
+                self.url, json.dumps(self.post_data), **POST_KW
+            )
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(
+            response.data['detail'],
+            STUDY_EDIT_DATE_INVALID_MSG.format(field='public_release_date'),
+        )
 
 
 class TestSheetCellEditAjaxView(

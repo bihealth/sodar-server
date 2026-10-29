@@ -158,7 +158,7 @@ export const EDIT_REGEX: { [key: string]: RegExp } = {
   integer:        /^(([1-9][0-9]*)|(0?))$/, // TODO: TBD: Allow negative?
   name:           /^([A-Za-z0-9-_/]*)$/
 }
-// Other regex not used for columns/cells
+// TODO: Move this under EDIT_REGEX?
 export const EDIT_REGEX_FILE_NAME: RegExp = /^[\w\-.]+$/
 
 // Browse mode text labels

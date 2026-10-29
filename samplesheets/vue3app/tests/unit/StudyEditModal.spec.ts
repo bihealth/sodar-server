@@ -26,16 +26,22 @@ let fetchDetail: string
 let fetchStatus: number
 const url = URL_STUDY_EDIT_PREFIX + STUDY_UUID
 
-const studyDescUp = 'Updated description'
-const studyFileUp = 's_small_update.txt'
-const studyIdUp = 'updated_id'
-const studyTitleUp = 'Updated Title'
+const metaDescUp = 'Updated description'
+const metaFileUp = 's_small_update.txt'
+const metaIdUp = 'updated_id'
+const metaPubDateUp = '2026-02-02'
+const metaSubDateUp = '2026-01-01'
+const metaTitleUp = 'Updated Title'
 
 const metaIdSel = '#sodar-ss-study-input-meta-id'
 const metaTitleSel = '#sodar-ss-study-input-meta-title'
 const metaFileSel = '#sodar-ss-study-input-meta-file'
 const metaDescSel = '#sodar-ss-study-input-meta-desc'
+const metaSubDateSel = '#sodar-ss-study-input-meta-sub-date'
+const metaPubDateSel = '#sodar-ss-study-input-meta-pub-date'
 const updateBtnSel = '#sodar-ss-study-edit-btn-update'
+
+const INVALID_CLASS = 'text-danger'
 
 // Global Setup ----------------------------------------------------------------
 
@@ -78,6 +84,10 @@ describe('StudyEditModal.vue', () => {
     expect(wrapper.find(metaTitleSel).attributes().value).toBe(sc.title)
     expect(wrapper.find(metaFileSel).attributes().value).toBe(sc.file_name)
     expect(wrapper.find(metaDescSel).attributes().value).toBe(sc.description)
+    expect(wrapper.find(
+      metaSubDateSel).attributes().value).toBe(sc.submission_date)
+    expect(wrapper.find(
+      metaPubDateSel).attributes().value).toBe(sc.public_release_date)
     expect(wrapper.find(updateBtnSel).attributes().disabled).not.toBeDefined()
   })
 
@@ -87,17 +97,21 @@ describe('StudyEditModal.vue', () => {
     expect(fetch).not.toHaveBeenCalled()
 
     const wrapper = await showModal()
-    await wrapper.find(metaIdSel).setValue(studyIdUp)
-    await wrapper.find(metaTitleSel).setValue(studyTitleUp)
-    await wrapper.find(metaFileSel).setValue(studyFileUp)
-    await wrapper.find(metaDescSel).setValue(studyDescUp)
+    await wrapper.find(metaIdSel).setValue(metaIdUp)
+    await wrapper.find(metaTitleSel).setValue(metaTitleUp)
+    await wrapper.find(metaFileSel).setValue(metaFileUp)
+    await wrapper.find(metaDescSel).setValue(metaDescUp)
+    await wrapper.find(metaSubDateSel).setValue(metaSubDateUp)
+    await wrapper.find(metaPubDateSel).setValue(metaPubDateUp)
     await wrapper.find('#sodar-ss-study-edit-btn-update').trigger('click')
 
     const expMeta = {
-      description: studyDescUp,
-      file_name: studyFileUp,
-      identifier: studyIdUp,
-      title: studyTitleUp,
+      description: metaDescUp,
+      file_name: metaFileUp,
+      identifier: metaIdUp,
+      public_release_date: metaPubDateUp,
+      submission_date: metaSubDateUp,
+      title: metaTitleUp,
     }
     expect(fetch).toHaveBeenCalledWith(
       url, expect.objectContaining(
@@ -105,10 +119,12 @@ describe('StudyEditModal.vue', () => {
     expect(mockNotifyCb).toHaveBeenCalledWith(
       STUDY_UPDATE_OK_MSG, VARIANT_SUCCESS)
 
-    expect(sc.identifier).toBe(studyIdUp)
-    expect(sc.title).toBe(studyTitleUp)
-    expect(sc.file_name).toBe(studyFileUp)
-    expect(sc.description).toBe(studyDescUp)
+    expect(sc.identifier).toBe(metaIdUp)
+    expect(sc.title).toBe(metaTitleUp)
+    expect(sc.file_name).toBe(metaFileUp)
+    expect(sc.description).toBe(metaDescUp)
+    expect(sc.submission_date).toBe(metaSubDateUp)
+    expect(sc.public_release_date).toBe(metaPubDateUp)
   })
 
   test('handle failed update', async () => {
@@ -122,10 +138,10 @@ describe('StudyEditModal.vue', () => {
     expect(fetch).not.toHaveBeenCalled()
 
     const wrapper = await showModal()
-    await wrapper.find(metaIdSel).setValue(studyIdUp)
-    await wrapper.find(metaTitleSel).setValue(studyTitleUp)
-    await wrapper.find(metaFileSel).setValue(studyFileUp)
-    await wrapper.find(metaDescSel).setValue(studyDescUp)
+    await wrapper.find(metaIdSel).setValue(metaIdUp)
+    await wrapper.find(metaTitleSel).setValue(metaTitleUp)
+    await wrapper.find(metaFileSel).setValue(metaFileUp)
+    await wrapper.find(metaDescSel).setValue(metaDescUp)
     await wrapper.find('#sodar-ss-study-edit-btn-update').trigger('click')
 
     expect(fetch).toHaveBeenCalled()
@@ -137,6 +153,8 @@ describe('StudyEditModal.vue', () => {
     expect(sc.title).toBe(og.title)
     expect(sc.file_name).toBe(og.file_name)
     expect(sc.description).toBe(og.description)
+    expect(sc.submission_date).toBe(og.submission_date)
+    expect(sc.public_release_date).toBe(og.public_release_date)
   })
 
   test('input valid identifier', async () => {
@@ -157,7 +175,7 @@ describe('StudyEditModal.vue', () => {
     const wrapper = await showModal()
     const input = wrapper.find(metaFileSel)
     await input.setValue('s_new_name.txt')
-    expect(input.classes()).not.toContain('text-danger')
+    expect(input.classes()).not.toContain(INVALID_CLASS)
     expect(wrapper.find(updateBtnSel).attributes().disabled).not.toBeDefined()
   })
 
@@ -165,7 +183,7 @@ describe('StudyEditModal.vue', () => {
     const wrapper = await showModal()
     const input = wrapper.find(metaFileSel)
     await input.setValue('a_new_name.txt') // Not starting with "s_"
-    expect(input.classes()).toContain('text-danger')
+    expect(input.classes()).toContain(INVALID_CLASS)
     expect(wrapper.find(updateBtnSel).attributes().disabled).toBeDefined()
   })
 
@@ -173,7 +191,7 @@ describe('StudyEditModal.vue', () => {
     const wrapper = await showModal()
     const input = wrapper.find(metaFileSel)
     await input.setValue('a_new_name.tsv') // Not ending with ".txt"
-    expect(input.classes()).toContain('text-danger')
+    expect(input.classes()).toContain(INVALID_CLASS)
     expect(wrapper.find(updateBtnSel).attributes().disabled).toBeDefined()
   })
 
@@ -188,7 +206,7 @@ describe('StudyEditModal.vue', () => {
     const wrapper = await showModal()
     const input = wrapper.find(metaFileSel)
     await input.setValue('s_new name.txt')
-    expect(input.classes()).toContain('text-danger')
+    expect(input.classes()).toContain(INVALID_CLASS)
     expect(wrapper.find(updateBtnSel).attributes().disabled).toBeDefined()
   })
 
@@ -196,7 +214,55 @@ describe('StudyEditModal.vue', () => {
     const wrapper = await showModal()
     const input = wrapper.find(metaFileSel)
     await input.setValue('s_(new)_name.txt')
-    expect(input.classes()).toContain('text-danger')
+    expect(input.classes()).toContain(INVALID_CLASS)
+    expect(wrapper.find(updateBtnSel).attributes().disabled).toBeDefined()
+  })
+
+  test('input valid submission date', async () => {
+    const wrapper = await showModal()
+    const input = wrapper.find(metaSubDateSel)
+    await input.setValue('1900-01-01')
+    expect(input.classes()).not.toContain(INVALID_CLASS)
+    expect(wrapper.find(updateBtnSel).attributes().disabled).not.toBeDefined()
+  })
+
+  test('input empty submission date', async () => {
+    const wrapper = await showModal()
+    const input = wrapper.find(metaSubDateSel)
+    await input.setValue('')
+    expect(input.classes()).not.toContain(INVALID_CLASS)
+    expect(wrapper.find(updateBtnSel).attributes().disabled).not.toBeDefined()
+  })
+
+  test('input invalid submission date', async () => {
+    const wrapper = await showModal()
+    const input = wrapper.find(metaSubDateSel)
+    await input.setValue('123-5-99')
+    expect(input.classes()).toContain(INVALID_CLASS)
+    expect(wrapper.find(updateBtnSel).attributes().disabled).toBeDefined()
+  })
+
+  test('input valid public release date', async () => {
+    const wrapper = await showModal()
+    const input = wrapper.find(metaPubDateSel)
+    await input.setValue('1900-01-01')
+    expect(input.classes()).not.toContain(INVALID_CLASS)
+    expect(wrapper.find(updateBtnSel).attributes().disabled).not.toBeDefined()
+  })
+
+  test('input empty public release date', async () => {
+    const wrapper = await showModal()
+    const input = wrapper.find(metaPubDateSel)
+    await input.setValue('')
+    expect(input.classes()).not.toContain(INVALID_CLASS)
+    expect(wrapper.find(updateBtnSel).attributes().disabled).not.toBeDefined()
+  })
+
+  test('input invalid public release date', async () => {
+    const wrapper = await showModal()
+    const input = wrapper.find(metaPubDateSel)
+    await input.setValue('123-5-99')
+    expect(input.classes()).toContain(INVALID_CLASS)
     expect(wrapper.find(updateBtnSel).attributes().disabled).toBeDefined()
   })
 })

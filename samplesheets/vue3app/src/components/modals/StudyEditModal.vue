@@ -19,6 +19,7 @@ import {
 } from '@/types.ts'
 import {
   AJAX_RES_OK,
+  EDIT_REGEX,
   EDIT_REGEX_FILE_NAME,
   REQ_POST,
   STUDY_UPDATE_FAIL_PREFIX,
@@ -28,18 +29,28 @@ import {
   VARIANT_SUCCESS
 } from '@/constants.ts'
 
+// Constants -------------------------------------------------------------------
+
+const INVALID_CLASS = 'text-danger'
+
+// Interfaces ------------------------------------------------------------------
+
+interface FieldValidStatus {
+  [key: string]: boolean
+}
+
 // External Data ---------------------------------------------------------------
 
 const appStore = useAppStore()
 
 // Refs ------------------------------------------------------------------------
 
-const fileNameClass = ref<string>('')
+const fieldsValid = ref<FieldValidStatus>({})
 const modalRef = useTemplateRef('studyEditModalRef')
 const showModal = ref<boolean>(false)
 const studyMeta = ref<StudyEditMeta | null>(null)
 const updating = ref<boolean>(true)
-const valid = ref<boolean>(true)
+const valid = ref<boolean>(true) // TODO: Compute based on fieldsValid
 
 // Internal Vars ---------------------------------------------------------------
 
@@ -48,8 +59,24 @@ let tableUuid: string
 
 // Helpers ---------------------------------------------------------------------
 
-function enableSubmit () {
+function enableSubmit (): boolean {
   return !updating.value && valid.value
+}
+
+function getFieldClass (fieldName: string): string {
+  if (fieldsValid.value![fieldName]!) return ''
+  return INVALID_CLASS
+}
+
+function onDateInput (fieldName: string) {
+  const v = studyMeta.value![fieldName as keyof StudyEditMeta]!.trim()
+  if (v && !EDIT_REGEX['date']!.test(v)) {
+    fieldsValid.value![fieldName] = false
+    valid.value = false
+  } else {
+    fieldsValid.value![fieldName] = true
+    valid.value = true
+  }
 }
 
 function onFileNameInput () {
@@ -58,10 +85,10 @@ function onFileNameInput () {
       !f.startsWith('s_') ||
       !f.endsWith('.txt') ||
       !EDIT_REGEX_FILE_NAME.test(f)) {
-    fileNameClass.value = 'text-danger'
+    fieldsValid.value!.fileName = false
     valid.value = false
   } else {
-    fileNameClass.value = ''
+    fieldsValid.value!.fileName = true
     valid.value = true
   }
 }
@@ -78,8 +105,10 @@ async function updateStudy () {
       description: studyMeta.value!.description.trim(),
       file_name: studyMeta.value!.fileName.trim(),
       identifier: studyMeta.value!.identifier.trim(),
+      public_release_date: studyMeta.value!.publicReleaseDate.trim(),
+      submission_date: studyMeta.value!.submissionDate.trim(),
       title: studyMeta.value!.title.trim(),
-    }
+    } // TODO: Trim with a oneliner or otherwise ensure sanitization
   }
   const response = await fetch(url, getAjaxRequestInit(REQ_POST, updateBody))
   const resBody: GenericResponseBody = await response.json()
@@ -102,6 +131,8 @@ function updateTableContext () {
   tableContext.description = studyMeta.value!.description
   tableContext.file_name = studyMeta.value!.fileName
   tableContext.identifier = identifier
+  tableContext.public_release_date = studyMeta.value!.publicReleaseDate
+  tableContext.submission_date = studyMeta.value!.submissionDate
   tableContext.title = title
   if (studyMeta.value!.title) tableContext.display_name = title
   else tableContext.display_name = identifier
@@ -115,11 +146,18 @@ function show (uuid: string) {
     description: tableContext.description,
     fileName: tableContext.file_name,
     identifier: tableContext.identifier,
+    publicReleaseDate: tableContext.public_release_date,
+    submissionDate: tableContext.submission_date,
     title: tableContext.title,
   }
   tableUuid = uuid
   updating.value = false
   valid.value = true // We assume all data must be valid when opening
+  fieldsValid.value = {
+    fileName: true,
+    publicReleaseDate: true,
+    submissionDate: true
+  } // Reset field valid status
   showModal.value = true
 }
 
@@ -184,7 +222,7 @@ defineExpose({ show })
             <td>
               <BFormInput
                   v-model="studyMeta.fileName"
-                  :class="fileNameClass"
+                  :class="getFieldClass('fileName')"
                   id="sodar-ss-study-input-meta-file"
                   @update:model-value="onFileNameInput()">
               </BFormInput>
@@ -198,6 +236,28 @@ defineExpose({ show })
                   id="sodar-ss-study-input-meta-desc"
                   rows="4">
               </BFormTextarea>
+            </td>
+          </tr>
+          <tr>
+            <td>Submission Date</td>
+            <td>
+              <BFormInput
+                  v-model="studyMeta.submissionDate"
+                  :class="getFieldClass('submissionDate')"
+                  id="sodar-ss-study-input-meta-sub-date"
+                  @update:model-value="onDateInput('submissionDate')">
+              </BFormInput>
+            </td>
+          </tr>
+          <tr>
+            <td>Public Release Date</td>
+            <td>
+              <BFormInput
+                  v-model="studyMeta.publicReleaseDate"
+                  :class="getFieldClass('publicReleaseDate')"
+                  id="sodar-ss-study-input-meta-pub-date"
+                  @update:model-value="onDateInput('publicReleaseDate')">
+              </BFormInput>
             </td>
           </tr>
         </tbody>
@@ -233,7 +293,7 @@ table#sodar-ss-study-edit-table tbody td:first-child {
   max-width: 250px;
   vertical-align: top;
   white-space: nowrap;
-  padding-top: 18px;
+  padding-top: 19px;
 }
 #sodar-ss-study-edit-btn-group {
   padding-right: 12px;

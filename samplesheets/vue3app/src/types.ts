@@ -51,6 +51,8 @@ export interface SodarContextStudy {
   irods_path: string
   plugin_name: string | null
   plugin_title: string | null
+  public_release_date: string
+  submission_date: string
   table_url: string
   title: string
 }
@@ -536,6 +538,8 @@ export interface StudyEditMeta {
   description: string
   fileName: string
   identifier: string
+  publicReleaseDate: string
+  submissionDate: string
   title: string
 }
 
@@ -752,6 +756,8 @@ export interface StudyEditRequestMetadata {
   description: string
   file_name: string
   identifier: string
+  public_release_date: string
+  submission_date: string
   title: string
 }
 
