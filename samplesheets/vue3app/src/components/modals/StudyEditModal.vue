@@ -80,6 +80,7 @@ function onDateInput (fieldName: string) {
 }
 
 function onFileNameInput () {
+  // TODO: Add uniqueness check
   const f = studyMeta.value!.fileName.trim()
   if (f === '' ||
       !f.startsWith('s_') ||
@@ -94,6 +95,7 @@ function onFileNameInput () {
 }
 
 function onIdentifierInput () {
+  // TODO: Add uniqueness check
   valid.value = studyMeta.value!.identifier.trim() !== ''
 }
 
@@ -142,6 +144,7 @@ function updateTableContext () {
 
 function show (uuid: string) {
   tableContext = appStore.sodarContext!.studies[uuid]!
+  tableUuid = uuid
   studyMeta.value = {
     description: tableContext.description,
     fileName: tableContext.file_name,
@@ -150,7 +153,6 @@ function show (uuid: string) {
     submissionDate: tableContext.submission_date,
     title: tableContext.title,
   }
-  tableUuid = uuid
   updating.value = false
   valid.value = true // We assume all data must be valid when opening
   fieldsValid.value = {
@@ -293,7 +295,7 @@ table#sodar-ss-study-edit-table tbody td:first-child {
   max-width: 250px;
   vertical-align: top;
   white-space: nowrap;
-  padding-top: 19px;
+  padding-top: 20px;
 }
 #sodar-ss-study-edit-btn-group {
   padding-right: 12px;

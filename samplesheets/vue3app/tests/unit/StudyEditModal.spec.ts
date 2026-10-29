@@ -265,4 +265,6 @@ describe('StudyEditModal.vue', () => {
     expect(input.classes()).toContain(INVALID_CLASS)
     expect(wrapper.find(updateBtnSel).attributes().disabled).toBeDefined()
   })
+
+  // TODO: Test identifier and file name uniqueness once implemented
 })

@@ -533,7 +533,7 @@ export interface GenericResponseBody {
 
 // Edit Mode Data --------------------------------------------------------------
 
-// Study Edit metadata
+// Study edit metadata
 export interface StudyEditMeta {
   description: string
   fileName: string
@@ -541,6 +541,13 @@ export interface StudyEditMeta {
   publicReleaseDate: string
   submissionDate: string
   title: string
+}
+
+// Assay edit metadata
+// TODO: Add technology type and measurement type fields (see #2612)
+export interface AssayEditMeta {
+  fileName: string
+  technologyPlatform: string
 }
 
 // Unsaved row info
