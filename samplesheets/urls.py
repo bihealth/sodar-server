@@ -296,6 +296,11 @@ urls_ajax = [
         name='ajax_edit_study',
     ),
     path(
+        route='ajax/edit/assay/<uuid:assay>',
+        view=views_ajax.SheetAssayEditAjaxView.as_view(),
+        name='ajax_edit_assay',
+    ),
+    path(
         route='ajax/edit/cell/<uuid:project>',
         view=views_ajax.SheetCellEditAjaxView.as_view(),
         name='ajax_edit_cell',

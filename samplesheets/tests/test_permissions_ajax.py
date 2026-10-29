@@ -415,6 +415,59 @@ class TestSheetStudyEditAjaxView(SampleSheetsAjaxPermissionTestBase):
         self.assert_response(self.url, self.non_superusers, 403, method='POST')
 
 
+class TestSheetAssayEditAjaxView(SampleSheetsAjaxPermissionTestBase):
+    """Permission tests for SheetAssayEditAjaxView"""
+
+    def setUp(self):
+        super().setUp()
+        self.url = reverse(
+            'samplesheets:ajax_edit_assay',
+            kwargs={'assay': self.assay.sodar_uuid},
+        )
+
+    def test_post(self):
+        """Test SheetAssayEditAjaxView POST"""
+        self.assert_response(
+            self.url, self.good_users_write, 200, method='POST'
+        )
+        self.assert_response(self.url, self.bad_users_write, 403, method='POST')
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response(
+                self.url, self.no_role_users, 403, method='POST'
+            )
+
+    @override_settings(PROJECTROLES_ALLOW_ANONYMOUS=True)
+    def test_post_anon(self):
+        """Test POST with anonymous guest access"""
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response(self.url, self.anonymous, 403, method='POST')
+
+    def test_post_archive(self):
+        """Test POST with archived project"""
+        self.project.set_archive()
+        self.assert_response(self.url, self.superuser, 200, method='POST')
+        self.assert_response(self.url, self.non_superusers, 403, method='POST')
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response(
+                self.url, self.no_role_users, 403, method='POST'
+            )
+
+    def test_post_block(self):
+        """Test POST with project access block"""
+        self.set_access_block(self.project)
+        self.assert_response(self.url, self.superuser, 200, method='POST')
+        self.assert_response(self.url, self.non_superusers, 403, method='POST')
+
+    def test_post_read_only(self):
+        """Test POST with site read-only mode"""
+        self.set_site_read_only()
+        self.assert_response(self.url, self.superuser, 200, method='POST')
+        self.assert_response(self.url, self.non_superusers, 403, method='POST')
+
+
 class TestSheetCellEditAjaxView(SampleSheetsAjaxPermissionTestBase):
     """Permission tests for SheetCellEditAjaxView"""
 

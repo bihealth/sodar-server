@@ -117,6 +117,9 @@ STUDY_EDIT_ID_DUPE_MSG = 'Duplicate study identifiers in investigation'
 STUDY_EDIT_FILE_INVALID_MSG = 'Invalid study file name'
 STUDY_EDIT_FILE_DUPE_MSG = 'Duplicate study file names in investigation'
 STUDY_EDIT_DATE_INVALID_MSG = 'Invalid date for {field}'
+# TODO: Unify study/assay message repetition
+ASSAY_EDIT_FILE_INVALID_MSG = 'Invalid assay file name'
+ASSAY_EDIT_FILE_DUPE_MSG = 'Duplicate assay file names in investigation'
 
 # NOTE: This regex is more strict than the actual ISA-Tab spec on purpose
 ISA_FILE_NAME_RE = re.compile(r'^[\w\-.]+$')
@@ -909,33 +912,38 @@ class SheetStudyEditAjaxView(BaseSheetEditAjaxView):
         q_kw = {'investigation': study.investigation}
         e_kw = {'sodar_uuid': study.sodar_uuid}
 
-        d = data['identifier'].strip()
-        if not d:
+        # Identifier
+        v = data['identifier'].strip()
+        if not v:
             self.raise_ex(STUDY_EDIT_ID_EMPTY_MSG)
-        if Study.objects.filter(identifier=d, **q_kw).exclude(**e_kw).exists():
+        if Study.objects.filter(identifier=v, **q_kw).exclude(**e_kw).exists():
             self.raise_ex(STUDY_EDIT_ID_DUPE_MSG)
-        study.identifier = d
+        study.identifier = v
 
-        study.title = data['title'].strip()
-        study.description = data['description'].strip()
-
-        d = data['file_name'].strip()
+        # File name
+        v = data['file_name'].strip()
+        # TODO: Reduce repetition for file name checks
         if (
-            not d.startswith('s_')
-            or not d.endswith('.txt')
-            or d == ''
-            or not ISA_FILE_NAME_RE.match(d)
+            not v.startswith('s_')
+            or not v.endswith('.txt')
+            or v == ''
+            or not ISA_FILE_NAME_RE.match(v)
         ):
             self.raise_ex(STUDY_EDIT_FILE_INVALID_MSG)
-        if Study.objects.filter(file_name=d, **q_kw).exclude(**e_kw).exists():
+        if Study.objects.filter(file_name=v, **q_kw).exclude(**e_kw).exists():
             self.raise_ex(STUDY_EDIT_FILE_DUPE_MSG)
-        study.file_name = d
+        study.file_name = v
 
+        # Dates
         for f in ['submission_date', 'public_release_date']:
-            d = data[f].strip() or None
-            if d and not DATE_RE.match(d):
+            v = data[f].strip() or None
+            if v and not DATE_RE.match(v):
                 self.raise_ex(STUDY_EDIT_DATE_INVALID_MSG.format(field=f))
-            setattr(study, f, d)
+            setattr(study, f, v)
+
+        # Other fields
+        study.title = data['title'].strip()
+        study.description = data['description'].strip()
 
     def post(self, request, *args, **kwargs):
         study = Study.objects.filter(
@@ -946,6 +954,52 @@ class SheetStudyEditAjaxView(BaseSheetEditAjaxView):
             if study_meta:
                 self._update_metadata(study, study_meta)
             study.save()
+        except BaseSheetEditAjaxView.SheetEditException as ex:
+            return Response({'detail': str(ex)}, status=400)
+        except Exception as ex:
+            return Response({'detail': str(ex)}, status=500)
+        return Response(self.ok_data, status=200)
+
+
+class SheetAssayEditAjaxView(BaseSheetEditAjaxView):
+    """Ajax view for editing assay properties"""
+
+    def _update_metadata(self, assay: Assay, data: dict):
+        """
+        Update Assay metadata properties.
+
+        :param assay: Assay object
+        :param data: Assay metadata from request (dict)
+        """
+        q_kw = {'study__investigation': assay.study.investigation}
+        e_kw = {'sodar_uuid': assay.sodar_uuid}
+
+        # File name
+        v = data['file_name'].strip()
+        # TODO: Reduce repetition for file name checks
+        if (
+            not v.startswith('a_')
+            or not v.endswith('.txt')
+            or v == ''
+            or not ISA_FILE_NAME_RE.match(v)
+        ):
+            self.raise_ex(ASSAY_EDIT_FILE_INVALID_MSG)
+        if Assay.objects.filter(file_name=v, **q_kw).exclude(**e_kw).exists():
+            self.raise_ex(ASSAY_EDIT_FILE_DUPE_MSG)
+        assay.file_name = v
+        # Technology platform
+        assay.technology_platform = data['technology_platform'].strip()
+        # TODO: Add technology type and measurement type fields (see #2612)
+
+    def post(self, request, *args, **kwargs):
+        assay = Assay.objects.filter(
+            sodar_uuid=self.kwargs.get('assay')
+        ).first()
+        assay_meta = request.data.get('assay_meta')
+        try:
+            if assay_meta:
+                self._update_metadata(assay, assay_meta)
+            assay.save()
         except BaseSheetEditAjaxView.SheetEditException as ex:
             return Response({'detail': str(ex)}, status=400)
         except Exception as ex:

@@ -75,6 +75,8 @@ from samplesheets.views_ajax import (
     RENDER_HEIGHT_SCROLLBAR,
     STUDY_PLUGIN_NOT_FOUND_MSG,
     ROW_LINK_DISPLAY_COMMENT,
+    ASSAY_EDIT_FILE_DUPE_MSG,
+    ASSAY_EDIT_FILE_INVALID_MSG,
     STUDY_EDIT_DATE_INVALID_MSG,
     STUDY_EDIT_FILE_DUPE_MSG,
     STUDY_EDIT_FILE_INVALID_MSG,
@@ -1089,6 +1091,117 @@ class TestSheetStudyEditAjaxView(
             response.data['detail'],
             STUDY_EDIT_DATE_INVALID_MSG.format(field='public_release_date'),
         )
+
+
+class TestSheetAssayEditAjaxView(
+    SampleSheetModelMixin, SamplesheetsViewTestBase
+):
+    """Tests for SheetAssayEditAjaxView"""
+
+    def setUp(self):
+        super().setUp()
+        self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
+        self.study = self.investigation.studies.first()
+        self.assay = self.study.assays.first()
+        self.post_data = {
+            'assay_meta': {
+                'file_name': 'a_small_updated.txt',
+                'technology_platform': 'ACME 9000',
+            }
+        }
+        self.url = reverse(
+            'samplesheets:ajax_edit_assay',
+            kwargs={'assay': self.assay.sodar_uuid},
+        )
+
+    def test_post(self):
+        """Test SheetAssayEditAjaxView POST"""
+        self.assertEqual(self.assay.file_name, 'a_small.txt')
+        self.assertEqual(self.assay.technology_platform, '')
+
+        with self.login(self.user):
+            response = self.client.post(
+                self.url, json.dumps(self.post_data), **POST_KW
+            )
+        self.assertEqual(response.status_code, 200)
+
+        self.assay.refresh_from_db()
+        a_meta = self.post_data['assay_meta']
+        self.assertEqual(self.assay.file_name, a_meta['file_name'])
+        self.assertEqual(
+            self.assay.technology_platform, a_meta['technology_platform']
+        )
+
+    def test_post_file_name_dupe(self):
+        """Test POST with duplicate file_name within investigation"""
+        self.make_assay(
+            file_name='a_small2.txt',
+            study=self.study,
+            tech_platform='',
+            tech_type='nucleotide sequencing',
+            measurement_type='environmental gene survey',
+            arcs=[],
+            comments={},
+        )
+        self.post_data['assay_meta']['file_name'] = 'a_small2.txt'
+        with self.login(self.user):
+            response = self.client.post(
+                self.url, json.dumps(self.post_data), **POST_KW
+            )
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.data['detail'], ASSAY_EDIT_FILE_DUPE_MSG)
+        self.study.refresh_from_db()
+        self.assertEqual(self.assay.file_name, 'a_small.txt')
+
+    def test_post_file_name_empty(self):
+        """Test POST with empty file_name"""
+        self.post_data['assay_meta']['file_name'] = ''
+        with self.login(self.user):
+            response = self.client.post(
+                self.url, json.dumps(self.post_data), **POST_KW
+            )
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.data['detail'], ASSAY_EDIT_FILE_INVALID_MSG)
+
+    def test_post_file_name_prefix_invalid(self):
+        """Test POST with invalid file_name prefix"""
+        self.post_data['assay_meta']['file_name'] = 's_small.txt'
+        with self.login(self.user):
+            response = self.client.post(
+                self.url, json.dumps(self.post_data), **POST_KW
+            )
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.data['detail'], ASSAY_EDIT_FILE_INVALID_MSG)
+
+    def test_post_file_name_suffix_invalid(self):
+        """Test POST with invalid file_name suffix"""
+        self.post_data['assay_meta']['file_name'] = 'a_small.pdf'
+        with self.login(self.user):
+            response = self.client.post(
+                self.url, json.dumps(self.post_data), **POST_KW
+            )
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.data['detail'], ASSAY_EDIT_FILE_INVALID_MSG)
+
+    def test_post_file_name_suffix_whitespace(self):
+        """Test POST with invalid file_name suffix"""
+        self.post_data['assay_meta']['file_name'] = 'a_small space.txt'
+        with self.login(self.user):
+            response = self.client.post(
+                self.url, json.dumps(self.post_data), **POST_KW
+            )
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.data['detail'], ASSAY_EDIT_FILE_INVALID_MSG)
+
+    def test_post_file_name_chars_invalid(self):
+        """Test POST with invalid file_name characters"""
+        self.post_data['assay_meta']['file_name'] = 'a_small(not/allowed!).txt'
+        with self.login(self.user):
+            response = self.client.post(
+                self.url, json.dumps(self.post_data), **POST_KW
+            )
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.data['detail'], ASSAY_EDIT_FILE_INVALID_MSG)
 
 
 class TestSheetCellEditAjaxView(
