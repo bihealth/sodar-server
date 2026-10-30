@@ -43,10 +43,7 @@ function getFileNameClass (): string {
 function onFileNameInput () {
   // TODO: Add uniqueness check
   const f = assayMeta.value!.fileName.trim()
-  if (f === '' ||
-      !f.startsWith('a_') ||
-      !f.endsWith('.txt') ||
-      !EDIT_REGEX_FILE_NAME.test(f)) {
+  if (!f.startsWith('a') || !EDIT_REGEX_FILE_NAME.test(f)) {
     fileNameValid.value = false
     valid.value = false
   } else {

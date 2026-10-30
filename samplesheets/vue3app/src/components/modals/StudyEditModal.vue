@@ -82,10 +82,7 @@ function onDateInput (fieldName: string) {
 function onFileNameInput () {
   // TODO: Add uniqueness check
   const f = studyMeta.value!.fileName.trim()
-  if (f === '' ||
-      !f.startsWith('s_') ||
-      !f.endsWith('.txt') ||
-      !EDIT_REGEX_FILE_NAME.test(f)) {
+  if (!f.startsWith('s') || !EDIT_REGEX_FILE_NAME.test(f)) {
     fieldsValid.value!.fileName = false
     valid.value = false
   } else {

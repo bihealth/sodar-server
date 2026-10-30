@@ -119,7 +119,7 @@ STUDY_EDIT_ID_DUPE_MSG = 'Duplicate study identifiers in investigation'
 STUDY_EDIT_ID_EMPTY_MSG = 'Empty identifier is not allowed'
 
 # NOTE: This regex is more strict than the actual ISA-Tab spec on purpose
-ISA_FILE_NAME_RE = re.compile(r'^[\w\-.]+$')
+ISA_FILE_NAME_RE = re.compile(r'^[isa]_[\w\-.]+\.txt$')
 DATE_RE = re.compile(r'^\d{4}-(0[1-9]|1[012])-(0[1-9]|[12][0-9]|3[01])$')
 
 
@@ -283,13 +283,8 @@ class BaseSheetEditAjaxView(SODARBaseProjectAjaxView):
         :param obj: Related object (Investigation/Study/Assay)
         :param name: File name (string)
         """
-        prefix = obj.__class__.__name__[:1].lower() + '_'
-        if (
-            not name.startswith(prefix)
-            or not name.endswith('.txt')
-            or name == ''
-            or not ISA_FILE_NAME_RE.match(name)
-        ):
+        prefix = obj.__class__.__name__[:1].lower()
+        if not name.startswith(prefix) or not ISA_FILE_NAME_RE.match(name):
             return False
         return True
 

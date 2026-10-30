@@ -159,7 +159,7 @@ export const EDIT_REGEX: { [key: string]: RegExp } = {
   name:           /^([A-Za-z0-9-_/]*)$/
 }
 // TODO: Move this under EDIT_REGEX?
-export const EDIT_REGEX_FILE_NAME: RegExp = /^[\w\-.]+$/
+export const EDIT_REGEX_FILE_NAME: RegExp = /^[isa]_[\w\-.]+\.txt$/
 
 // Browse mode text labels
 export const COPY_MSG_SUFFIX = ' copied into clipboard'
