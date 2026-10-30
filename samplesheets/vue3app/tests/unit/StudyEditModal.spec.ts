@@ -157,6 +157,30 @@ describe('StudyEditModal.vue', () => {
     expect(sc.public_release_date).toBe(og.public_release_date)
   })
 
+  test('cancel study metadata update', async () => {
+    const appStore = useAppStore()
+    const sc = appStore.sodarContext!.studies[STUDY_UUID]!
+    const og = sodarContext.studies[STUDY_UUID]!
+    expect(fetch).not.toHaveBeenCalled()
+
+    const wrapper = await showModal()
+    await wrapper.find(metaIdSel).setValue(metaIdUp)
+    await wrapper.find(metaTitleSel).setValue(metaTitleUp)
+    await wrapper.find(metaFileSel).setValue(metaFileUp)
+    await wrapper.find(metaDescSel).setValue(metaDescUp)
+    await wrapper.find(metaSubDateSel).setValue(metaSubDateUp)
+    await wrapper.find(metaPubDateSel).setValue(metaPubDateUp)
+    await wrapper.find('#sodar-ss-study-edit-btn-cancel').trigger('click')
+
+    expect(fetch).not.toHaveBeenCalled()
+    expect(sc.identifier).toBe(og.identifier)
+    expect(sc.title).toBe(og.title)
+    expect(sc.file_name).toBe(og.file_name)
+    expect(sc.description).toBe(og.description)
+    expect(sc.submission_date).toBe(og.submission_date)
+    expect(sc.public_release_date).toBe(og.public_release_date)
+  })
+
   test('input valid identifier', async () => {
     const wrapper = await showModal()
     const input = wrapper.find(metaIdSel)

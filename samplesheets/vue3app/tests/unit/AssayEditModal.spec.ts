@@ -131,6 +131,22 @@ describe('AssayEditModal.vue', () => {
     expect(ac.technology_platform).toBe(og.technology_platform)
   })
 
+  test('cancel assay metadata update', async () => {
+    const appStore = useAppStore()
+    const ac = appStore.sodarContext!.studies[STUDY_UUID]!.assays[ASSAY_UUID]!
+    const og = sodarContext.studies[STUDY_UUID]!.assays[ASSAY_UUID]!
+    expect(fetch).not.toHaveBeenCalled()
+
+    const wrapper = await showModal()
+    await wrapper.find(metaFileSel).setValue(metaFileUp)
+    await wrapper.find(metaTechPlatSel).setValue(metaTechPlatUp)
+    await wrapper.find('#sodar-ss-assay-edit-btn-cancel').trigger('click')
+
+    expect(fetch).not.toHaveBeenCalled()
+    expect(ac.file_name).toBe(og.file_name)
+    expect(ac.technology_platform).toBe(og.technology_platform)
+  })
+
   test('input valid file name', async () => {
     const wrapper = await showModal()
     const input = wrapper.find(metaFileSel)
