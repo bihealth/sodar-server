@@ -112,14 +112,11 @@ NO_AUTH_ERROR = 'User not authorized for iRODS collection'
 STUDY_PLUGIN_NOT_FOUND_MSG = 'Plugin not found for study'
 ROW_LINK_DISPLAY_COMMENT = 'SODAR Assay Row Link Display'
 
-STUDY_EDIT_ID_EMPTY_MSG = 'Empty identifier is not allowed'
+DATE_INVALID_MSG = 'Invalid date for {field}'
+FILE_DUPE_MSG = 'Duplicate file names in investigation'
+FILE_INVALID_MSG = 'Invalid file name'
 STUDY_EDIT_ID_DUPE_MSG = 'Duplicate study identifiers in investigation'
-STUDY_EDIT_FILE_INVALID_MSG = 'Invalid study file name'
-STUDY_EDIT_FILE_DUPE_MSG = 'Duplicate study file names in investigation'
-STUDY_EDIT_DATE_INVALID_MSG = 'Invalid date for {field}'
-# TODO: Unify study/assay message repetition
-ASSAY_EDIT_FILE_INVALID_MSG = 'Invalid assay file name'
-ASSAY_EDIT_FILE_DUPE_MSG = 'Duplicate assay file names in investigation'
+STUDY_EDIT_ID_EMPTY_MSG = 'Empty identifier is not allowed'
 
 # NOTE: This regex is more strict than the actual ISA-Tab spec on purpose
 ISA_FILE_NAME_RE = re.compile(r'^[\w\-.]+$')
@@ -137,16 +134,6 @@ class BaseSheetEditAjaxView(SODARBaseProjectAjaxView):
 
     class SheetEditException(Exception):
         pass
-
-    def raise_ex(self, msg: Union[Exception, str]):
-        """
-        Raise SheetEditException and log the error.
-
-        :param msg: Exception or string
-        :raise: SheetEditException
-        """
-        logger.error(msg)
-        raise self.SheetEditException(msg)
 
     @classmethod
     def get_attr_value(
@@ -212,6 +199,16 @@ class BaseSheetEditAjaxView(SODARBaseProjectAjaxView):
         logger.debug('Ontologies in edit data: {}'.format(', '.join(ret)))
         return ret
 
+    def raise_ex(self, msg: Union[Exception, str]):
+        """
+        Raise SheetEditException and log the error.
+
+        :param msg: Exception or string
+        :raise: SheetEditException
+        """
+        logger.error(msg)
+        raise self.SheetEditException(msg)
+
     @classmethod
     @transaction.atomic
     def update_ontology_refs(
@@ -275,6 +272,26 @@ class BaseSheetEditAjaxView(SODARBaseProjectAjaxView):
             logger.info(f'Ontology references updated {inv_suffix}')
         else:
             logger.debug(f'No updates for ontology references {inv_suffix}')
+
+    @classmethod
+    def validate_isa_file_name(
+        cls, obj: Union[Investigation, Study, Assay], name: str
+    ) -> bool:
+        """
+        Validate ISA-Tab file name.
+
+        :param obj: Related object (Investigation/Study/Assay)
+        :param name: File name (string)
+        """
+        prefix = obj.__class__.__name__[:1].lower() + '_'
+        if (
+            not name.startswith(prefix)
+            or not name.endswith('.txt')
+            or name == ''
+            or not ISA_FILE_NAME_RE.match(name)
+        ):
+            return False
+        return True
 
 
 class SheetVersionMixin:
@@ -922,23 +939,17 @@ class SheetStudyEditAjaxView(BaseSheetEditAjaxView):
 
         # File name
         v = data['file_name'].strip()
-        # TODO: Reduce repetition for file name checks
-        if (
-            not v.startswith('s_')
-            or not v.endswith('.txt')
-            or v == ''
-            or not ISA_FILE_NAME_RE.match(v)
-        ):
-            self.raise_ex(STUDY_EDIT_FILE_INVALID_MSG)
+        if not self.validate_isa_file_name(study, v):
+            self.raise_ex(FILE_INVALID_MSG)
         if Study.objects.filter(file_name=v, **q_kw).exclude(**e_kw).exists():
-            self.raise_ex(STUDY_EDIT_FILE_DUPE_MSG)
+            self.raise_ex(FILE_DUPE_MSG)
         study.file_name = v
 
         # Dates
         for f in ['submission_date', 'public_release_date']:
             v = data[f].strip() or None
             if v and not DATE_RE.match(v):
-                self.raise_ex(STUDY_EDIT_DATE_INVALID_MSG.format(field=f))
+                self.raise_ex(DATE_INVALID_MSG.format(field=f))
             setattr(study, f, v)
 
         # Other fields
@@ -976,16 +987,10 @@ class SheetAssayEditAjaxView(BaseSheetEditAjaxView):
 
         # File name
         v = data['file_name'].strip()
-        # TODO: Reduce repetition for file name checks
-        if (
-            not v.startswith('a_')
-            or not v.endswith('.txt')
-            or v == ''
-            or not ISA_FILE_NAME_RE.match(v)
-        ):
-            self.raise_ex(ASSAY_EDIT_FILE_INVALID_MSG)
+        if not self.validate_isa_file_name(assay, v):
+            self.raise_ex(FILE_INVALID_MSG)
         if Assay.objects.filter(file_name=v, **q_kw).exclude(**e_kw).exists():
-            self.raise_ex(ASSAY_EDIT_FILE_DUPE_MSG)
+            self.raise_ex(FILE_DUPE_MSG)
         assay.file_name = v
         # Technology platform
         assay.technology_platform = data['technology_platform'].strip()

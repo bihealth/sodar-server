@@ -75,11 +75,9 @@ from samplesheets.views_ajax import (
     RENDER_HEIGHT_SCROLLBAR,
     STUDY_PLUGIN_NOT_FOUND_MSG,
     ROW_LINK_DISPLAY_COMMENT,
-    ASSAY_EDIT_FILE_DUPE_MSG,
-    ASSAY_EDIT_FILE_INVALID_MSG,
-    STUDY_EDIT_DATE_INVALID_MSG,
-    STUDY_EDIT_FILE_DUPE_MSG,
-    STUDY_EDIT_FILE_INVALID_MSG,
+    DATE_INVALID_MSG,
+    FILE_DUPE_MSG,
+    FILE_INVALID_MSG,
     STUDY_EDIT_ID_DUPE_MSG,
     STUDY_EDIT_ID_EMPTY_MSG,
 )
@@ -974,7 +972,7 @@ class TestSheetStudyEditAjaxView(
                 self.url, json.dumps(self.post_data), **POST_KW
             )
         self.assertEqual(response.status_code, 400)
-        self.assertEqual(response.data['detail'], STUDY_EDIT_FILE_DUPE_MSG)
+        self.assertEqual(response.data['detail'], FILE_DUPE_MSG)
         self.study.refresh_from_db()
         self.assertEqual(self.study.file_name, 's_small.txt')
 
@@ -986,7 +984,7 @@ class TestSheetStudyEditAjaxView(
                 self.url, json.dumps(self.post_data), **POST_KW
             )
         self.assertEqual(response.status_code, 400)
-        self.assertEqual(response.data['detail'], STUDY_EDIT_FILE_INVALID_MSG)
+        self.assertEqual(response.data['detail'], FILE_INVALID_MSG)
 
     def test_post_file_name_prefix_invalid(self):
         """Test POST with invalid file_name prefix"""
@@ -996,7 +994,7 @@ class TestSheetStudyEditAjaxView(
                 self.url, json.dumps(self.post_data), **POST_KW
             )
         self.assertEqual(response.status_code, 400)
-        self.assertEqual(response.data['detail'], STUDY_EDIT_FILE_INVALID_MSG)
+        self.assertEqual(response.data['detail'], FILE_INVALID_MSG)
 
     def test_post_file_name_suffix_invalid(self):
         """Test POST with invalid file_name suffix"""
@@ -1006,7 +1004,7 @@ class TestSheetStudyEditAjaxView(
                 self.url, json.dumps(self.post_data), **POST_KW
             )
         self.assertEqual(response.status_code, 400)
-        self.assertEqual(response.data['detail'], STUDY_EDIT_FILE_INVALID_MSG)
+        self.assertEqual(response.data['detail'], FILE_INVALID_MSG)
 
     def test_post_file_name_suffix_whitespace(self):
         """Test POST with invalid file_name suffix"""
@@ -1016,7 +1014,7 @@ class TestSheetStudyEditAjaxView(
                 self.url, json.dumps(self.post_data), **POST_KW
             )
         self.assertEqual(response.status_code, 400)
-        self.assertEqual(response.data['detail'], STUDY_EDIT_FILE_INVALID_MSG)
+        self.assertEqual(response.data['detail'], FILE_INVALID_MSG)
 
     def test_post_file_name_chars_invalid(self):
         """Test POST with invalid file_name characters"""
@@ -1026,7 +1024,7 @@ class TestSheetStudyEditAjaxView(
                 self.url, json.dumps(self.post_data), **POST_KW
             )
         self.assertEqual(response.status_code, 400)
-        self.assertEqual(response.data['detail'], STUDY_EDIT_FILE_INVALID_MSG)
+        self.assertEqual(response.data['detail'], FILE_INVALID_MSG)
 
     def test_post_uuid_invalid(self):
         """Test POST with invalid study UUID"""
@@ -1063,7 +1061,7 @@ class TestSheetStudyEditAjaxView(
         self.assertEqual(response.status_code, 400)
         self.assertEqual(
             response.data['detail'],
-            STUDY_EDIT_DATE_INVALID_MSG.format(field='submission_date'),
+            DATE_INVALID_MSG.format(field='submission_date'),
         )
 
     def test_post_public_release_date_empty(self):
@@ -1089,7 +1087,7 @@ class TestSheetStudyEditAjaxView(
         self.assertEqual(response.status_code, 400)
         self.assertEqual(
             response.data['detail'],
-            STUDY_EDIT_DATE_INVALID_MSG.format(field='public_release_date'),
+            DATE_INVALID_MSG.format(field='public_release_date'),
         )
 
 
@@ -1149,7 +1147,7 @@ class TestSheetAssayEditAjaxView(
                 self.url, json.dumps(self.post_data), **POST_KW
             )
         self.assertEqual(response.status_code, 400)
-        self.assertEqual(response.data['detail'], ASSAY_EDIT_FILE_DUPE_MSG)
+        self.assertEqual(response.data['detail'], FILE_DUPE_MSG)
         self.study.refresh_from_db()
         self.assertEqual(self.assay.file_name, 'a_small.txt')
 
@@ -1161,7 +1159,7 @@ class TestSheetAssayEditAjaxView(
                 self.url, json.dumps(self.post_data), **POST_KW
             )
         self.assertEqual(response.status_code, 400)
-        self.assertEqual(response.data['detail'], ASSAY_EDIT_FILE_INVALID_MSG)
+        self.assertEqual(response.data['detail'], FILE_INVALID_MSG)
 
     def test_post_file_name_prefix_invalid(self):
         """Test POST with invalid file_name prefix"""
@@ -1171,7 +1169,7 @@ class TestSheetAssayEditAjaxView(
                 self.url, json.dumps(self.post_data), **POST_KW
             )
         self.assertEqual(response.status_code, 400)
-        self.assertEqual(response.data['detail'], ASSAY_EDIT_FILE_INVALID_MSG)
+        self.assertEqual(response.data['detail'], FILE_INVALID_MSG)
 
     def test_post_file_name_suffix_invalid(self):
         """Test POST with invalid file_name suffix"""
@@ -1181,7 +1179,7 @@ class TestSheetAssayEditAjaxView(
                 self.url, json.dumps(self.post_data), **POST_KW
             )
         self.assertEqual(response.status_code, 400)
-        self.assertEqual(response.data['detail'], ASSAY_EDIT_FILE_INVALID_MSG)
+        self.assertEqual(response.data['detail'], FILE_INVALID_MSG)
 
     def test_post_file_name_suffix_whitespace(self):
         """Test POST with invalid file_name suffix"""
@@ -1191,7 +1189,7 @@ class TestSheetAssayEditAjaxView(
                 self.url, json.dumps(self.post_data), **POST_KW
             )
         self.assertEqual(response.status_code, 400)
-        self.assertEqual(response.data['detail'], ASSAY_EDIT_FILE_INVALID_MSG)
+        self.assertEqual(response.data['detail'], FILE_INVALID_MSG)
 
     def test_post_file_name_chars_invalid(self):
         """Test POST with invalid file_name characters"""
@@ -1201,7 +1199,7 @@ class TestSheetAssayEditAjaxView(
                 self.url, json.dumps(self.post_data), **POST_KW
             )
         self.assertEqual(response.status_code, 400)
-        self.assertEqual(response.data['detail'], ASSAY_EDIT_FILE_INVALID_MSG)
+        self.assertEqual(response.data['detail'], FILE_INVALID_MSG)
 
 
 class TestSheetCellEditAjaxView(
