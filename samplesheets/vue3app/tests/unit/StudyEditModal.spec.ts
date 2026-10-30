@@ -190,7 +190,7 @@ describe('StudyEditModal.vue', () => {
   test('input file name with invalid suffix', async () => {
     const wrapper = await showModal()
     const input = wrapper.find(metaFileSel)
-    await input.setValue('a_new_name.tsv') // Not ending with ".txt"
+    await input.setValue('s_new_name.tsv') // Not ending with ".txt"
     expect(input.classes()).toContain(INVALID_CLASS)
     expect(wrapper.find(updateBtnSel).attributes().disabled).toBeDefined()
   })
