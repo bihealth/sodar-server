@@ -42,6 +42,7 @@ const valid = ref<boolean>(true)
 
 // Internal Vars ---------------------------------------------------------------
 
+let assayFileNames: Array<string> = []
 let tableContext: SodarContextAssay
 let tableUuid: string
 
@@ -57,9 +58,10 @@ function getFileNameClass (): string {
 }
 
 function onFileNameInput () {
-  // TODO: Add uniqueness check
   const f = assayMeta.value!.fileName.trim()
-  if (!f.startsWith('a') || !EDIT_REGEX_FILE_NAME.test(f)) {
+  if (!f.startsWith('a') ||
+      !EDIT_REGEX_FILE_NAME.test(f) ||
+      assayFileNames.includes(f)) {
     fileNameValid.value = false
     valid.value = false
   } else {
@@ -113,6 +115,15 @@ function show (uuid: string) {
   tableContext = appStore.sodarContext!.studies[
     appStore.currentStudyUuid]!.assays[uuid]!
   tableUuid = uuid
+
+  // Store assay file names for uniqueness check
+  assayFileNames = []
+  for (const s of Object.values(appStore.sodarContext!.studies)) {
+    for (const [k, v] of Object.entries(s.assays)) {
+      if (k !== tableUuid) assayFileNames.push(v.file_name)
+    }
+  }
+
   // TODO: Add technology type and measurement type fields (see #2612)
   assayMeta.value = {
     fileName: tableContext.file_name,

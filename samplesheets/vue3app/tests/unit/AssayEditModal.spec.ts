@@ -6,7 +6,7 @@ import { createBootstrap } from 'bootstrap-vue-next/plugins/createBootstrap'
 
 import AssayEditModal from '@/components/modals/AssayEditModal.vue'
 import { useAppStore } from '@/stores/appStore.ts'
-import { type SodarContext } from '@/types.ts'
+import { type SodarContext, type SodarContextAssay } from '@/types.ts'
 import {
   AJAX_RES_OK,
   ASSAY_UPDATE_FAIL_PREFIX,
@@ -18,7 +18,7 @@ import {
 } from '@/constants.ts'
 
 import { sodarContext } from '../data/sodarContext.ts'
-import { ASSAY_UUID, STUDY_UUID } from '../testConstants.ts'
+import { ASSAY_UUID, STUDY_UUID, TMP_UUID } from '../testConstants.ts'
 import { copy } from '../testUtils.ts'
 
 // Test Data -------------------------------------------------------------------
@@ -210,6 +210,20 @@ describe('AssayEditModal.vue', () => {
     const wrapper = await showModal()
     const input = wrapper.find(metaFileSel)
     await input.setValue('a_(new)_name.txt')
+    expect(input.classes()).toContain(INVALID_CLASS)
+    expect(wrapper.find(updateBtnSel).attributes().disabled).toBeDefined()
+  })
+
+  test('input duplicate file name', async () => {
+    const appStore = useAppStore()
+    const assay = copy(appStore.sodarContext!.studies[STUDY_UUID]!.assays[
+        ASSAY_UUID]!) as SodarContextAssay
+    assay.file_name = metaFileUp
+    appStore.sodarContext!.studies[STUDY_UUID]!.assays[TMP_UUID] = assay
+
+    const wrapper = await showModal()
+    const input = wrapper.find(metaFileSel)
+    await input.setValue(metaFileUp)
     expect(input.classes()).toContain(INVALID_CLASS)
     expect(wrapper.find(updateBtnSel).attributes().disabled).toBeDefined()
   })
