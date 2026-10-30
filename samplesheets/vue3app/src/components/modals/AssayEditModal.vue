@@ -4,8 +4,23 @@ import { BButton, BButtonGroup, BFormInput, BModal } from 'bootstrap-vue-next'
 
 import ModalHeader from '@/components/modals/ModalHeader.vue'
 import { useAppStore } from '@/stores/appStore.ts'
-import { type AssayEditMeta, type SodarContextAssay } from '@/types.ts'
-import { EDIT_REGEX_FILE_NAME } from '@/constants.ts'
+import { getAjaxRequestInit } from '@/utils/appUtils.ts'
+import {
+  type AssayEditMeta,
+  type AssayEditRequestBody,
+  type GenericResponseBody,
+  type SodarContextAssay,
+} from '@/types.ts'
+import {
+  AJAX_RES_OK,
+  ASSAY_UPDATE_OK_MSG,
+  ASSAY_UPDATE_FAIL_PREFIX,
+  EDIT_REGEX_FILE_NAME,
+  REQ_POST,
+  URL_ASSAY_EDIT_PREFIX,
+  VARIANT_DANGER,
+  VARIANT_SUCCESS,
+} from '@/constants.ts'
 
 // Constants -------------------------------------------------------------------
 
@@ -27,7 +42,7 @@ const valid = ref<boolean>(true)
 // Internal Vars ---------------------------------------------------------------
 
 let tableContext: SodarContextAssay
-// let tableUuid: string
+let tableUuid: string
 
 // Helpers ---------------------------------------------------------------------
 
@@ -52,12 +67,42 @@ function onFileNameInput () {
   }
 }
 
+// Post assay update and handle the results
+async function updateAssay () {
+  const url = URL_ASSAY_EDIT_PREFIX + tableUuid
+  const updateBody: AssayEditRequestBody = {
+    assay_meta: {
+      file_name: assayMeta.value!.fileName.trim(),
+      technology_platform: assayMeta.value!.technologyPlatform.trim(),
+    }
+  }
+  const response = await fetch(url, getAjaxRequestInit(REQ_POST, updateBody))
+  const resBody: GenericResponseBody = await response.json()
+  if (resBody.detail == AJAX_RES_OK) {
+    updateTableContext()
+    if (appStore.notifyCb) {
+      appStore.notifyCb(ASSAY_UPDATE_OK_MSG, VARIANT_SUCCESS)
+    }
+  } else {
+    const msg: string = ASSAY_UPDATE_FAIL_PREFIX + resBody.detail
+    if (appStore.notifyCb) appStore.notifyCb(msg, VARIANT_DANGER)
+    console.error(msg)
+  }
+}
+
+// Update tableContext with edited values
+function updateTableContext () {
+  tableContext.file_name = assayMeta.value!.fileName.trim()
+  tableContext.technology_platform = assayMeta.value!.technologyPlatform.trim()
+  // TODO: Update display name if SODAR assay display name is not set?
+}
+
 // API and Life Cycle ----------------------------------------------------------
 
 function show (uuid: string) {
   tableContext = appStore.sodarContext!.studies[
     appStore.currentStudyUuid]!.assays[uuid]!
-  // tableUuid = uuid
+  tableUuid = uuid
   // TODO: Add technology type and measurement type fields (see #2612)
   assayMeta.value = {
     fileName: tableContext.file_name,
@@ -71,7 +116,14 @@ function show (uuid: string) {
 
 function hide (update: boolean) {
   if (update) {
-    // TODO: Add update logic here
+    updating.value = true
+    try {
+      updateAssay()
+    } catch (error) {
+      const msg: string = `Error updating assay: ${error}`
+      if (appStore.notifyCb) appStore.notifyCb(msg, VARIANT_DANGER)
+      console.error(msg)
+    }
   }
   modalRef.value?.hide()
 }

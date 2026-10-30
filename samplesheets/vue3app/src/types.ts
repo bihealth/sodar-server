@@ -772,6 +772,16 @@ export interface StudyEditRequestBody {
   study_meta: StudyEditRequestMetadata
 }
 
+// TODO: Add technology type and measurement type fields (see #2612)
+export interface AssayEditRequestMetadata {
+  file_name: string
+  technology_platform: string
+}
+
+export interface AssayEditRequestBody {
+  assay_meta: AssayEditRequestMetadata
+}
+
 // Function Callbacks ----------------------------------------------------------
 
 export interface RowEditFinishCb {

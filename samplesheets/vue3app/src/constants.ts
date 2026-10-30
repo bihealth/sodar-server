@@ -31,6 +31,7 @@ export const URL_ROW_INS_PREFIX = '/samplesheets/ajax/edit/row/insert/'
 export const URL_STUDY_LINKS_PREFIX = '/samplesheets/ajax/study/links/'
 export const URL_VERSION_SAVE_PREFIX = '/samplesheets/ajax/version/save/'
 export const URL_STUDY_EDIT_PREFIX = '/samplesheets/ajax/edit/study/'
+export const URL_ASSAY_EDIT_PREFIX = '/samplesheets/ajax/edit/assay/'
 
 // Color variants
 export const VARIANT_DANGER = 'danger'
@@ -190,6 +191,8 @@ export const EDIT_MSG_SAVE_FAIL_PREFIX = 'Saving version failed: '
 
 export const STUDY_UPDATE_OK_MSG = 'Study updated'
 export const STUDY_UPDATE_FAIL_PREFIX = 'Study update failed: '
+export const ASSAY_UPDATE_OK_MSG = 'Assay updated'
+export const ASSAY_UPDATE_FAIL_PREFIX = 'Assay update failed: '
 
 export const NODE_RENAME_MSG = 'A node with the same name already exists in ' +
   'this column. Renaming will replace all values in the fields of the ' +
