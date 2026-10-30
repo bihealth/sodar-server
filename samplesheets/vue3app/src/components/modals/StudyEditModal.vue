@@ -54,6 +54,8 @@ const valid = ref<boolean>(true) // TODO: Compute based on fieldsValid
 
 // Internal Vars ---------------------------------------------------------------
 
+let studyFileNames: Array<string> = []
+let studyIds: Array<string> = []
 let tableContext: SodarContextStudy
 let tableUuid: string
 
@@ -80,9 +82,10 @@ function onDateInput (fieldName: string) {
 }
 
 function onFileNameInput () {
-  // TODO: Add uniqueness check
   const f = studyMeta.value!.fileName.trim()
-  if (!f.startsWith('s') || !EDIT_REGEX_FILE_NAME.test(f)) {
+  if (!f.startsWith('s') ||
+      !EDIT_REGEX_FILE_NAME.test(f) ||
+      studyFileNames.includes(f)) {
     fieldsValid.value!.fileName = false
     valid.value = false
   } else {
@@ -92,8 +95,14 @@ function onFileNameInput () {
 }
 
 function onIdentifierInput () {
-  // TODO: Add uniqueness check
-  valid.value = studyMeta.value!.identifier.trim() !== ''
+  const v = studyMeta.value!.identifier.trim()
+  if (v === '' || studyIds.includes(v)) {
+    fieldsValid.value!.identifier = false
+    valid.value = false
+  } else {
+    fieldsValid.value!.identifier = true
+    valid.value = true
+  }
 }
 
 // Post study update and handle the results
@@ -142,6 +151,17 @@ function updateTableContext () {
 function show (uuid: string) {
   tableContext = appStore.sodarContext!.studies[uuid]!
   tableUuid = uuid
+
+  // Store info from other studies for uniqueness checks
+  studyFileNames = []
+  studyIds = []
+  for (const [k, v] of Object.entries(appStore.sodarContext!.studies)) {
+    if (k !== tableUuid) {
+      studyFileNames.push(v.file_name)
+      studyIds.push(v.identifier)
+    }
+  }
+
   studyMeta.value = {
     description: tableContext.description,
     fileName: tableContext.file_name,
@@ -154,6 +174,7 @@ function show (uuid: string) {
   valid.value = true // We assume all data must be valid when opening
   fieldsValid.value = {
     fileName: true,
+    identifier: true,
     publicReleaseDate: true,
     submissionDate: true
   } // Reset field valid status
@@ -202,6 +223,7 @@ defineExpose({ show })
             <td>
               <BFormInput
                   v-model="studyMeta.identifier"
+                  :class="getFieldClass('identifier')"
                   id="sodar-ss-study-input-meta-id"
                   @update:model-value="onIdentifierInput()">
               </BFormInput>

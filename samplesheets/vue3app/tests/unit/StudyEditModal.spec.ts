@@ -6,7 +6,7 @@ import { createBootstrap } from 'bootstrap-vue-next/plugins/createBootstrap'
 
 import StudyEditModal from '@/components/modals/StudyEditModal.vue'
 import { useAppStore } from '@/stores/appStore.ts'
-import { type SodarContext } from '@/types.ts'
+import { type SodarContext, type SodarContextStudy } from '@/types.ts'
 import {
   AJAX_RES_OK,
   STUDY_UPDATE_FAIL_PREFIX,
@@ -17,7 +17,7 @@ import {
 } from '@/constants.ts'
 
 import { sodarContext } from '../data/sodarContext.ts'
-import { STUDY_UUID } from '../testConstants.ts'
+import { STUDY_UUID, TMP_UUID } from '../testConstants.ts'
 import { copy } from '../testUtils.ts'
 
 // Test Data -------------------------------------------------------------------
@@ -183,6 +183,7 @@ describe('StudyEditModal.vue', () => {
     const wrapper = await showModal()
     const input = wrapper.find(metaIdSel)
     await input.setValue('new_identifier')
+    expect(input.classes()).not.toContain(INVALID_CLASS)
     expect(wrapper.find(updateBtnSel).attributes().disabled).not.toBeDefined()
   })
 
@@ -190,6 +191,20 @@ describe('StudyEditModal.vue', () => {
     const wrapper = await showModal()
     const input = wrapper.find(metaIdSel)
     await input.setValue('')
+    expect(wrapper.find(updateBtnSel).attributes().disabled).toBeDefined()
+  })
+
+  test('input duplicate identifier', async () => {
+    const appStore = useAppStore()
+    const study = copy(
+      appStore.sodarContext!.studies[STUDY_UUID]!) as SodarContextStudy
+    study.identifier = metaIdUp
+    appStore.sodarContext!.studies[TMP_UUID] = study
+
+    const wrapper = await showModal()
+    const input = wrapper.find(metaIdSel)
+    await input.setValue(metaIdUp)
+    expect(input.classes()).toContain(INVALID_CLASS)
     expect(wrapper.find(updateBtnSel).attributes().disabled).toBeDefined()
   })
 
@@ -288,5 +303,17 @@ describe('StudyEditModal.vue', () => {
     expect(wrapper.find(updateBtnSel).attributes().disabled).toBeDefined()
   })
 
-  // TODO: Test identifier and file name uniqueness once implemented
+  test('input duplicate file name', async () => {
+    const appStore = useAppStore()
+    const study = copy(
+      appStore.sodarContext!.studies[STUDY_UUID]!) as SodarContextStudy
+    study.file_name = metaFileUp
+    appStore.sodarContext!.studies[TMP_UUID] = study
+
+    const wrapper = await showModal()
+    const input = wrapper.find(metaFileSel)
+    await input.setValue(metaFileUp)
+    expect(input.classes()).toContain(INVALID_CLASS)
+    expect(wrapper.find(updateBtnSel).attributes().disabled).toBeDefined()
+  })
 })
