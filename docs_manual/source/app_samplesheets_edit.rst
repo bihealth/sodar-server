@@ -58,6 +58,32 @@ Differences in edit mode compared to browsing mode:
     then navigate to the desired study.
 
 
+.. _app_samplesheets_edit_study:
+
+Study Properties
+================
+
+To edit study properties, click on the button on the right side of the study
+header containing the study title. This will open a modal with a form to edit
+currently supported study variables.
+
+**TODO:** Add screenshot
+
+**TODO:** Describe currently supported features
+
+
+Assay Properties
+================
+
+To edit assay properties, click on the button on the right side of the assay
+header containing the assay title. This will open a modal containing a form
+similar to study properties.
+
+**TODO:** Add screenshot
+
+**TODO:** Describe currently supported features
+
+
 Cell Editing
 ============
 
@@ -326,15 +352,6 @@ Column Editing
 .. attention::
 
     Inserting or removing columns to study and assay tables is not currently
-    supported. This functionality will be added in a future SODAR release.
-
-
-Investigation/Study Metadata Editing
-====================================
-
-.. attention::
-
-    Editing investigation and study metadata or study protocols is not currently
     supported. This functionality will be added in a future SODAR release.
 
 
