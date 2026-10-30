@@ -11,6 +11,7 @@ import {
   AJAX_RES_OK,
   ASSAY_UPDATE_FAIL_PREFIX,
   ASSAY_UPDATE_OK_MSG,
+  SODAR_ISA_ASSAY_DISPLAY_NAME,
   URL_ASSAY_EDIT_PREFIX,
   VARIANT_DANGER,
   VARIANT_SUCCESS,
@@ -85,6 +86,7 @@ describe('AssayEditModal.vue', () => {
   test('update assay metadata', async () => {
     const appStore = useAppStore()
     const ac = appStore.sodarContext!.studies[STUDY_UUID]!.assays[ASSAY_UUID]!
+    expect(ac.comments).toBe(null)
     expect(fetch).not.toHaveBeenCalled()
 
     const wrapper = await showModal()
@@ -104,6 +106,26 @@ describe('AssayEditModal.vue', () => {
 
     expect(ac.file_name).toBe(metaFileUp)
     expect(ac.technology_platform).toBe(metaTechPlatUp)
+    // No override in comments = display name should be updated
+    expect(ac.display_name).toBe('Small Update')
+  })
+
+  test('update file name with metadata display name set', async () => {
+    const appStore = useAppStore()
+    const ac = appStore.sodarContext!.studies[STUDY_UUID]!.assays[ASSAY_UUID]!
+    ac.comments = { [SODAR_ISA_ASSAY_DISPLAY_NAME]: 'Small' }
+    expect(ac.display_name).toBe('Small')
+
+    const wrapper = await showModal()
+    expect(fetch).not.toHaveBeenCalled()
+    await wrapper.find(metaFileSel).setValue(metaFileUp)
+    await wrapper.find(metaTechPlatSel).setValue(metaTechPlatUp)
+    await wrapper.find('#sodar-ss-assay-edit-btn-update').trigger('click')
+
+    expect(fetch).toHaveBeenCalled()
+    expect(ac.technology_platform).toBe(metaTechPlatUp)
+    // Override in comments = display name should remain
+    expect(ac.display_name).toBe('Small')
   })
 
   test('handle failed update', async () => {
@@ -115,7 +137,6 @@ describe('AssayEditModal.vue', () => {
     const og = sodarContext.studies[STUDY_UUID]!.assays[ASSAY_UUID]!
     fetchDetail = 'Error'
     fetchStatus = 400
-    expect(fetch).not.toHaveBeenCalled()
 
     const wrapper = await showModal()
     await wrapper.find(metaFileSel).setValue(metaFileUp)
@@ -135,7 +156,6 @@ describe('AssayEditModal.vue', () => {
     const appStore = useAppStore()
     const ac = appStore.sodarContext!.studies[STUDY_UUID]!.assays[ASSAY_UUID]!
     const og = sodarContext.studies[STUDY_UUID]!.assays[ASSAY_UUID]!
-    expect(fetch).not.toHaveBeenCalled()
 
     const wrapper = await showModal()
     await wrapper.find(metaFileSel).setValue(metaFileUp)

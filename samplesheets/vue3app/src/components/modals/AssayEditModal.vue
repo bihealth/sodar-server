@@ -17,6 +17,7 @@ import {
   ASSAY_UPDATE_FAIL_PREFIX,
   EDIT_REGEX_FILE_NAME,
   REQ_POST,
+  SODAR_ISA_ASSAY_DISPLAY_NAME,
   URL_ASSAY_EDIT_PREFIX,
   VARIANT_DANGER,
   VARIANT_SUCCESS,
@@ -94,7 +95,16 @@ async function updateAssay () {
 function updateTableContext () {
   tableContext.file_name = assayMeta.value!.fileName.trim()
   tableContext.technology_platform = assayMeta.value!.technologyPlatform.trim()
-  // TODO: Update display name if SODAR assay display name is not set?
+
+  // Update display name if SODAR assay display name is not set
+  if (!tableContext.comments ||
+      !(SODAR_ISA_ASSAY_DISPLAY_NAME in tableContext.comments) ||
+      tableContext.comments[SODAR_ISA_ASSAY_DISPLAY_NAME] === '') {
+    let title = tableContext.file_name.slice(2, -4).replace(/_/g, ' ')
+    title = title.split(' ').map(
+      w => w[0]!.toUpperCase() + w.substring(1).toLowerCase()).join(' ')
+    tableContext.display_name = title
+  }
 }
 
 // API and Life Cycle ----------------------------------------------------------

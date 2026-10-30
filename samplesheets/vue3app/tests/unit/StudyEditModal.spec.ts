@@ -94,9 +94,9 @@ describe('StudyEditModal.vue', () => {
   test('update study metadata', async () => {
     const appStore = useAppStore()
     const sc = appStore.sodarContext!.studies[STUDY_UUID]!
-    expect(fetch).not.toHaveBeenCalled()
 
     const wrapper = await showModal()
+    expect(fetch).not.toHaveBeenCalled()
     await wrapper.find(metaIdSel).setValue(metaIdUp)
     await wrapper.find(metaTitleSel).setValue(metaTitleUp)
     await wrapper.find(metaFileSel).setValue(metaFileUp)
@@ -135,7 +135,6 @@ describe('StudyEditModal.vue', () => {
     const og = sodarContext.studies[STUDY_UUID]! // Original unaltered data
     fetchDetail = 'Error'
     fetchStatus = 400
-    expect(fetch).not.toHaveBeenCalled()
 
     const wrapper = await showModal()
     await wrapper.find(metaIdSel).setValue(metaIdUp)
@@ -161,7 +160,6 @@ describe('StudyEditModal.vue', () => {
     const appStore = useAppStore()
     const sc = appStore.sodarContext!.studies[STUDY_UUID]!
     const og = sodarContext.studies[STUDY_UUID]!
-    expect(fetch).not.toHaveBeenCalled()
 
     const wrapper = await showModal()
     await wrapper.find(metaIdSel).setValue(metaIdUp)

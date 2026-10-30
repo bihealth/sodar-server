@@ -231,3 +231,6 @@ export const OBO_ID_ORDO = 'ORDO'
 export const OBO_HEADER_HP = 'hpo terms'
 export const OBO_HEADER_OMIM = 'omim disease'
 export const OBO_HEADER_ORDO = 'orphanet disease'
+
+// SODAR ISA-Tab Metadata
+export const SODAR_ISA_ASSAY_DISPLAY_NAME = 'SODAR Assay Display Name'
