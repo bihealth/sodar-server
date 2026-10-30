@@ -1,3 +1,4 @@
+import { type TemplateRef } from 'vue'
 import { beforeEach, describe, expect, test, vi } from 'vitest'
 import { config, mount, type VueWrapper } from '@vue/test-utils'
 import { setActivePinia, createPinia } from 'pinia'
@@ -37,6 +38,7 @@ const statsBadgeClass = 'mock-irods-stats-badge'
 // Global Setup ----------------------------------------------------------------
 
 const mockDetailModal = { template: '<div />', methods: {show: vi.fn() } }
+const mockEditModal = { show: vi.fn() }
 const mockNotifyCb = vi.fn()
 
 config.global.plugins = [createBootstrap()]
@@ -58,6 +60,7 @@ vi.mock('@vueuse/core', async () => {
 describe('SheetTableHeader.vue', () => {
   function mountComponent (propVals: SheetTableHeaderProps): VueWrapper {
     const props = copy(propVals) as SheetTableHeaderProps
+    props.editModalRef = mockEditModal as unknown as TemplateRef
     return mount(SheetTableHeader, { props: props })
   }
 
@@ -81,6 +84,8 @@ describe('SheetTableHeader.vue', () => {
     expect(wrapper.find('.sodar-ss-table-title').text()).toContain(
       'Study: ' + appStore.sodarContext!.studies[STUDY_UUID]!.display_name)
     expect(wrapper.find('.sodar-ss-irods-links').exists()).toBe(true)
+    expect(wrapper.find('.sodar-ss-btn-edit-study').exists()).toBe(false)
+    expect(wrapper.find('.sodar-ss-btn-edit-assay').exists()).toBe(false)
   })
 
   test('render component for assay', async () => {
@@ -176,22 +181,6 @@ describe('SheetTableHeader.vue', () => {
     expect(wrapper.find('.sodar-ss-study-title-badge').exists()).toBe(false)
   })
 
-  test('hide iRODS stats badge with editMode=true', async () => {
-    const appStore = useAppStore()
-    appStore.editMode = true
-    const wrapper = mountComponent(studyProps)
-    // NOTE: The container should still exist
-    expect(wrapper.find('.sodar-ss-study-title-badge').exists()).toBe(true)
-    expect(wrapper.find('.' + statsBadgeClass).exists()).toBe(false)
-  })
-
-  test('hide iRODS links with editMode=true', async () => {
-    const appStore = useAppStore()
-    appStore.editMode = true
-    const wrapper = mountComponent(studyProps)
-    expect(wrapper.find('.sodar-ss-irods-links').exists()).toBe(false)
-  })
-
   test('hide iRODS stats badge with view_files=false', async () => {
     const appStore = useAppStore()
     appStore.sodarContext!.perms.view_files = false
@@ -223,5 +212,55 @@ describe('SheetTableHeader.vue', () => {
     const wrapper = mountComponent(studyProps)
     await wrapper.find('.sodar-ss-btn-table-detail').trigger('click')
     expect(mockDetailModal.methods.show).toHaveBeenCalled()
+  })
+
+  test('hide iRODS stats badge with editMode=true', async () => {
+    const appStore = useAppStore()
+    appStore.editMode = true
+    const wrapper = mountComponent(studyProps)
+    // NOTE: The container should still exist
+    expect(wrapper.find('.sodar-ss-study-title-badge').exists()).toBe(true)
+    expect(wrapper.find('.' + statsBadgeClass).exists()).toBe(false)
+  })
+
+  test('hide iRODS links with editMode=true', async () => {
+    const appStore = useAppStore()
+    appStore.editMode = true
+    const wrapper = mountComponent(studyProps)
+    expect(wrapper.find('.sodar-ss-irods-links').exists()).toBe(false)
+  })
+
+  test('display study edit button with editMode=true', async () => {
+    const appStore = useAppStore()
+    appStore.editMode = true
+    const wrapper = mountComponent(studyProps)
+    expect(wrapper.find('.sodar-ss-btn-edit-study').exists()).toBe(true)
+    expect(wrapper.find('.sodar-ss-btn-edit-assay').exists()).toBe(false)
+  })
+
+  test('open study edit modal with button click', async () => {
+    const appStore = useAppStore()
+    appStore.editMode = true
+    expect(mockEditModal.show).not.toHaveBeenCalled()
+    const wrapper = mountComponent(studyProps)
+    await wrapper.find('.sodar-ss-btn-edit-study').trigger('click')
+    expect(mockEditModal.show).toHaveBeenCalledWith(STUDY_UUID)
+  })
+
+  test('display assay edit button with editMode=true', async () => {
+    const appStore = useAppStore()
+    appStore.editMode = true
+    const wrapper = mountComponent(assayProps)
+    expect(wrapper.find('.sodar-ss-btn-edit-study').exists()).toBe(false)
+    expect(wrapper.find('.sodar-ss-btn-edit-assay').exists()).toBe(true)
+  })
+
+  test('open assay edit modal with button click', async () => {
+    const appStore = useAppStore()
+    appStore.editMode = true
+    expect(mockEditModal.show).not.toHaveBeenCalled()
+    const wrapper = mountComponent(assayProps)
+    await wrapper.find('.sodar-ss-btn-edit-assay').trigger('click')
+    expect(mockEditModal.show).toHaveBeenCalledWith(ASSAY_UUID)
   })
 })

@@ -51,6 +51,8 @@ export interface SodarContextStudy {
   irods_path: string
   plugin_name: string | null
   plugin_title: string | null
+  public_release_date: string
+  submission_date: string
   table_url: string
   title: string
 }
@@ -531,6 +533,24 @@ export interface GenericResponseBody {
 
 // Edit Mode Data --------------------------------------------------------------
 
+// Study edit metadata
+export interface StudyEditMeta {
+  description: string
+  fileName: string
+  identifier: string
+  publicReleaseDate: string
+  submissionDate: string
+  title: string
+}
+
+// Assay edit metadata
+// TODO: Add technology type and measurement type fields (see #2612)
+export interface AssayEditMeta {
+  fileName: string
+  technologyPlatform: string
+}
+
+// Unsaved row info
 export interface EditUnsavedRow {
   id: string
   tableUuid: string
@@ -737,6 +757,29 @@ export interface RowSaveParams {
   finishCb?: RowEditFinishCb
   rowNode: IRowNode
   saveData: RowSaveData
+}
+
+export interface StudyEditRequestMetadata {
+  description: string
+  file_name: string
+  identifier: string
+  public_release_date: string
+  submission_date: string
+  title: string
+}
+
+export interface StudyEditRequestBody {
+  study_meta: StudyEditRequestMetadata
+}
+
+// TODO: Add technology type and measurement type fields (see #2612)
+export interface AssayEditRequestMetadata {
+  file_name: string
+  technology_platform: string
+}
+
+export interface AssayEditRequestBody {
+  assay_meta: AssayEditRequestMetadata
 }
 
 // Function Callbacks ----------------------------------------------------------

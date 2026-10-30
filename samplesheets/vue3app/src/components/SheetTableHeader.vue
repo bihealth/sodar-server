@@ -1,39 +1,44 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { BButton } from 'bootstrap-vue-next'
+
 import IrodsButtons from '@/components/IrodsButtons.vue'
 import IrodsStatsBadge from '@/components/IrodsStatsBadge.vue'
 import TableDetailModal from '@/components/modals/TableDetailModal.vue'
+
 import { useAppStore } from '@/stores/appStore.ts'
+
+import { type SodarContextAssay, type SodarContextStudy } from '@/types.ts'
 
 // External Data ---------------------------------------------------------------
 
 const appStore = useAppStore()
-const props = defineProps(['assayMode', 'tableUuid'])
+const props = defineProps(['assayMode', 'editModalRef', 'tableUuid'])
 
 // Refs ------------------------------------------------------------------------
 
 const tableDetailModalComponent = ref<typeof TableDetailModal | null>(null)
+const tableContext = ref<SodarContextAssay | SodarContextStudy | null>(null)
+const tableType = ref<string>('')
 
 // Internal Vars ---------------------------------------------------------------
 
-let tableType
 let tableTitle
-let tableContext
 
 // Setup -----------------------------------------------------------------------
 
 if (!props.assayMode) {
-  tableType = 'study'
+  tableContext.value = appStore.sodarContext!.studies[
+    props.tableUuid] as SodarContextStudy
   tableTitle = 'Study'
-  tableContext = appStore.sodarContext!.studies[props.tableUuid]
+  tableType.value = 'study'
 } else {
-  tableType = 'assay'
+  tableContext.value = appStore.sodarContext!.studies[
+    appStore.currentStudyUuid]!.assays[props.tableUuid] as SodarContextAssay
   tableTitle = 'Assay'
-  tableContext = appStore.sodarContext!.studies[
-    appStore.currentStudyUuid]!.assays[props.tableUuid]
+  tableType.value = 'assay'
 }
-const tableIdSuffix = tableType + '-' + props.tableUuid
+const tableIdSuffix = tableType.value + '-' + props.tableUuid
 
 // Helpers ---------------------------------------------------------------------
 
@@ -99,6 +104,7 @@ function getTitleTextClass (): string {
       <span class="text-nowrap">
         <!-- Table detail modal button -->
         <BButton
+            v-if="!appStore.editMode"
             class="sodar-list-btn btn-info sodar-ss-btn-table-detail mr-1"
             :title="tableTitle + ' details'"
             @click="tableDetailModalComponent!.show(tableUuid, tableContext)">
@@ -114,13 +120,21 @@ function getTitleTextClass (): string {
             :notify-cb="appStore.notifyCb"
             :show-file-list="false">
         </IrodsButtons>
+        <BButton
+            v-if="appStore.editMode"
+            variant="info"
+            :class="'sodar-list-btn sodar-ss-btn-edit-' + tableType"
+            :title="'Update ' + tableType + ' metadata and properties'"
+            @click="editModalRef!.show(tableUuid)">
+          <i class="iconify" data-icon="mdi:lead-pencil"></i>
+        </BButton>
       </span>
     </div>
   </div>
   <!-- Modals -->
   <TableDetailModal
-      ref="tableDetailModalComponent"
-      id="sodar-ss-table-detail-modal-component">
+      class="sodar-ss-table-detail-modal-component"
+      ref="tableDetailModalComponent">
   </TableDetailModal>
 </template>
 

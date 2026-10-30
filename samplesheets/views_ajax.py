@@ -1,6 +1,7 @@
 """Ajax API views for the samplesheets app"""
 
 import json
+import re
 
 from datetime import datetime as dt
 from packaging import version
@@ -111,6 +112,16 @@ NO_AUTH_ERROR = 'User not authorized for iRODS collection'
 STUDY_PLUGIN_NOT_FOUND_MSG = 'Plugin not found for study'
 ROW_LINK_DISPLAY_COMMENT = 'SODAR Assay Row Link Display'
 
+DATE_INVALID_MSG = 'Invalid date for {field}'
+FILE_DUPE_MSG = 'Duplicate file names in investigation'
+FILE_INVALID_MSG = 'Invalid file name'
+STUDY_EDIT_ID_DUPE_MSG = 'Duplicate study identifiers in investigation'
+STUDY_EDIT_ID_EMPTY_MSG = 'Empty identifier is not allowed'
+
+# NOTE: This regex is more strict than the actual ISA-Tab spec on purpose
+ISA_FILE_NAME_RE = re.compile(r'^[isa]_[\w\-.]+\.txt$')
+DATE_RE = re.compile(r'^\d{4}-(0[1-9]|1[012])-(0[1-9]|[12][0-9]|3[01])$')
+
 
 # Base Ajax View Classes and Mixins --------------------------------------------
 
@@ -123,16 +134,6 @@ class BaseSheetEditAjaxView(SODARBaseProjectAjaxView):
 
     class SheetEditException(Exception):
         pass
-
-    def raise_ex(self, msg: Union[Exception, str]):
-        """
-        Raise SheetEditException and log the error.
-
-        :param msg: Exception or string
-        :raise: SheetEditException
-        """
-        logger.error(msg)
-        raise self.SheetEditException(msg)
 
     @classmethod
     def get_attr_value(
@@ -198,6 +199,16 @@ class BaseSheetEditAjaxView(SODARBaseProjectAjaxView):
         logger.debug('Ontologies in edit data: {}'.format(', '.join(ret)))
         return ret
 
+    def raise_ex(self, msg: Union[Exception, str]):
+        """
+        Raise SheetEditException and log the error.
+
+        :param msg: Exception or string
+        :raise: SheetEditException
+        """
+        logger.error(msg)
+        raise self.SheetEditException(msg)
+
     @classmethod
     @transaction.atomic
     def update_ontology_refs(
@@ -261,6 +272,21 @@ class BaseSheetEditAjaxView(SODARBaseProjectAjaxView):
             logger.info(f'Ontology references updated {inv_suffix}')
         else:
             logger.debug(f'No updates for ontology references {inv_suffix}')
+
+    @classmethod
+    def validate_isa_file_name(
+        cls, obj: Union[Investigation, Study, Assay], name: str
+    ) -> bool:
+        """
+        Validate ISA-Tab file name.
+
+        :param obj: Related object (Investigation/Study/Assay)
+        :param name: File name (string)
+        """
+        prefix = obj.__class__.__name__[:1].lower()
+        if not name.startswith(prefix) or not ISA_FILE_NAME_RE.match(name):
+            return False
+        return True
 
 
 class SheetVersionMixin:
@@ -362,12 +388,21 @@ class SheetContextAjaxView(SODARBaseProjectAjaxView):
         # NOTE: More metadata can be added if needed. Certain fields such as
         #       factors, contacs and study design need some extra formatting to
         #       be nicely human readable.
+        df = '%Y-%m-%d'
+        pub_date = ''
+        if study.public_release_date:
+            pub_date = study.public_release_date.strftime(df)
+        sub_date = ''
+        if study.submission_date:
+            sub_date = study.submission_date.strftime(df)
         return {
             'display_name': study.get_name(),
             'file_name': study.file_name,
             'identifier': study.identifier,
             'title': study.title,
             'description': study.description,
+            'public_release_date': pub_date,
+            'submission_date': sub_date,
             'comments': get_comments(study),
             'irods_path': (
                 self.irods_backend.get_path(study)
@@ -873,6 +908,103 @@ class SheetWarningsAjaxView(SODARBaseProjectAjaxView):
             )
         logger.debug(f'Parser Warnings: {json.dumps(inv.parser_warnings)}')
         return Response({'warnings': inv.parser_warnings}, status=200)
+
+
+class SheetStudyEditAjaxView(BaseSheetEditAjaxView):
+    """Ajax view for editing study properties"""
+
+    def _update_metadata(self, study: Study, data: dict):
+        """
+        Update Study metadata properties.
+
+        :param study: Study object
+        :param data: Study metadata from request (dict)
+        """
+        # TODO: Field checks should happen on the model level (see #2606)
+        q_kw = {'investigation': study.investigation}
+        e_kw = {'sodar_uuid': study.sodar_uuid}
+
+        # Identifier
+        v = data['identifier'].strip()
+        if not v:
+            self.raise_ex(STUDY_EDIT_ID_EMPTY_MSG)
+        if Study.objects.filter(identifier=v, **q_kw).exclude(**e_kw).exists():
+            self.raise_ex(STUDY_EDIT_ID_DUPE_MSG)
+        study.identifier = v
+
+        # File name
+        v = data['file_name'].strip()
+        if not self.validate_isa_file_name(study, v):
+            self.raise_ex(FILE_INVALID_MSG)
+        if Study.objects.filter(file_name=v, **q_kw).exclude(**e_kw).exists():
+            self.raise_ex(FILE_DUPE_MSG)
+        study.file_name = v
+
+        # Dates
+        for f in ['submission_date', 'public_release_date']:
+            v = data[f].strip() or None
+            if v and not DATE_RE.match(v):
+                self.raise_ex(DATE_INVALID_MSG.format(field=f))
+            setattr(study, f, v)
+
+        # Other fields
+        study.title = data['title'].strip()
+        study.description = data['description'].strip()
+
+    def post(self, request, *args, **kwargs):
+        study = Study.objects.filter(
+            sodar_uuid=self.kwargs.get('study')
+        ).first()
+        study_meta = request.data.get('study_meta')
+        try:
+            if study_meta:
+                self._update_metadata(study, study_meta)
+            study.save()
+        except BaseSheetEditAjaxView.SheetEditException as ex:
+            return Response({'detail': str(ex)}, status=400)
+        except Exception as ex:
+            return Response({'detail': str(ex)}, status=500)
+        return Response(self.ok_data, status=200)
+
+
+class SheetAssayEditAjaxView(BaseSheetEditAjaxView):
+    """Ajax view for editing assay properties"""
+
+    def _update_metadata(self, assay: Assay, data: dict):
+        """
+        Update Assay metadata properties.
+
+        :param assay: Assay object
+        :param data: Assay metadata from request (dict)
+        """
+        q_kw = {'study__investigation': assay.study.investigation}
+        e_kw = {'sodar_uuid': assay.sodar_uuid}
+
+        # File name
+        v = data['file_name'].strip()
+        if not self.validate_isa_file_name(assay, v):
+            self.raise_ex(FILE_INVALID_MSG)
+        if Assay.objects.filter(file_name=v, **q_kw).exclude(**e_kw).exists():
+            self.raise_ex(FILE_DUPE_MSG)
+        assay.file_name = v
+        # Technology platform
+        assay.technology_platform = data['technology_platform'].strip()
+        # TODO: Add technology type and measurement type fields (see #2612)
+
+    def post(self, request, *args, **kwargs):
+        assay = Assay.objects.filter(
+            sodar_uuid=self.kwargs.get('assay')
+        ).first()
+        assay_meta = request.data.get('assay_meta')
+        try:
+            if assay_meta:
+                self._update_metadata(assay, assay_meta)
+            assay.save()
+        except BaseSheetEditAjaxView.SheetEditException as ex:
+            return Response({'detail': str(ex)}, status=400)
+        except Exception as ex:
+            return Response({'detail': str(ex)}, status=500)
+        return Response(self.ok_data, status=200)
 
 
 class SheetCellEditAjaxView(BaseSheetEditAjaxView):

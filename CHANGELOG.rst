@@ -17,12 +17,15 @@ Added
     - ``ISA_META_ASSAY_DISPLAY_NAME`` ISA-Tab SODAR metadata constant (#1782)
     - Custom assay display name support (#1782)
     - SODAR metadata comments in ISA-Tab export and version saving (#614)
-    - Vue3app ops dropdown  "Export Without Metadata" link (#614)
+    - Vue3app ops dropdown "Export Without Metadata" link (#614)
     - ``SheetISAExportAPIView`` ``include_meta`` field (#614)
     - ``ISATab`` ``sodar_version`` field (#2596)
     - SODAR version in ``SheetVersionListView`` (#2596)
     - SODAR metadata UUID support in sheet replace (#2590)
     - Study and assay renaming support in sheet replace (#2590)
+    - ``SheetStudyEditAjaxView`` Ajax view (#2285)
+    - ``SheetAssayEditAjaxView`` Ajax view (#2285)
+    - Study and assay metadata editing (#2285)
 
 Changed
 -------

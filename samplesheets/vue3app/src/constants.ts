@@ -30,6 +30,8 @@ export const URL_ROW_DEL_PREFIX = '/samplesheets/ajax/edit/row/delete/'
 export const URL_ROW_INS_PREFIX = '/samplesheets/ajax/edit/row/insert/'
 export const URL_STUDY_LINKS_PREFIX = '/samplesheets/ajax/study/links/'
 export const URL_VERSION_SAVE_PREFIX = '/samplesheets/ajax/version/save/'
+export const URL_STUDY_EDIT_PREFIX = '/samplesheets/ajax/edit/study/'
+export const URL_ASSAY_EDIT_PREFIX = '/samplesheets/ajax/edit/assay/'
 
 // Color variants
 export const VARIANT_DANGER = 'danger'
@@ -157,6 +159,8 @@ export const EDIT_REGEX: { [key: string]: RegExp } = {
   integer:        /^(([1-9][0-9]*)|(0?))$/, // TODO: TBD: Allow negative?
   name:           /^([A-Za-z0-9-_/]*)$/
 }
+// TODO: Move this under EDIT_REGEX?
+export const EDIT_REGEX_FILE_NAME: RegExp = /^[isa]_[\w\-.]+\.txt$/
 
 // Browse mode text labels
 export const COPY_MSG_SUFFIX = ' copied into clipboard'
@@ -184,6 +188,11 @@ export const EDIT_MSG_FINISH = 'Finished editing'
 export const EDIT_MSG_SAVE = 'Sheet version saved'
 export const EDIT_MSG_SAVE_ERR_PREFIX = 'Error saving version: '
 export const EDIT_MSG_SAVE_FAIL_PREFIX = 'Saving version failed: '
+
+export const STUDY_UPDATE_OK_MSG = 'Study updated'
+export const STUDY_UPDATE_FAIL_PREFIX = 'Study update failed: '
+export const ASSAY_UPDATE_OK_MSG = 'Assay updated'
+export const ASSAY_UPDATE_FAIL_PREFIX = 'Assay update failed: '
 
 export const NODE_RENAME_MSG = 'A node with the same name already exists in ' +
   'this column. Renaming will replace all values in the fields of the ' +
@@ -222,3 +231,6 @@ export const OBO_ID_ORDO = 'ORDO'
 export const OBO_HEADER_HP = 'hpo terms'
 export const OBO_HEADER_OMIM = 'omim disease'
 export const OBO_HEADER_ORDO = 'orphanet disease'
+
+// SODAR ISA-Tab Metadata
+export const SODAR_ISA_ASSAY_DISPLAY_NAME = 'SODAR Assay Display Name'
