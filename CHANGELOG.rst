@@ -41,6 +41,8 @@ Changed
     - Refactor legacy ISA-Tab metadata constants (#2594)
     - Move ``compare_inv_replace()`` functionality to ``SheetImportMixin`` (#2590)
     - Hide vue3app table header iRODS links in edit mode (#2605)
+    - Move modal includes to ``src/modals/include`` (#2617)
+    - Rename ``ModalTableSeparator`` (#2617)
 
 Fixed
 -----

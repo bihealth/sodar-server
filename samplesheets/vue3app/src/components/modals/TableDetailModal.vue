@@ -2,7 +2,7 @@
 import { ref, useTemplateRef } from 'vue'
 import { BModal } from 'bootstrap-vue-next'
 
-import ModalHeader from '@/components/modals/ModalHeader.vue'
+import ModalHeader from '@/components/modals/include/ModalHeader.vue'
 import TableDetailList from '@/components/TableDetailList.vue'
 import { useAppStore } from '@/stores/appStore.ts'
 import {

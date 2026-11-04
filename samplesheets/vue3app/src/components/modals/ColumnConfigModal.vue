@@ -15,8 +15,8 @@ import { type ColDef, type GridApi } from 'ag-grid-community'
 import { useClipboard } from '@vueuse/core'
 
 import InfoIcon from '@/components/InfoIcon.vue'
-import ModalHeader from '@/components/modals/ModalHeader.vue'
-import ColumnConfigModalSeparator from '@/components/modals/ColumnConfigModalSeparator.vue'
+import ModalHeader from '@/components/modals/include/ModalHeader.vue'
+import ModalTableSeparator from '@/components/modals/include/ModalTableSeparator.vue'
 
 import { useAppStore } from '@/stores/appStore.ts'
 import { useEditStore } from '@/stores/editStore.ts'
@@ -897,7 +897,7 @@ function hide (update: boolean) {
         <tbody
             v-else-if="colType === EDIT_COL_TYPE_CONTACT"
             id="sodar-ss-col-config-tbody-contact">
-          <ColumnConfigModalSeparator />
+          <ModalTableSeparator />
           <tr>
             <td colspan="2" class="sodar-ss-td-info">
               Enter the contact info as <code>Name &lt;email@domain.com&gt;</code>
@@ -909,7 +909,7 @@ function hide (update: boolean) {
         <tbody
             v-else-if="colType === EDIT_COL_TYPE_DATE"
             id="sodar-ss-col-config-tbody-date">
-          <ColumnConfigModalSeparator />
+          <ModalTableSeparator />
           <tr>
             <td colspan="2" class="sodar-ss-td-info">
               Enter the date as <code>YYYY-MM-DD</code>.
@@ -961,7 +961,7 @@ function hide (update: boolean) {
         <tbody
             v-else-if="colType === EDIT_COL_TYPE_EXT_LINKS"
             id="sodar-ss-col-config-tbody-ext">
-          <ColumnConfigModalSeparator />
+          <ModalTableSeparator />
           <tr>
             <td colspan="2" class="sodar-ss-td-info">
               Enter IDs as <code>id-type:id</code> separated by <code>;</code>
@@ -994,7 +994,7 @@ function hide (update: boolean) {
               </BFormSelect>
             </td>
           </tr>
-          <ColumnConfigModalSeparator />
+          <ModalTableSeparator />
           <!-- Select controls -->
           <tr v-if="config.format === EDIT_FORMAT_SELECT"
               id="sodar-ss-col-config-tr-select">

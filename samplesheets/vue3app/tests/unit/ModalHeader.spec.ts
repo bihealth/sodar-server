@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, test, vi, type Mock } from 'vitest'
 import { mount, type VueWrapper } from '@vue/test-utils'
 
-import ModalHeader from '@/components/modals/ModalHeader.vue'
+import ModalHeader from '@/components/modals/include/ModalHeader.vue'
 import { copy } from '../testUtils.ts'
 
 // Interfaces ------------------------------------------------------------------

@@ -14,7 +14,7 @@ import {
 } from 'bootstrap-vue-next'
 import { useClipboard } from '@vueuse/core'
 
-import ModalHeader from '@/components/modals/ModalHeader.vue'
+import ModalHeader from '@/components/modals/include/ModalHeader.vue'
 import { useAppStore } from '@/stores/appStore.ts'
 import { useEditStore } from '@/stores/editStore.ts'
 import { getAjaxRequestInit } from '@/utils/appUtils.ts'

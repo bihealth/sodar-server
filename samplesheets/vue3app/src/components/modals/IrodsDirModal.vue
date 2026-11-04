@@ -3,7 +3,7 @@ import { ref, useTemplateRef } from 'vue'
 import { BButton, BFormInput, BModal } from 'bootstrap-vue-next'
 import prettyBytes from 'pretty-bytes'
 
-import ModalHeader from '@/components/modals/ModalHeader.vue'
+import ModalHeader from '@/components/modals/include/ModalHeader.vue'
 import WaitSection from '@/components/WaitSection.vue'
 import { useAppStore } from '@/stores/appStore.ts'
 import { getAjaxRequestInit } from '@/utils/appUtils.ts'

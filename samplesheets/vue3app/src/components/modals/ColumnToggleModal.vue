@@ -10,7 +10,7 @@ import {
 } from 'bootstrap-vue-next'
 import { type ColDef, type ColGroupDef, type GridApi} from 'ag-grid-community'
 
-import ModalHeader from '@/components/modals/ModalHeader.vue'
+import ModalHeader from '@/components/modals/include/ModalHeader.vue'
 import { useAppStore } from '@/stores/appStore.ts'
 import { useTableStore } from '@/stores/tableStore.ts'
 

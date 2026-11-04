@@ -2,7 +2,7 @@
 import { ref, useTemplateRef } from 'vue'
 import { BButton, BModal } from 'bootstrap-vue-next'
 
-import ModalHeader from '@/components/modals/ModalHeader.vue'
+import ModalHeader from '@/components/modals/include/ModalHeader.vue'
 import WaitSection from '@/components/WaitSection.vue'
 import {
   type StudyShortcutCell,
