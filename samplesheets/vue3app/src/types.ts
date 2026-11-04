@@ -24,6 +24,9 @@ export interface SodarContextInvestigation {
   comments: { [key: string]: string } | null
   description: string
   identifier: string
+  public_release_date: string
+  sodar_uuid: string
+  submission_date: string
   title: string
 }
 
@@ -533,8 +536,8 @@ export interface GenericResponseBody {
 
 // Edit Mode Data --------------------------------------------------------------
 
-// Study edit metadata
-export interface StudyEditMeta {
+// Investigation and study edit metadata
+export interface InvStudyEditMeta {
   description: string
   fileName: string
   identifier: string
@@ -759,7 +762,7 @@ export interface RowSaveParams {
   saveData: RowSaveData
 }
 
-export interface StudyEditRequestMetadata {
+export interface InvStudyEditRequestMetadata {
   description: string
   file_name: string
   identifier: string
@@ -768,8 +771,12 @@ export interface StudyEditRequestMetadata {
   title: string
 }
 
+export interface InvestigationEditRequestBody {
+  inv_meta: InvStudyEditRequestMetadata
+}
+
 export interface StudyEditRequestBody {
-  study_meta: StudyEditRequestMetadata
+  study_meta: InvStudyEditRequestMetadata
 }
 
 // TODO: Add technology type and measurement type fields (see #2612)

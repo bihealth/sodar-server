@@ -1,56 +1,39 @@
 <script setup lang="ts">
 import { ref, useTemplateRef } from 'vue'
-import {
-  BButton,
-  BButtonGroup,
-  BFormInput,
-  BModal,
-  BFormTextarea
-} from 'bootstrap-vue-next'
+import { BButton, BButtonGroup, BModal } from 'bootstrap-vue-next'
 
 import ModalHeader from '@/components/modals/ModalHeader.vue'
+import InvStudyMetaEditSection from '@/components/modals/include/InvStudyMetaEditSection.vue'
 import { useAppStore } from '@/stores/appStore.ts'
+import { useEditStore } from '@/stores/editStore.ts'
 import { getAjaxRequestInit } from '@/utils/appUtils.ts'
 import {
   type GenericResponseBody,
   type SodarContextStudy,
-  type StudyEditMeta,
-  type StudyEditRequestBody
+  type InvStudyEditMeta,
+  type StudyEditRequestBody,
 } from '@/types.ts'
 import {
   AJAX_RES_OK,
-  EDIT_REGEX,
-  EDIT_REGEX_FILE_NAME,
   REQ_POST,
   STUDY_UPDATE_FAIL_PREFIX,
   STUDY_UPDATE_OK_MSG,
-  URL_STUDY_EDIT_PREFIX,
+  URL_STUDY_UPDATE_PREFIX,
   VARIANT_DANGER,
   VARIANT_SUCCESS
 } from '@/constants.ts'
 
-// Constants -------------------------------------------------------------------
-
-const INVALID_CLASS = 'text-danger'
-
-// Interfaces ------------------------------------------------------------------
-
-interface FieldValidStatus {
-  [key: string]: boolean
-}
-
 // External Data ---------------------------------------------------------------
 
 const appStore = useAppStore()
+const editStore = useEditStore()
 
 // Refs ------------------------------------------------------------------------
 
-const fieldsValid = ref<FieldValidStatus>({})
 const modalRef = useTemplateRef('studyEditModalRef')
 const showModal = ref<boolean>(false)
-const studyMeta = ref<StudyEditMeta | null>(null)
+const studyMeta = ref<InvStudyEditMeta | null>(null)
 const updating = ref<boolean>(true)
-const valid = ref<boolean>(true) // TODO: Compute based on fieldsValid
 
 // Internal Vars ---------------------------------------------------------------
 
@@ -62,52 +45,12 @@ let tableUuid: string
 // Helpers ---------------------------------------------------------------------
 
 function enableSubmit (): boolean {
-  return !updating.value && valid.value
-}
-
-function getFieldClass (fieldName: string): string {
-  if (fieldsValid.value![fieldName]!) return ''
-  return INVALID_CLASS
-}
-
-function onDateInput (fieldName: string) {
-  const v = studyMeta.value![fieldName as keyof StudyEditMeta]!.trim()
-  if (v && !EDIT_REGEX['date']!.test(v)) {
-    fieldsValid.value![fieldName] = false
-    valid.value = false
-  } else {
-    fieldsValid.value![fieldName] = true
-    valid.value = true
-  }
-}
-
-function onFileNameInput () {
-  const f = studyMeta.value!.fileName.trim()
-  if (!f.startsWith('s') ||
-      !EDIT_REGEX_FILE_NAME.test(f) ||
-      studyFileNames.includes(f)) {
-    fieldsValid.value!.fileName = false
-    valid.value = false
-  } else {
-    fieldsValid.value!.fileName = true
-    valid.value = true
-  }
-}
-
-function onIdentifierInput () {
-  const v = studyMeta.value!.identifier.trim()
-  if (v === '' || studyIds.includes(v)) {
-    fieldsValid.value!.identifier = false
-    valid.value = false
-  } else {
-    fieldsValid.value!.identifier = true
-    valid.value = true
-  }
+  return !updating.value && editStore.modalEditValid
 }
 
 // Post study update and handle the results
 async function updateStudy () {
-  const url = URL_STUDY_EDIT_PREFIX + tableUuid
+  const url = URL_STUDY_UPDATE_PREFIX + tableUuid
   const updateBody: StudyEditRequestBody = {
     study_meta: {
       description: studyMeta.value!.description.trim(),
@@ -170,14 +113,8 @@ function show (uuid: string) {
     submissionDate: tableContext.submission_date,
     title: tableContext.title,
   }
+  editStore.modalEditValid = true // Assume all data must be valid when opening
   updating.value = false
-  valid.value = true // We assume all data must be valid when opening
-  fieldsValid.value = {
-    fileName: true,
-    identifier: true,
-    publicReleaseDate: true,
-    submissionDate: true
-  } // Reset field valid status
   showModal.value = true
 }
 
@@ -217,71 +154,12 @@ defineExpose({ show })
           v-if="studyMeta"
           class="table table-borderless w-100 mb-3"
           id="sodar-ss-study-edit-table">
-        <tbody>
-          <tr>
-            <td>Identifier</td>
-            <td>
-              <BFormInput
-                  v-model="studyMeta.identifier"
-                  :class="getFieldClass('identifier')"
-                  id="sodar-ss-study-input-meta-id"
-                  @update:model-value="onIdentifierInput()">
-              </BFormInput>
-            </td>
-          </tr>
-          <tr>
-            <td>Title</td>
-            <td>
-              <BFormInput
-                  v-model="studyMeta.title"
-                  id="sodar-ss-study-input-meta-title">
-              </BFormInput>
-            </td>
-          </tr>
-          <tr>
-            <td>File Name</td>
-            <td>
-              <BFormInput
-                  v-model="studyMeta.fileName"
-                  :class="getFieldClass('fileName')"
-                  id="sodar-ss-study-input-meta-file"
-                  @update:model-value="onFileNameInput()">
-              </BFormInput>
-            </td>
-          </tr>
-          <tr>
-            <td>Description</td>
-            <td>
-              <BFormTextarea
-                  v-model="studyMeta.description"
-                  id="sodar-ss-study-input-meta-desc"
-                  rows="4">
-              </BFormTextarea>
-            </td>
-          </tr>
-          <tr>
-            <td>Submission Date</td>
-            <td>
-              <BFormInput
-                  v-model="studyMeta.submissionDate"
-                  :class="getFieldClass('submissionDate')"
-                  id="sodar-ss-study-input-meta-sub-date"
-                  @update:model-value="onDateInput('submissionDate')">
-              </BFormInput>
-            </td>
-          </tr>
-          <tr>
-            <td>Public Release Date</td>
-            <td>
-              <BFormInput
-                  v-model="studyMeta.publicReleaseDate"
-                  :class="getFieldClass('publicReleaseDate')"
-                  id="sodar-ss-study-input-meta-pub-date"
-                  @update:model-value="onDateInput('publicReleaseDate')">
-              </BFormInput>
-            </td>
-          </tr>
-        </tbody>
+        <InvStudyMetaEditSection
+            :file-names="studyFileNames"
+            :identifiers="studyIds"
+            :metadata="studyMeta"
+            :study-mode="true">
+        </InvStudyMetaEditSection>
       </table>
     </div>
     <div id="sodar-ss-study-edit-controls">

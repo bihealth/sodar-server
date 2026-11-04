@@ -58,6 +58,20 @@ Differences in edit mode compared to browsing mode:
     then navigate to the desired study.
 
 
+.. _app_samplesheets_edit_inv:
+
+Investigation Properties
+========================
+
+To edit investigation properties, click on the button on the left side of the
+:guilabel:`Finish Editing` button. This will open a modal with a form to edit
+currently supported investigation variables.
+
+**TODO:** Add screenshot
+
+**TODO:** Describe currently supported features
+
+
 .. _app_samplesheets_edit_study:
 
 Study Properties
@@ -71,6 +85,8 @@ currently supported study variables.
 
 **TODO:** Describe currently supported features
 
+
+.. _app_samplesheets_edit_assay:
 
 Assay Properties
 ================

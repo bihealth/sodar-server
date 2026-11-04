@@ -291,14 +291,19 @@ urls_ajax = [
         name='ajax_warnings',
     ),
     path(
-        route='ajax/edit/study/<uuid:study>',
-        view=views_ajax.SheetStudyEditAjaxView.as_view(),
-        name='ajax_edit_study',
+        route='ajax/investigation/update/<uuid:investigation>',
+        view=views_ajax.InvestigationUpdateAjaxView.as_view(),
+        name='ajax_inv_update',
     ),
     path(
-        route='ajax/edit/assay/<uuid:assay>',
-        view=views_ajax.SheetAssayEditAjaxView.as_view(),
-        name='ajax_edit_assay',
+        route='ajax/study/update/<uuid:study>',
+        view=views_ajax.StudyUpdateAjaxView.as_view(),
+        name='ajax_study_update',
+    ),
+    path(
+        route='ajax/assay/update/<uuid:assay>',
+        view=views_ajax.AssayUpdateAjaxView.as_view(),
+        name='ajax_assay_update',
     ),
     path(
         route='ajax/edit/cell/<uuid:project>',

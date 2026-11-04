@@ -12,7 +12,7 @@ import {
   ASSAY_UPDATE_FAIL_PREFIX,
   ASSAY_UPDATE_OK_MSG,
   SODAR_ISA_ASSAY_DISPLAY_NAME,
-  URL_ASSAY_EDIT_PREFIX,
+  URL_ASSAY_UPDATE_PREFIX,
   VARIANT_DANGER,
   VARIANT_SUCCESS,
 } from '@/constants.ts'
@@ -25,7 +25,7 @@ import { copy } from '../testUtils.ts'
 
 let fetchDetail: string
 let fetchStatus: number
-const url = URL_ASSAY_EDIT_PREFIX + ASSAY_UUID
+const url = URL_ASSAY_UPDATE_PREFIX + ASSAY_UUID
 
 const metaFileUp = 'a_small_update.txt'
 const metaTechPlatUp = 'Sequencer McSequencerface 9000'

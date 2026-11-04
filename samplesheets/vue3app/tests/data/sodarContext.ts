@@ -7,6 +7,7 @@ import {
 import {
   ASSAY_PATH,
   ASSAY_UUID,
+  INV_UUID,
   PROJECT_SAMPLE_PATH,
   PROJECT_UUID,
   STUDY_PATH,
@@ -18,7 +19,10 @@ export const sodarContextInvestigation: SodarContextInvestigation = {
   identifier: 'i_small',
   title: 'Small Investigation',
   description: '',
-  comments: null
+  public_release_date: '',
+  submission_date: '2026-10-15',
+  comments: null,
+  sodar_uuid: INV_UUID,
 }
 
 export const sodarContextAssay: SodarContextAssay = {

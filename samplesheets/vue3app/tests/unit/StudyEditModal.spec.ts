@@ -11,7 +11,7 @@ import {
   AJAX_RES_OK,
   STUDY_UPDATE_FAIL_PREFIX,
   STUDY_UPDATE_OK_MSG,
-  URL_STUDY_EDIT_PREFIX,
+  URL_STUDY_UPDATE_PREFIX,
   VARIANT_DANGER,
   VARIANT_SUCCESS,
 } from '@/constants.ts'
@@ -24,7 +24,7 @@ import { copy } from '../testUtils.ts'
 
 let fetchDetail: string
 let fetchStatus: number
-const url = URL_STUDY_EDIT_PREFIX + STUDY_UUID
+const url = URL_STUDY_UPDATE_PREFIX + STUDY_UUID
 
 const metaDescUp = 'Updated description'
 const metaFileUp = 's_small_update.txt'

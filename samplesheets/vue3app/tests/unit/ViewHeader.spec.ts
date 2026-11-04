@@ -22,7 +22,6 @@ import {
   STUDY_NAV_DROPDOWN_LEN,
   STUDY_NAV_TAB_LEN,
   URL_EDIT_FINISH_PREFIX,
-  URL_ISA_EXPORT_PREFIX,
   VIEW_PARSER_WARNING,
   VIEW_OVERVIEW,
   VIEW_STUDY
@@ -45,10 +44,12 @@ let router: Router
 // Global Setup ----------------------------------------------------------------
 
 // Mock modals
+const mockInvEditModal = { template: '<div />', methods: {show: vi.fn() } }
 const mockVersionSaveModal = { template: '<div />', methods: {show: vi.fn() } }
 const mockWinExportModal = { template: '<div />', methods: {show: vi.fn() } }
 
 config.global.stubs = {
+  InvestigationEditModal: mockInvEditModal,
   VersionSaveModal: mockVersionSaveModal,
   WinExportModal: mockWinExportModal
 }
@@ -357,7 +358,32 @@ describe('ViewHeader.vue', () => {
     expect(appStore.viewActive).toBe(VIEW_STUDY)
   })
 
-  test('hide save version button in edit mode', async () => {
+  test('hide update investigation button in browsing mode', async () => {
+    const appStore = useAppStore()
+    expect(appStore.editMode).toBe(false)
+    const wrapper = mountComponent()
+    expect(wrapper.find('#sodar-ss-btn-inv-edit').exists()).toBe(false)
+  })
+
+  test('display update investigation button in edit mode', async () => {
+    const appStore = useAppStore()
+    appStore.editMode = true
+    const wrapper = mountComponent()
+    expect(wrapper.find('#sodar-ss-btn-inv-edit').exists()).toBe(true)
+    expect(wrapper.find(
+      '#sodar-ss-btn-inv-edit').attributes().disabled).not.toBeDefined()
+  })
+
+  test('open InvestigationEditModal on button click', async () => {
+    const appStore = useAppStore()
+    appStore.editMode = true
+    const wrapper = mountComponent()
+    expect(mockInvEditModal.methods.show).not.toHaveBeenCalled()
+    await wrapper.find('#sodar-ss-btn-inv-edit').trigger('click')
+    expect(mockInvEditModal.methods.show).toHaveBeenCalled()
+  })
+
+  test('hide save version button in browsing mode', async () => {
     const appStore = useAppStore()
     expect(appStore.editMode).toBe(false)
     const wrapper = mountComponent()

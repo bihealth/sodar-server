@@ -3,6 +3,7 @@
 /* UUIDs -------------------------------------------------------------------- */
 
 export const PROJECT_UUID: string = '00000000-0000-0000-0000-000000000000'
+export const INV_UUID: string = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'
 export const STUDY_UUID: string = '11111111-1111-1111-1111-111111111111'
 export const ASSAY_UUID: string = '22222222-2222-2222-2222-222222222222'
 export const USER_UUID: string = '66666666-6666-6666-6666-666666666666'

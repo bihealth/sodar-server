@@ -79,7 +79,7 @@ from samplesheets.views_ajax import (
     FILE_DUPE_MSG,
     FILE_INVALID_MSG,
     STUDY_EDIT_ID_DUPE_MSG,
-    STUDY_EDIT_ID_EMPTY_MSG,
+    ID_EMPTY_MSG,
 )
 
 
@@ -303,7 +303,10 @@ class TestSheetContextAjaxView(IrodsDataRequestMixin, SamplesheetsViewTestBase):
                 'identifier': self.investigation.identifier,
                 'title': self.investigation.title,
                 'description': None,
+                'public_release_date': '',
+                'submission_date': '',
                 'comments': None,
+                'sodar_uuid': str(self.investigation.sodar_uuid),
             },
             'studies': {
                 self.study_uuid: {
@@ -871,10 +874,200 @@ class TestSheetWarningsAjaxView(SamplesheetsViewTestBase):
         )
 
 
-class TestSheetStudyEditAjaxView(
+class TestInvestigationUpdateAjaxView(
     SampleSheetModelMixin, SamplesheetsViewTestBase
 ):
-    """Tests for SheetStudyEditAjaxView"""
+    """Tests for InvestigationUpdateAjaxView"""
+
+    def setUp(self):
+        super().setUp()
+        self.inv = self.import_isa_from_file(SHEET_PATH, self.project)
+        self.post_data = {
+            'inv_meta': {
+                'identifier': 'i_small_updated',
+                'title': 'Updated Investigation',
+                'description': 'Updated description',
+                'file_name': 'i_small_updated.txt',
+                'submission_date': '2026-10-15',
+                'public_release_date': '2026-11-27',
+            }
+        }
+        self.url = reverse(
+            'samplesheets:ajax_inv_update',
+            kwargs={'investigation': self.inv.sodar_uuid},
+        )
+
+    def test_post(self):
+        """Test InvestigationUpdateAjaxView POST"""
+        self.assertEqual(self.inv.identifier, 'i_small')
+        self.assertEqual(self.inv.title, 'Small Investigation')
+        self.assertEqual(self.inv.description, '')
+        self.assertEqual(self.inv.file_name, 'i_small/i_small.txt')
+        self.assertEqual(self.inv.submission_date, None)
+        self.assertEqual(self.inv.public_release_date, None)
+
+        with self.login(self.user):
+            response = self.client.post(
+                self.url, json.dumps(self.post_data), **POST_KW
+            )
+        self.assertEqual(response.status_code, 200)
+
+        self.inv.refresh_from_db()
+        p_meta = self.post_data['inv_meta']
+        self.assertEqual(self.inv.identifier, p_meta['identifier'])
+        self.assertEqual(self.inv.title, p_meta['title'])
+        self.assertEqual(self.inv.description, p_meta['description'])
+        self.assertEqual(self.inv.file_name, 'i_small/' + p_meta['file_name'])
+        self.assertEqual(
+            self.inv.submission_date.strftime('%Y-%m-%d'),
+            p_meta['submission_date'],
+        )
+        self.assertEqual(
+            self.inv.public_release_date.strftime('%Y-%m-%d'),
+            p_meta['public_release_date'],
+        )
+
+    def test_post_identifier_empty(self):
+        """Test POST with empty identifier"""
+        self.post_data['inv_meta']['identifier'] = ''
+        with self.login(self.user):
+            response = self.client.post(
+                self.url, json.dumps(self.post_data), **POST_KW
+            )
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.data['detail'], ID_EMPTY_MSG)
+        self.inv.refresh_from_db()
+        self.assertEqual(self.inv.identifier, 'i_small')
+
+    def test_post_file_name_no_path(self):
+        """Test POST with original file_name not containing subpath"""
+        self.inv.file_name = 'i_small.txt'
+        self.inv.save()
+        with self.login(self.user):
+            response = self.client.post(
+                self.url, json.dumps(self.post_data), **POST_KW
+            )
+        self.assertEqual(response.status_code, 200)
+        self.inv.refresh_from_db()
+        self.assertEqual(self.inv.file_name, 'i_small_updated.txt')
+
+    def test_post_file_name_empty(self):
+        """Test POST with empty file_name"""
+        self.post_data['inv_meta']['file_name'] = ''
+        with self.login(self.user):
+            response = self.client.post(
+                self.url, json.dumps(self.post_data), **POST_KW
+            )
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.data['detail'], FILE_INVALID_MSG)
+
+    def test_post_file_name_prefix_invalid(self):
+        """Test POST with invalid file_name prefix"""
+        self.post_data['inv_meta']['file_name'] = 's_small.txt'
+        with self.login(self.user):
+            response = self.client.post(
+                self.url, json.dumps(self.post_data), **POST_KW
+            )
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.data['detail'], FILE_INVALID_MSG)
+
+    def test_post_file_name_suffix_invalid(self):
+        """Test POST with invalid file_name suffix"""
+        self.post_data['inv_meta']['file_name'] = 'i_small.pdf'
+        with self.login(self.user):
+            response = self.client.post(
+                self.url, json.dumps(self.post_data), **POST_KW
+            )
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.data['detail'], FILE_INVALID_MSG)
+
+    def test_post_file_name_suffix_whitespace(self):
+        """Test POST with invalid file_name suffix"""
+        self.post_data['inv_meta']['file_name'] = 'i_small space.txt'
+        with self.login(self.user):
+            response = self.client.post(
+                self.url, json.dumps(self.post_data), **POST_KW
+            )
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.data['detail'], FILE_INVALID_MSG)
+
+    def test_post_file_name_chars_invalid(self):
+        """Test POST with invalid file_name characters"""
+        self.post_data['inv_meta']['file_name'] = 'i_small(not/allowed!).txt'
+        with self.login(self.user):
+            response = self.client.post(
+                self.url, json.dumps(self.post_data), **POST_KW
+            )
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.data['detail'], FILE_INVALID_MSG)
+
+    def test_post_submission_date_empty(self):
+        """Test POST with empty submission_date"""
+        self.inv.submission_date = '2026-01-15'
+        self.inv.save()
+        self.post_data['inv_meta']['submission_date'] = ''
+        with self.login(self.user):
+            response = self.client.post(
+                self.url, json.dumps(self.post_data), **POST_KW
+            )
+        self.assertEqual(response.status_code, 200)
+        self.inv.refresh_from_db()
+        self.assertEqual(self.inv.submission_date, None)
+
+    def test_post_submission_date_invalid(self):
+        """Test POST with invalid submission_date"""
+        self.post_data['inv_meta']['submission_date'] = 'NOT-A-VALID-DATE'
+        with self.login(self.user):
+            response = self.client.post(
+                self.url, json.dumps(self.post_data), **POST_KW
+            )
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(
+            response.data['detail'],
+            DATE_INVALID_MSG.format(field='submission_date'),
+        )
+
+    def test_post_public_release_date_empty(self):
+        """Test POST with empty public_release_date"""
+        self.inv.public_release_date = '2026-01-15'
+        self.inv.save()
+        self.post_data['inv_meta']['public_release_date'] = ''
+        with self.login(self.user):
+            response = self.client.post(
+                self.url, json.dumps(self.post_data), **POST_KW
+            )
+        self.assertEqual(response.status_code, 200)
+        self.inv.refresh_from_db()
+        self.assertEqual(self.inv.public_release_date, None)
+
+    def test_post_public_release_date_invalid(self):
+        """Test POST with invalid public_release_date"""
+        self.post_data['inv_meta']['public_release_date'] = 'NOT-A-VALID-DATE'
+        with self.login(self.user):
+            response = self.client.post(
+                self.url, json.dumps(self.post_data), **POST_KW
+            )
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(
+            response.data['detail'],
+            DATE_INVALID_MSG.format(field='public_release_date'),
+        )
+
+    def test_post_uuid_invalid(self):
+        """Test POST with invalid investigation UUID"""
+        url = reverse(
+            'samplesheets:ajax_inv_update',
+            kwargs={'investigation': uuid.uuid4()},
+        )
+        with self.login(self.user):
+            response = self.client.post(
+                url, json.dumps(self.post_data), **POST_KW
+            )
+        self.assertEqual(response.status_code, 404)
+
+
+class TestStudyUpdateAjaxView(SampleSheetModelMixin, SamplesheetsViewTestBase):
+    """Tests for StudyUpdateAjaxView"""
 
     def setUp(self):
         super().setUp()
@@ -891,12 +1084,12 @@ class TestSheetStudyEditAjaxView(
             }
         }
         self.url = reverse(
-            'samplesheets:ajax_edit_study',
+            'samplesheets:ajax_study_update',
             kwargs={'study': self.study.sodar_uuid},
         )
 
     def test_post(self):
-        """Test SheetStudyEditAjaxView POST"""
+        """Test StudyUpdateAjaxView POST"""
         self.assertEqual(self.study.identifier, 's_small')
         self.assertEqual(self.study.title, 'Small Germline Study')
         self.assertEqual(self.study.description, '')
@@ -933,7 +1126,7 @@ class TestSheetStudyEditAjaxView(
                 self.url, json.dumps(self.post_data), **POST_KW
             )
         self.assertEqual(response.status_code, 400)
-        self.assertEqual(response.data['detail'], STUDY_EDIT_ID_EMPTY_MSG)
+        self.assertEqual(response.data['detail'], ID_EMPTY_MSG)
         self.study.refresh_from_db()
         self.assertEqual(self.study.identifier, 's_small')
 
@@ -1026,18 +1219,6 @@ class TestSheetStudyEditAjaxView(
         self.assertEqual(response.status_code, 400)
         self.assertEqual(response.data['detail'], FILE_INVALID_MSG)
 
-    def test_post_uuid_invalid(self):
-        """Test POST with invalid study UUID"""
-        url = reverse(
-            'samplesheets:ajax_edit_study',
-            kwargs={'study': uuid.uuid4()},
-        )
-        with self.login(self.user):
-            response = self.client.post(
-                url, json.dumps(self.post_data), **POST_KW
-            )
-        self.assertEqual(response.status_code, 404)
-
     def test_post_submission_date_empty(self):
         """Test POST with empty submission_date"""
         self.study.submission_date = '2026-01-15'
@@ -1090,11 +1271,21 @@ class TestSheetStudyEditAjaxView(
             DATE_INVALID_MSG.format(field='public_release_date'),
         )
 
+    def test_post_uuid_invalid(self):
+        """Test POST with invalid study UUID"""
+        url = reverse(
+            'samplesheets:ajax_study_update',
+            kwargs={'study': uuid.uuid4()},
+        )
+        with self.login(self.user):
+            response = self.client.post(
+                url, json.dumps(self.post_data), **POST_KW
+            )
+        self.assertEqual(response.status_code, 404)
 
-class TestSheetAssayEditAjaxView(
-    SampleSheetModelMixin, SamplesheetsViewTestBase
-):
-    """Tests for SheetAssayEditAjaxView"""
+
+class TestAssayUpdateAjaxView(SampleSheetModelMixin, SamplesheetsViewTestBase):
+    """Tests for AssayUpdateAjaxView"""
 
     def setUp(self):
         super().setUp()
@@ -1108,12 +1299,12 @@ class TestSheetAssayEditAjaxView(
             }
         }
         self.url = reverse(
-            'samplesheets:ajax_edit_assay',
+            'samplesheets:ajax_assay_update',
             kwargs={'assay': self.assay.sodar_uuid},
         )
 
     def test_post(self):
-        """Test SheetAssayEditAjaxView POST"""
+        """Test AssayUpdateAjaxView POST"""
         self.assertEqual(self.assay.file_name, 'a_small.txt')
         self.assertEqual(self.assay.technology_platform, '')
 

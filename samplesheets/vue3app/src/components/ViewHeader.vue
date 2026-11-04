@@ -9,6 +9,7 @@ import {
   useToast,
 } from 'bootstrap-vue-next'
 
+import InvestigationEditModal from '@/components/modals/InvestigationEditModal.vue'
 import VersionSaveModal from '@/components/modals/VersionSaveModal.vue'
 import WinExportModal from '@/components/modals/WinExportModal.vue'
 import { useAppStore } from '@/stores/appStore.ts'
@@ -51,6 +52,7 @@ const { create } = useToast()
 
 // Refs ------------------------------------------------------------------------
 
+const invEditCompRef = ref<typeof InvestigationEditModal | null>(null)
 const versionSaveCompRef = ref<typeof VersionSaveModal | null>(null)
 const winExportCompRef = ref<typeof WinExportModal | null>(null)
 
@@ -275,6 +277,16 @@ function truncate (s: string, maxLen: number): string {
           <i class="iconify" data-icon="mdi:sitemap"></i> Overview
         </BDropdownItem>
       </BDropdown>
+      <!-- Edit investigation button -->
+      <BButton
+          v-if="appStore.editMode"
+          id="sodar-ss-btn-inv-edit"
+          variant="info"
+          class="mr-1"
+          title="Update investigation metadata and properties"
+          @click="invEditCompRef!.show()">
+        <i class="iconify" data-icon="mdi:file-document-edit"></i>
+      </BButton>
       <!-- Save version button -->
       <BButton
           v-if="appStore.editMode"
@@ -441,7 +453,7 @@ function truncate (s: string, maxLen: number): string {
           <span v-if="appStore.sodarContext.irods_status">and Data</span>
         </BDropdownItem>
       </BDropdown>
-       <!-- Finish editing button (replace op dropdown in edit mode) -->
+      <!-- Finish editing button (replace op dropdown in edit mode) -->
       <BButton
           v-if="appStore.editMode"
           variant="primary"
@@ -457,6 +469,10 @@ function truncate (s: string, maxLen: number): string {
       </BButton>
     </div>
   </div>
+  <InvestigationEditModal
+      id="sodar-ss-inv-edit-modal-component"
+      ref="invEditCompRef">
+  </InvestigationEditModal>
   <WinExportModal
       id="sodar-ss-win-export-modal-component"
       ref="winExportCompRef"

@@ -23,9 +23,9 @@ Added
     - SODAR version in ``SheetVersionListView`` (#2596)
     - SODAR metadata UUID support in sheet replace (#2590)
     - Study and assay renaming support in sheet replace (#2590)
-    - ``SheetStudyEditAjaxView`` Ajax view (#2285)
-    - ``SheetAssayEditAjaxView`` Ajax view (#2285)
-    - Study and assay metadata editing (#2285)
+    - Investigation, study and assay metadata editing (#2285, #2613)
+    - ISA property updating Ajax views (#2285, #2613)
+    - Vue3app ISA property updating modals (#2285, #2613)
 
 Changed
 -------

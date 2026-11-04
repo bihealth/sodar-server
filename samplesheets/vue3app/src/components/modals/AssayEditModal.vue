@@ -18,7 +18,7 @@ import {
   EDIT_REGEX_FILE_NAME,
   REQ_POST,
   SODAR_ISA_ASSAY_DISPLAY_NAME,
-  URL_ASSAY_EDIT_PREFIX,
+  URL_ASSAY_UPDATE_PREFIX,
   VARIANT_DANGER,
   VARIANT_SUCCESS,
 } from '@/constants.ts'
@@ -72,7 +72,7 @@ function onFileNameInput () {
 
 // Post assay update and handle the results
 async function updateAssay () {
-  const url = URL_ASSAY_EDIT_PREFIX + tableUuid
+  const url = URL_ASSAY_UPDATE_PREFIX + tableUuid
   const updateBody: AssayEditRequestBody = {
     assay_meta: {
       file_name: assayMeta.value!.fileName.trim(),
