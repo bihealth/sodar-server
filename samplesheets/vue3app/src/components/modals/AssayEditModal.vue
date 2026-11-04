@@ -162,6 +162,8 @@ defineExpose({ show })
     <template #header>
       <ModalHeader
           :hide-close-button="true"
+          icon="mdi:table-large"
+          icon-variant="danger"
           :modal-ref="modalRef"
           title="Update Assay">
       </ModalHeader>

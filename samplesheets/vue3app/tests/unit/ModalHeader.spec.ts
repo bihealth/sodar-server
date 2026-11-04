@@ -7,9 +7,11 @@ import { copy } from '../testUtils.ts'
 // Interfaces ------------------------------------------------------------------
 
 interface ModalHeaderProps {
-  modalRef: { hide: Mock },
-  title: string,
   hideCloseButton?: boolean
+  icon?: string
+  iconVariant?: string
+  modalRef: { hide: Mock }
+  title: string
 }
 
 // Test Data -------------------------------------------------------------------
@@ -37,6 +39,7 @@ describe('ModalHeader.vue', () => {
     expect(wrapper.find('.sodar-ss-modal-header').exists()).toBe(true)
     expect(wrapper.find('h5').text()).toBe(props.title)
     expect(wrapper.find('.modal-close').exists()).toBe(true)
+    expect(wrapper.find('.sodar-ss-modal-header-icon').exists()).toBe(false)
   })
 
   test('render component with hideCloseButton=true', async () => {
@@ -44,6 +47,27 @@ describe('ModalHeader.vue', () => {
     const wrapper = mountComponent()
     expect(wrapper.find('.sodar-ss-modal-header').exists()).toBe(true)
     expect(wrapper.find('.modal-close').exists()).toBe(false)
+  })
+
+  test('render component with icon', async () => {
+    props.icon = 'mdi:info'
+    const wrapper = mountComponent()
+    expect(wrapper.find('h5').text()).toBe(props.title)
+    expect(wrapper.find('.modal-close').exists()).toBe(true)
+    const icon = wrapper.find('.sodar-ss-modal-header-icon')
+    expect(icon.exists()).toBe(true)
+    expect(icon.classes()).not.toContain('text-info')
+  })
+
+  test('render component with icon and icon variant', async () => {
+    props.icon = 'mdi:info'
+    props.iconVariant = 'info'
+    const wrapper = mountComponent()
+    expect(wrapper.find('h5').text()).toBe(props.title)
+    expect(wrapper.find('.modal-close').exists()).toBe(true)
+    const icon = wrapper.find('.sodar-ss-modal-header-icon')
+    expect(icon.exists()).toBe(true)
+    expect(icon.classes()).toContain('text-info') // Class should be included
   })
 
   test('hide modal on button click', async () => {

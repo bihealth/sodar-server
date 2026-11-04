@@ -25,7 +25,8 @@ Added
     - Study and assay renaming support in sheet replace (#2590)
     - Investigation, study and assay metadata editing (#2285, #2613)
     - ISA property updating Ajax views (#2285, #2613)
-    - Vue3app ISA property updating modals (#2285, #2613)
+    - Vue3app ISA property updating modals (#2285, #2613, #2624)
+    - Vue3app ``ModalHeader`` icon support (#2624)
 
 Changed
 -------

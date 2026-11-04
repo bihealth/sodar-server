@@ -145,6 +145,8 @@ defineExpose({ show })
     <template #header>
       <ModalHeader
           :hide-close-button="true"
+          icon="mdi:folder-table"
+          icon-variant="info"
           :modal-ref="modalRef"
           title="Update Study">
       </ModalHeader>

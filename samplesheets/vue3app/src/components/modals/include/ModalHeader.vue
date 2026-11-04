@@ -1,12 +1,27 @@
 <script setup lang="ts">
 // Common modal header
-defineProps(['modalRef', 'title', 'hideCloseButton'])
+const props = defineProps([
+  'icon',
+  'iconVariant',
+  'modalRef',
+  'title',
+  'hideCloseButton'
+])
+
+let iconClass = ''
+if (props.icon && props.iconVariant) iconClass = ' text-' + props.iconVariant
 </script>
 
 <template>
   <div class="d-flex w-100 align-top sodar-ss-modal-header">
-    <h5 class="modal-title flex-grow-1">{{ title }}</h5>
-      <slot name="extend"></slot>
+    <h5 class="modal-title flex-grow-1">
+      <i v-if="icon"
+         :class="'iconify sodar-ss-modal-header-icon' + iconClass"
+         :data-icon="icon">
+      </i>
+      {{ title }}
+    </h5>
+    <slot name="extend"></slot>
     <button
         v-if="hideCloseButton !== true"
         class="close modal-close"
