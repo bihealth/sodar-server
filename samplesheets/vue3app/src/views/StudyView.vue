@@ -287,10 +287,12 @@ onMounted(() => {
   <WaitSection v-else></WaitSection>
   <!-- Modals -->
   <AssayEditModal
+      v-if="appStore.editMode"
       id="sodar-ss-assay-edit-modal-component"
       ref="assayEditModalComponent">
   </AssayEditModal>
   <ColumnConfigModal
+      v-if="appStore.editMode"
       id="sodar-ss-col-config-modal-component"
       ref="columnConfigModalComponent">
   </ColumnConfigModal>
@@ -299,18 +301,22 @@ onMounted(() => {
       ref="columnToggleModalComponent">
   </ColumnToggleModal>
   <IrodsDirModal
+      v-if="!appStore.editMode"
       id="sodar-ss-irods-dir-modal-component"
       ref="irodsDirModalComponent">
   </IrodsDirModal>
   <OntologyEditModal
+      v-if="appStore.editMode"
       id="sodar-ss-ontology-edit-modal-component"
       ref="ontologyEditModalComponent">
   </OntologyEditModal>
   <StudyEditModal
+      v-if="appStore.editMode"
       id="sodar-ss-study-edit-modal-component"
       ref="studyEditModalComponent">
   </StudyEditModal>
   <StudyShortcutModal
+      v-if="!appStore.editMode"
       id="sodar-ss-study-shortcut-modal-component"
       ref="studyShortcutModalComponent">
   </StudyShortcutModal>

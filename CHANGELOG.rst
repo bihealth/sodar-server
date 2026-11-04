@@ -47,6 +47,7 @@ Changed
     - Move modal includes to ``src/modals/include`` (#2617)
     - Rename ``ModalTableSeparator`` (#2617)
     - Hide vue3app nav tabs and dropdown in edit mode (#2616)
+    - Update vue3app modals for dynamic initialization (#2615)
 
 Fixed
 -----

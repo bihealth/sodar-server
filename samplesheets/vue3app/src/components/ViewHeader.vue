@@ -470,15 +470,18 @@ function truncate (s: string, maxLen: number): string {
     </div>
   </div>
   <InvestigationEditModal
+      v-if="appStore.editMode"
       id="sodar-ss-inv-edit-modal-component"
       ref="invEditCompRef">
   </InvestigationEditModal>
   <WinExportModal
+      v-if="!appStore.editMode"
       id="sodar-ss-win-export-modal-component"
       ref="winExportCompRef"
       :project-uuid="appStore.projectUuid">
   </WinExportModal>
   <VersionSaveModal
+      v-if="appStore.editMode"
       id="sodar-ss-version-save-modal-component"
       ref="versionSaveCompRef">
   </VersionSaveModal>
