@@ -879,6 +879,14 @@ class TestInvestigationUpdateAjaxView(
 ):
     """Tests for InvestigationUpdateAjaxView"""
 
+    def _get_tl_event(self):
+        """Return investigation update timeline event"""
+        return TimelineEvent.objects.filter(
+            project=self.project,
+            app=APP_NAME,
+            event_name='sheet_investigation_update',
+        ).first()
+
     def setUp(self):
         super().setUp()
         self.inv = self.import_isa_from_file(SHEET_PATH, self.project)
@@ -905,6 +913,7 @@ class TestInvestigationUpdateAjaxView(
         self.assertEqual(self.inv.file_name, 'i_small/i_small.txt')
         self.assertEqual(self.inv.submission_date, None)
         self.assertEqual(self.inv.public_release_date, None)
+        self.assertIsNone(self._get_tl_event())
 
         with self.login(self.user):
             response = self.client.post(
@@ -927,6 +936,10 @@ class TestInvestigationUpdateAjaxView(
             p_meta['public_release_date'],
         )
 
+        tl_event = self._get_tl_event()
+        self.assertEqual(tl_event.extra_data, self.post_data)
+        self.assertEqual(tl_event.get_status().status_type, 'OK')
+
     def test_post_identifier_empty(self):
         """Test POST with empty identifier"""
         self.post_data['inv_meta']['identifier'] = ''
@@ -938,6 +951,9 @@ class TestInvestigationUpdateAjaxView(
         self.assertEqual(response.data['detail'], ID_EMPTY_MSG)
         self.inv.refresh_from_db()
         self.assertEqual(self.inv.identifier, 'i_small')
+        self.assertEqual(
+            self._get_tl_event().get_status().status_type, 'FAILED'
+        )
 
     def test_post_file_name_no_path(self):
         """Test POST with original file_name not containing subpath"""
@@ -1069,6 +1085,14 @@ class TestInvestigationUpdateAjaxView(
 class TestStudyUpdateAjaxView(SampleSheetModelMixin, SamplesheetsViewTestBase):
     """Tests for StudyUpdateAjaxView"""
 
+    def _get_tl_event(self):
+        """Return investigation update timeline event"""
+        return TimelineEvent.objects.filter(
+            project=self.project,
+            app=APP_NAME,
+            event_name='sheet_study_update',
+        ).first()
+
     def setUp(self):
         super().setUp()
         self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
@@ -1096,6 +1120,7 @@ class TestStudyUpdateAjaxView(SampleSheetModelMixin, SamplesheetsViewTestBase):
         self.assertEqual(self.study.file_name, 's_small.txt')
         self.assertEqual(self.study.submission_date, None)
         self.assertEqual(self.study.public_release_date, None)
+        self.assertIsNone(self._get_tl_event())
 
         with self.login(self.user):
             response = self.client.post(
@@ -1118,6 +1143,10 @@ class TestStudyUpdateAjaxView(SampleSheetModelMixin, SamplesheetsViewTestBase):
             p_meta['public_release_date'],
         )
 
+        tl_event = self._get_tl_event()
+        self.assertEqual(tl_event.extra_data, self.post_data)
+        self.assertEqual(tl_event.get_status().status_type, 'OK')
+
     def test_post_identifier_empty(self):
         """Test POST with empty identifier"""
         self.post_data['study_meta']['identifier'] = ''
@@ -1129,6 +1158,9 @@ class TestStudyUpdateAjaxView(SampleSheetModelMixin, SamplesheetsViewTestBase):
         self.assertEqual(response.data['detail'], ID_EMPTY_MSG)
         self.study.refresh_from_db()
         self.assertEqual(self.study.identifier, 's_small')
+        self.assertEqual(
+            self._get_tl_event().get_status().status_type, 'FAILED'
+        )
 
     def test_post_identifier_dupe(self):
         """Test POST with duplicate identifier within investigation"""
@@ -1287,6 +1319,14 @@ class TestStudyUpdateAjaxView(SampleSheetModelMixin, SamplesheetsViewTestBase):
 class TestAssayUpdateAjaxView(SampleSheetModelMixin, SamplesheetsViewTestBase):
     """Tests for AssayUpdateAjaxView"""
 
+    def _get_tl_event(self):
+        """Return investigation update timeline event"""
+        return TimelineEvent.objects.filter(
+            project=self.project,
+            app=APP_NAME,
+            event_name='sheet_assay_update',
+        ).first()
+
     def setUp(self):
         super().setUp()
         self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
@@ -1307,6 +1347,7 @@ class TestAssayUpdateAjaxView(SampleSheetModelMixin, SamplesheetsViewTestBase):
         """Test AssayUpdateAjaxView POST"""
         self.assertEqual(self.assay.file_name, 'a_small.txt')
         self.assertEqual(self.assay.technology_platform, '')
+        self.assertIsNone(self._get_tl_event())
 
         with self.login(self.user):
             response = self.client.post(
@@ -1320,6 +1361,10 @@ class TestAssayUpdateAjaxView(SampleSheetModelMixin, SamplesheetsViewTestBase):
         self.assertEqual(
             self.assay.technology_platform, a_meta['technology_platform']
         )
+
+        tl_event = self._get_tl_event()
+        self.assertEqual(tl_event.extra_data, self.post_data)
+        self.assertEqual(tl_event.get_status().status_type, 'OK')
 
     def test_post_file_name_dupe(self):
         """Test POST with duplicate file_name within investigation"""
@@ -1341,6 +1386,9 @@ class TestAssayUpdateAjaxView(SampleSheetModelMixin, SamplesheetsViewTestBase):
         self.assertEqual(response.data['detail'], FILE_DUPE_MSG)
         self.study.refresh_from_db()
         self.assertEqual(self.assay.file_name, 'a_small.txt')
+        self.assertEqual(
+            self._get_tl_event().get_status().status_type, 'FAILED'
+        )
 
     def test_post_file_name_empty(self):
         """Test POST with empty file_name"""

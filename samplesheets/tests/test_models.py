@@ -562,6 +562,15 @@ class TestInvestigation(SamplesheetsModelTestBase):
         )
         self.assertEqual(self.investigation.get_url(), expected)
 
+    def test_get_display_name(self):
+        """Test get_display_name()"""
+        self.assertEqual(self.investigation.get_display_name(), INV_TITLE)
+
+    def test_get_display_name_no_title(self):
+        """Test get_display_name() with no title"""
+        self.investigation.title = ''
+        self.assertEqual(self.investigation.get_display_name(), INV_IDENTIFIER)
+
 
 class TestStudy(SamplesheetsModelTestBase):
     """Tests for the Study model"""

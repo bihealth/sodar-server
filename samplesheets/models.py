@@ -281,6 +281,12 @@ class Investigation(BaseSampleSheet):
             get_comment(self, sc.ISA_COMM_STUDY_CONFIG_CREATE)
         )
 
+    def get_display_name(self) -> str:
+        """Return display name. If title is not set, returns identifier."""
+        if self.title:
+            return self.title
+        return self.identifier
+
     def get_material_count(self, item_type: str) -> int:
         """Return matieral count of a certain type within the investigation"""
         return GenericMaterial.objects.filter(

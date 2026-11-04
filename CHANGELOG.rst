@@ -29,6 +29,8 @@ Added
     - Vue3app ``ModalHeader`` icon support (#2624)
     - SODAR UUID in vue3app details table (#2611)
     - Investigation and study dates in vue3app details tables (#2611)
+    - Investigation, study and assay property updating timeline events (#2623)
+    - ``Investigation.get_display_name()`` helper (#2625)
 
 Changed
 -------

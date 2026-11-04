@@ -5,7 +5,7 @@ import re
 
 from datetime import datetime as dt
 from packaging import version
-from typing import Optional, Union
+from typing import Any, Optional, Union
 
 from altamisa.constants import table_headers as th
 
@@ -118,6 +118,9 @@ FILE_DUPE_MSG = 'Duplicate file names in investigation'
 FILE_INVALID_MSG = 'Invalid file name'
 ID_EMPTY_MSG = 'Empty identifier is not allowed'
 STUDY_EDIT_ID_DUPE_MSG = 'Duplicate study identifiers in investigation'
+TL_ERR_PREFIX = 'Exception creating timeline event: '
+PROP_EDIT_ERR_PREFIX = 'SheetEditException raised: '
+PROP_GEN_ERR_PREFIX = 'Exception raised: '
 
 # NOTE: This regex is more strict than the actual ISA-Tab spec on purpose
 ISA_FILE_NAME_RE = re.compile(r'^[isa]_[\w\-.]+\.txt$')
@@ -128,7 +131,6 @@ DATE_FORMAT = '%Y-%m-%d'
 # Base Ajax View Classes and Mixins --------------------------------------------
 
 
-# TODO: TBD: Separate helpers into ISA property editing and cell/row editing?
 class BaseSheetEditAjaxView(SODARBaseProjectAjaxView):
     """Base ajax view for editing sample sheet data"""
 
@@ -137,6 +139,169 @@ class BaseSheetEditAjaxView(SODARBaseProjectAjaxView):
 
     class SheetEditException(Exception):
         pass
+
+    def raise_ex(self, msg: Union[Exception, str]):
+        """
+        Raise SheetEditException and log the error.
+
+        :param msg: Exception or string
+        :raise: SheetEditException
+        """
+        logger.error(msg)
+        raise self.SheetEditException(msg)
+
+
+class BaseISAPropertyEditAjaxView(BaseSheetEditAjaxView):
+    """Base ajax view for investigation/study/assay property editing"""
+
+    #: TimelineAPI
+    timeline = None
+
+    def add_tl_event(
+        self, obj: Union[Investigation, Study, Assay], post_data: dict
+    ) -> Any:
+        """
+        Add timeline event for ISA property updating.
+
+        :param obj: Investigation, Study or Assay object
+        :param post_data: Post data for update (dict)
+        :return: TimelineEvent object or None
+        """
+        self.timeline = plugin_api.get_backend_api('timeline_backend')
+        if not self.timeline:
+            return None
+        project = obj.get_project()
+        obj_cls = obj.__class__.__name__.lower()
+        tl_desc = f'Update properties of {obj_cls} {{{obj_cls}}}'
+        tl_event = self.timeline.add_event(
+            project=project,
+            app_name=APP_NAME,
+            user=self.request.user,
+            event_name=f'sheet_{obj_cls}_update',
+            description=tl_desc,
+            extra_data=post_data,
+        )
+        tl_event.add_object(obj=obj, label=obj_cls, name=obj.get_display_name())
+        return tl_event
+
+    def update_inv_study_metadata(
+        self, obj: Union[Investigation, Study], data: dict
+    ):
+        """
+        Update Investigation or Study metadata properties.
+
+        :param obj: Investigation or Study object
+        :param data: Metadata from request (dict)
+        """
+        # TODO: Field checks should happen on the model level (see #2606)
+        obj_study = isinstance(obj, Study)
+        q_kw = {}
+        e_kw = {}
+        if obj_study:
+            q_kw = {'investigation': obj.investigation}
+            e_kw = {'sodar_uuid': obj.sodar_uuid}
+
+        # Identifier
+        v = data['identifier'].strip()
+        if not v:
+            self.raise_ex(ID_EMPTY_MSG)
+        if (
+            obj_study
+            and Study.objects.filter(identifier=v, **q_kw)
+            .exclude(**e_kw)
+            .exists()
+        ):
+            self.raise_ex(STUDY_EDIT_ID_DUPE_MSG)
+        obj.identifier = v
+
+        # File name
+        v = data['file_name'].strip()
+        if not self.validate_isa_file_name(obj, v):
+            self.raise_ex(FILE_INVALID_MSG)
+        if (
+            obj_study
+            and Study.objects.filter(file_name=v, **q_kw)
+            .exclude(**e_kw)
+            .exists()
+        ):
+            self.raise_ex(FILE_DUPE_MSG)
+        if '/' in obj.file_name:  # Support optional investigation file subpath
+            obj.file_name = '/'.join(obj.file_name.split('/')[:-1] + [v])
+        else:
+            obj.file_name = v
+
+        # Dates
+        for f in ['submission_date', 'public_release_date']:
+            v = data[f].strip() or None
+            if v and not DATE_RE.match(v):
+                self.raise_ex(DATE_INVALID_MSG.format(field=f))
+            setattr(obj, f, v)
+
+        # Other fields
+        obj.title = data['title'].strip()
+        obj.description = data['description'].strip()
+
+    @classmethod
+    def validate_isa_file_name(
+        cls, obj: Union[Investigation, Study, Assay], name: str
+    ) -> bool:
+        """
+        Validate ISA-Tab file name.
+
+        :param obj: Related object (Investigation/Study/Assay)
+        :param name: File name (string)
+        """
+        prefix = obj.__class__.__name__[:1].lower()
+        if not name.startswith(prefix) or not ISA_FILE_NAME_RE.match(name):
+            return False
+        return True
+
+    def get_object(self) -> Union[Investigation, Study, Assay]:
+        """Return Investigation, Study or Assay object"""
+        raise NotImplementedError('Method get_object() not implemented')
+
+    def update_isa_props(
+        self, obj: Union[Investigation, Study, Assay], request: HttpRequest
+    ):
+        """
+        Update object properties.
+        Override in implementation.
+
+        :param obj: Investigation, Study or Assay object
+        :param request: HttpRequest object
+        """
+        raise NotImplementedError('Method update_properties() not implemented')
+
+    def post(self, request, *args, **kwargs):
+        obj = self.get_object()  # Call override
+        tl_event = None
+        try:
+            tl_event = self.add_tl_event(obj, request.data)
+        except Exception as ex:
+            logger.error(f'{TL_ERR_PREFIX}{ex}')
+        try:
+            self.update_isa_props(obj, request)  # Call override
+        except BaseSheetEditAjaxView.SheetEditException as ex:
+            if tl_event:
+                tl_event.set_status(
+                    self.timeline.TL_STATUS_FAILED,
+                    f'{PROP_EDIT_ERR_PREFIX}{ex}',
+                )
+            return Response({'detail': str(ex)}, status=400)
+        except Exception as ex:
+            if tl_event:
+                tl_event.set_status(
+                    self.timeline.TL_STATUS_FAILED, f'{PROP_GEN_ERR_PREFIX}{ex}'
+                )
+            return Response({'detail': str(ex)}, status=500)
+
+        if tl_event:
+            tl_event.set_status(self.timeline.TL_STATUS_OK)
+        return Response(self.ok_data, status=200)
+
+
+class BaseTableDataEditAjaxView(BaseSheetEditAjaxView):
+    """Base ajax view for sheet table data editing"""
 
     @classmethod
     def get_attr_value(
@@ -202,16 +367,6 @@ class BaseSheetEditAjaxView(SODARBaseProjectAjaxView):
         logger.debug('Ontologies in edit data: {}'.format(', '.join(ret)))
         return ret
 
-    def raise_ex(self, msg: Union[Exception, str]):
-        """
-        Raise SheetEditException and log the error.
-
-        :param msg: Exception or string
-        :raise: SheetEditException
-        """
-        logger.error(msg)
-        raise self.SheetEditException(msg)
-
     @classmethod
     @transaction.atomic
     def update_ontology_refs(
@@ -275,78 +430,6 @@ class BaseSheetEditAjaxView(SODARBaseProjectAjaxView):
             logger.info(f'Ontology references updated {inv_suffix}')
         else:
             logger.debug(f'No updates for ontology references {inv_suffix}')
-
-    @classmethod
-    def validate_isa_file_name(
-        cls, obj: Union[Investigation, Study, Assay], name: str
-    ) -> bool:
-        """
-        Validate ISA-Tab file name.
-
-        :param obj: Related object (Investigation/Study/Assay)
-        :param name: File name (string)
-        """
-        prefix = obj.__class__.__name__[:1].lower()
-        if not name.startswith(prefix) or not ISA_FILE_NAME_RE.match(name):
-            return False
-        return True
-
-    def update_inv_study_metadata(
-        self, obj: Union[Investigation, Study], data: dict
-    ):
-        """
-        Update Investigation or Study metadata properties.
-
-        :param obj: Investigation or Study object
-        :param data: Metadata from request (dict)
-        """
-        # TODO: Field checks should happen on the model level (see #2606)
-        obj_study = isinstance(obj, Study)
-        q_kw = {}
-        e_kw = {}
-        if obj_study:
-            q_kw = {'investigation': obj.investigation}
-            e_kw = {'sodar_uuid': obj.sodar_uuid}
-
-        # Identifier
-        v = data['identifier'].strip()
-        if not v:
-            self.raise_ex(ID_EMPTY_MSG)
-        if (
-            obj_study
-            and Study.objects.filter(identifier=v, **q_kw)
-            .exclude(**e_kw)
-            .exists()
-        ):
-            self.raise_ex(STUDY_EDIT_ID_DUPE_MSG)
-        obj.identifier = v
-
-        # File name
-        v = data['file_name'].strip()
-        if not self.validate_isa_file_name(obj, v):
-            self.raise_ex(FILE_INVALID_MSG)
-        if (
-            obj_study
-            and Study.objects.filter(file_name=v, **q_kw)
-            .exclude(**e_kw)
-            .exists()
-        ):
-            self.raise_ex(FILE_DUPE_MSG)
-        if '/' in obj.file_name:  # Support optional investigation file subpath
-            obj.file_name = '/'.join(obj.file_name.split('/')[:-1] + [v])
-        else:
-            obj.file_name = v
-
-        # Dates
-        for f in ['submission_date', 'public_release_date']:
-            v = data[f].strip() or None
-            if v and not DATE_RE.match(v):
-                self.raise_ex(DATE_INVALID_MSG.format(field=f))
-            setattr(obj, f, v)
-
-        # Other fields
-        obj.title = data['title'].strip()
-        obj.description = data['description'].strip()
 
 
 class SheetVersionMixin:
@@ -986,43 +1069,35 @@ class SheetWarningsAjaxView(SODARBaseProjectAjaxView):
         return Response({'warnings': inv.parser_warnings}, status=200)
 
 
-class InvestigationUpdateAjaxView(BaseSheetEditAjaxView):
+class InvestigationUpdateAjaxView(BaseISAPropertyEditAjaxView):
     """Ajax view for updating investigation properties"""
 
-    def post(self, request, *args, **kwargs):
-        inv = Investigation.objects.get(
+    def get_object(self) -> Investigation:
+        return Investigation.objects.get(
             sodar_uuid=self.kwargs.get('investigation')
         )
+
+    def update_isa_props(self, obj, request):
         inv_meta = request.data.get('inv_meta')
-        try:
-            if inv_meta:
-                self.update_inv_study_metadata(inv, inv_meta)
-            inv.save()
-        except BaseSheetEditAjaxView.SheetEditException as ex:
-            return Response({'detail': str(ex)}, status=400)
-        except Exception as ex:
-            return Response({'detail': str(ex)}, status=500)
-        return Response(self.ok_data, status=200)
+        if inv_meta:
+            self.update_inv_study_metadata(obj, inv_meta)
+        obj.save()
 
 
-class StudyUpdateAjaxView(BaseSheetEditAjaxView):
+class StudyUpdateAjaxView(BaseISAPropertyEditAjaxView):
     """Ajax view for updating study properties"""
 
-    def post(self, request, *args, **kwargs):
-        study = Study.objects.get(sodar_uuid=self.kwargs.get('study'))
+    def get_object(self) -> Study:
+        return Study.objects.get(sodar_uuid=self.kwargs.get('study'))
+
+    def update_isa_props(self, obj, request):
         study_meta = request.data.get('study_meta')
-        try:
-            if study_meta:
-                self.update_inv_study_metadata(study, study_meta)
-            study.save()
-        except BaseSheetEditAjaxView.SheetEditException as ex:
-            return Response({'detail': str(ex)}, status=400)
-        except Exception as ex:
-            return Response({'detail': str(ex)}, status=500)
-        return Response(self.ok_data, status=200)
+        if study_meta:
+            self.update_inv_study_metadata(obj, study_meta)
+        obj.save()
 
 
-class AssayUpdateAjaxView(BaseSheetEditAjaxView):
+class AssayUpdateAjaxView(BaseISAPropertyEditAjaxView):
     """Ajax view for updating assay properties"""
 
     def _update_metadata(self, assay: Assay, data: dict):
@@ -1046,23 +1121,17 @@ class AssayUpdateAjaxView(BaseSheetEditAjaxView):
         assay.technology_platform = data['technology_platform'].strip()
         # TODO: Add technology type and measurement type fields (see #2612)
 
-    def post(self, request, *args, **kwargs):
-        assay = Assay.objects.filter(
-            sodar_uuid=self.kwargs.get('assay')
-        ).first()
+    def get_object(self) -> Assay:
+        return Assay.objects.get(sodar_uuid=self.kwargs.get('assay'))
+
+    def update_isa_props(self, obj, request):
         assay_meta = request.data.get('assay_meta')
-        try:
-            if assay_meta:
-                self._update_metadata(assay, assay_meta)
-            assay.save()
-        except BaseSheetEditAjaxView.SheetEditException as ex:
-            return Response({'detail': str(ex)}, status=400)
-        except Exception as ex:
-            return Response({'detail': str(ex)}, status=500)
-        return Response(self.ok_data, status=200)
+        if assay_meta:
+            self._update_metadata(obj, assay_meta)
+        obj.save()
 
 
-class SheetCellEditAjaxView(BaseSheetEditAjaxView):
+class SheetCellEditAjaxView(BaseTableDataEditAjaxView):
     """Ajax view to edit sample sheet cells"""
 
     @classmethod
@@ -1115,6 +1184,7 @@ class SheetCellEditAjaxView(BaseSheetEditAjaxView):
         logger.debug('Verify OK')
         return None
 
+    # TODO: Split into submethods
     @transaction.atomic
     def _update_cell(
         self,
@@ -1301,7 +1371,7 @@ class SheetCellEditAjaxView(BaseSheetEditAjaxView):
         return Response(self.ok_data, status=200)
 
 
-class SheetRowInsertAjaxView(BaseSheetEditAjaxView):
+class SheetRowInsertAjaxView(BaseTableDataEditAjaxView):
     """Ajax view for inserting rows into sample sheets"""
 
     @classmethod
@@ -1486,6 +1556,7 @@ class SheetRowInsertAjaxView(BaseSheetEditAjaxView):
                     return collapse_uuid
             logger.debug('Collapse: Identical process not found')
 
+    # TODO: Split into submethods
     @transaction.atomic
     def _insert_row(self, row: dict):
         """
@@ -1738,6 +1809,7 @@ class SheetRowDeleteAjaxView(BaseSheetEditAjaxView):
             )
             node['obj'].delete()
 
+    # TODO: Split into submethods
     @transaction.atomic
     def _delete_row(self, row: dict):
         """
