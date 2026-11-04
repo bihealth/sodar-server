@@ -155,23 +155,12 @@ describe('ViewHeader.vue', () => {
       '#sodar-ss-nav-tab-overview').attributes().disabled).toBeDefined()
   })
 
-  test('render nav tabs with editMode=true and multiple studies', async () => {
+  test('hide nav tabs with editMode=true', async () => {
     const appStore = useAppStore()
     appStore.editMode = true
-    // Fake extra study
-    appStore.sodarContext!.studies[TMP_UUID] = {
-      assays: {},
-      display_name: 'Fake Study'
-    } as SodarContextStudy
-
     const wrapper = mountComponent()
-    const studyNavs = wrapper.findAll('.sodar-ss-nav-tab-study')
-    expect(studyNavs.length).toBe(2)
-    for (const s of studyNavs) {
-      expect(s.attributes().disabled).toBeDefined()
-    }
-    expect(wrapper.find(
-      '#sodar-ss-nav-tab-overview').attributes().disabled).toBeDefined()
+    expect(wrapper.find('.sodar-ss-nav-tab-study').exists()).toBe(false)
+    expect(wrapper.find('#sodar-ss-nav-tab-overview').exists()).toBe(false)
   })
 
   test('render nav tabs with viewActive=VIEW_OVERVIEW', async () => {
@@ -300,14 +289,11 @@ describe('ViewHeader.vue', () => {
       '#sodar-ss-nav-overview').attributes().disabled).not.toBeDefined()
   })
 
-  test('render nav dropdown with editMode=true', async () => {
+  test('hide nav dropdown with editMode=true', async () => {
     const appStore = useAppStore()
     appStore.editMode = true
     const wrapper = mountComponent()
-    expect(wrapper.find('#sodar-ss-nav-dropdown').exists()).toBe(true)
-    // The entire dropdown should be disabled
-    expect(wrapper.find(
-      '#sodar-ss-nav-dropdown').attributes().disabled).toBeDefined()
+    expect(wrapper.find('#sodar-ss-nav-dropdown').exists()).toBe(false)
   })
 
   test('hide nav dropdown with no sheets available', async () => {

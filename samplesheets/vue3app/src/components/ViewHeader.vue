@@ -190,7 +190,7 @@ function truncate (s: string, maxLen: number): string {
     <!-- Study navigation -->
     <div class="col"
          id="sodar-ss-subtitle-col-study-nav">
-      <BNav pills v-if="appStore.sheetsAvailable"
+      <BNav pills v-if="appStore.sheetsAvailable && !appStore.editMode"
             class="sodar-ss-nav me-0"
             id="sodar-ss-nav-tabs">
         <!-- NOTE: bootstrap-vue-next BNavItem fails if using @click -->
@@ -202,7 +202,7 @@ function truncate (s: string, maxLen: number): string {
             :id="'sodar-ss-nav-tab-study-' + studyUuid"
             @click="handleStudyNavigation(studyUuid as string, null)"
             :active="isStudyActive(studyUuid as string)"
-            :disabled="appStore.gridsBusy || appStore.editMode">
+            :disabled="appStore.gridsBusy">
           <i class="iconify" data-icon="mdi:folder-table"></i>
           {{ truncate(studyInfo.display_name, STUDY_NAV_TAB_LEN) }}
         </BButton>
@@ -212,7 +212,7 @@ function truncate (s: string, maxLen: number): string {
             id="sodar-ss-nav-tab-overview"
             @click="handleOverviewNavigation()"
             :active="appStore.viewActive === VIEW_OVERVIEW"
-            :disabled="appStore.gridsBusy || appStore.editMode">
+            :disabled="appStore.gridsBusy">
           <i class="iconify" data-icon="mdi:sitemap"></i> Overview
         </BButton>
       </BNav>
@@ -240,12 +240,12 @@ function truncate (s: string, maxLen: number): string {
         </div>
       <!-- Nav dropdown -->
       <BDropdown
-          v-if="appStore.sheetsAvailable"
+          v-if="appStore.sheetsAvailable && !appStore.editMode"
           class="mr-1"
           id="sodar-ss-nav-dropdown"
           placement="bottom-end"
           variant="success"
-          :disabled="appStore.gridsBusy || appStore.editMode">
+          :disabled="appStore.gridsBusy">
         <template #button-content>
           <i class="iconify" data-icon="mdi:menu"></i>
         </template>

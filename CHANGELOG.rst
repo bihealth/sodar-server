@@ -46,6 +46,7 @@ Changed
     - Hide vue3app table header iRODS links in edit mode (#2605)
     - Move modal includes to ``src/modals/include`` (#2617)
     - Rename ``ModalTableSeparator`` (#2617)
+    - Hide vue3app nav tabs and dropdown in edit mode (#2616)
 
 Fixed
 -----

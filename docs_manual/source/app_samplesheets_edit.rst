@@ -31,11 +31,14 @@ UI.
 
 Differences in edit mode compared to browsing mode:
 
-- The navigation bar displays the edit mode status badge along with the version
-  backup button.
-- The :guilabel:`Overview` tab is disabled.
+- Navigation tabs and dropdown are hidden.
+- The app header displays the edit mode status badge along with the
+  :ref:`investigation property editing <app_samplesheets_edit_inv>` and
+  :ref:`sheet version backup <app_samplesheets_edit_version>` buttons.
 - The :guilabel:`Sheet Operations` dropdown is replaced by the
   :guilabel:`Finish Editing` button.
+- Study and assay headers contain buttons to open modals for
+  :ref:`study and assay property editing <app_samplesheets_edit_study>`.
 - An :guilabel:`Insert Row` button is added to the table header of each study
   and assay table.
 - Column headers contain buttons for configuring editing options for that
@@ -53,7 +56,7 @@ Differences in edit mode compared to browsing mode:
 .. note::
 
     Currently, SODAR allows editing a single study at a time. When in edit mode,
-    study navigation is disabled. To switch to editing a different study in a
+    study navigation is hidden. To switch to editing a different study in a
     multi-study project, you need to first click on :guilabel:`Finish Editing`,
     then navigate to the desired study.
 
@@ -63,7 +66,7 @@ Differences in edit mode compared to browsing mode:
 Investigation Properties
 ========================
 
-To edit investigation properties, click on the button on the left side of the
+To update investigation properties, click on the button on the left side of the
 :guilabel:`Finish Editing` button. This will open a modal with a form to edit
 currently supported investigation variables.
 
@@ -77,7 +80,7 @@ currently supported investigation variables.
 Study Properties
 ================
 
-To edit study properties, click on the button on the right side of the study
+To update  study properties, click on the button on the right side of the study
 header containing the study title. This will open a modal with a form to edit
 currently supported study variables.
 
@@ -91,7 +94,7 @@ currently supported study variables.
 Assay Properties
 ================
 
-To edit assay properties, click on the button on the right side of the assay
+To update  assay properties, click on the button on the right side of the assay
 header containing the assay title. This will open a modal containing a form
 similar to study properties.
 
@@ -379,6 +382,8 @@ Adding and Removing Studies and Assays
     Adding or removing entire studies or assays is not currently supported. This
     functionality will be added in a future SODAR release.
 
+
+.. _app_samplesheets_edit_version:
 
 Saving Backup Sheet Versions
 ============================
