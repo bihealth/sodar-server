@@ -131,6 +131,17 @@ watch(() => appStore.sodarContext, (newContext) => {
             :title="sodarMetaTitle"
             row-class="sodar-ss-table-detail-row-sodar">
         </TableDetailListRow>
+        <TableDetailListRow
+            legend="SODAR UUID"
+            :value="(appStore.sodarContext!.investigation as
+                    SodarContextInvestigation).sodar_uuid"
+            icon="mdi:code-braces"
+            icon-class="text-secondary"
+            :title="sodarMetaTitle"
+            row-class="sodar-ss-table-detail-row-sodar"
+            copy-button="true"
+            :notify-cb="appStore.notifyCb">
+        </TableDetailListRow>
         <!-- TODO: Enable adding custom content in TableDetailListRow -->
         <dl class="row pb-0 sodar-ss-table-detail-row"
             id="sodar-ss-inv-detail-irods">

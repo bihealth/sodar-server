@@ -58,13 +58,17 @@ export const DB_OBJ_CLASS_PROCESS = 'Process'
 export const INV_META_FIELDS = [
   ['Identifier', 'identifier'],
   ['Title', 'title'],
-  ['Description', 'description']
+  ['Description', 'description'],
+  ['Submission Date', 'submission_date'],
+  ['Public Release Date', 'public_release_date'],
 ]
 export const STUDY_META_FIELDS = [
   ['File Name', 'file_name'],
   ['Identifier', 'identifier'],
   ['Title', 'title'],
-  ['Description', 'description']
+  ['Description', 'description'],
+  ['Submission Date', 'submission_date'],
+  ['Public Release Date', 'public_release_date'],
 ]
 export const STUDY_SODAR_FIELDS = [
   ['Display Name', 'display_name'],

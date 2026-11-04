@@ -74,7 +74,7 @@ describe('OverviewView.vue', () => {
     expect(card.findAll('.sodar-ss-table-detail-row-meta').length).toBe(
       INV_META_FIELDS.length + 1)
     expect(card.findAll('.sodar-ss-table-detail-row-comment').length).toBe(0)
-    expect(card.findAll('.sodar-ss-table-detail-row-sodar').length).toBe(2)
+    expect(card.findAll('.sodar-ss-table-detail-row-sodar').length).toBe(3)
 
     await waitSelector(wrapper, '.sodar-ss-irods-stats-loading', 0)
     const badge = wrapper.find('.sodar-ss-irods-stats')
