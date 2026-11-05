@@ -56,6 +56,7 @@ Changed
     - Rename ``ModalTableSeparator`` (#2617)
     - Hide vue3app nav tabs and dropdown in edit mode (#2616)
     - Update vue3app modals for dynamic initialization (#2615)
+    - Omit top header "name" suffixes in vue3app rendering (#1772)
 
 Fixed
 -----

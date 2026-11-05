@@ -460,8 +460,13 @@ export function buildColDef (params: ColDefBuildParams): Array<ColGroupDef> {
     // NOTE: ColGroupDef no longer has cellRendererParams, set headers in
     //       headerGroupComponentParams instead
     // TODO: Only add headers if editMode is enabled
+    let name: string = topHeader!.value
+    // Omit redundant "name" values from top header
+    if (name.toLowerCase().endsWith(' name')) {
+      name = name.substring(0, name.lastIndexOf(' '))
+    }
     let headerGroup: ColGroupDef = {
-      headerName: topHeader?.value,
+      headerName: name,
       headerClass: ['text-white', 'bg-' + topHeader.colour],
       headerGroupComponentParams: { headers: topHeader.headers },
       children: []

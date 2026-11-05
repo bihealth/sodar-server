@@ -273,7 +273,10 @@ describe('SheetTable.vue', () => {
     const topHeaders = grid.findAll('.ag-header-group-cell')
     expect(topHeaders.length).toBe(exTopHeader.length)
     for (let i = 0; i < exTopHeader.length; i++) {
-      const e = exTopHeader[i]
+      const e = copy(exTopHeader[i]!) as Array<string>
+      if (e[0]!.endsWith(' Name')) {
+        e[0] = e[0]!.substring(0, e[0]!.lastIndexOf(' '))
+      } // Strip "name" suffixes
       expect(topHeaders[i]?.text(), i.toString()).toBe(e![0])
       expect(topHeaders[i]?.classes()).toContain('bg-' + e![1])
     }
@@ -289,9 +292,12 @@ describe('SheetTable.vue', () => {
     const topHeaders = grid.findAll('.ag-header-group-cell')
     expect(topHeaders.length).toBe(exTopHeader.length)
     for (let i = 0; i < exTopHeader.length; i++) {
-      const e = exTopHeader[i]
-      expect(topHeaders[i]?.text(), i.toString()).toBe(e![0])
-      expect(topHeaders[i]?.classes()).toContain('bg-' + e![1])
+      const e = copy(exTopHeader[i]!) as Array<string>
+      if (e[0]!.endsWith(' Name')) {
+        e[0] = e[0]!.substring(0, e[0]!.lastIndexOf(' '))
+      } // Strip "name" suffixes
+      expect(topHeaders[i]?.text(), i.toString()).toBe(e[0])
+      expect(topHeaders[i]?.classes()).toContain('bg-' + e[1])
     }
   })
 
