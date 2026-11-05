@@ -304,11 +304,19 @@ class TestZoneCreateView(
 
         self.assert_zone_count(1)
         zone = LandingZone.objects.first()
+        exp_path = iRODSPath(
+            self.zone_root_path,
+            self.user.username,
+            self.irods_backend.get_sub_path(zone.assay, landing_zone=True),
+            zone.title,
+        )
+        self.assertEqual(zone.irods_path, exp_path)
         self.assert_zone_status(zone, lc.ZONE_STATUS_ACTIVE)
         self.assert_irods_coll(zone)
         self.assertEqual(zone.coll_creation, lc.ZONE_COLLS_NONE)
         for c in ZONE_BASE_COLLS:
             self.assert_irods_coll(zone, c, False)
+
         tl_event = TimelineEvent.objects.filter(
             event_name='zone_create'
         ).first()
@@ -320,6 +328,7 @@ class TestZoneCreateView(
             'user_message': '',
             'configuration': None,
             'config_data': {},
+            'irods_path': zone.irods_path,
             'sodar_uuid': str(zone.sodar_uuid),
         }
         self.assertEqual(tl_event.extra_data, expected_extra)

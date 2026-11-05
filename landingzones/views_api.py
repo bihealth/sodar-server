@@ -302,6 +302,13 @@ class ZoneCreateAPIView(
         # If all is OK, go forward with object creation and taskflow submission
         super().perform_create(serializer)
         try:
+            irods_backend = PluginAPI.get_backend_api('omics_irods')
+            if irods_backend:
+                # Save immutable iRODS path
+                serializer.instance.irods_path = irods_backend.get_path(
+                    serializer.instance
+                )
+                serializer.instance.save()
             self.submit_create(zone=serializer.instance, request=self.request)
         except Exception as ex:
             raise APIException(f'{ex_prefix}{ex}')

@@ -242,6 +242,15 @@ class TestZoneRetrieveAPIView(LandingZoneAPIViewTestBase):
         }
         self.assertEqual(json.loads(response.content), expected)
 
+    def test_get_irods_path(self):
+        """Test GET with preset iRODS path"""
+        path = '/sodarZone/preset/zone/path'
+        self.zone.irods_path = path
+        self.zone.save()
+        response = self.request_knox(self.url)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(json.loads(response.content)['irods_path'], path)
+
     def test_get_locked(self):
         """Test GET with locked landing zone status"""
         self.zone.status = lc.ZONE_STATUS_MOVING

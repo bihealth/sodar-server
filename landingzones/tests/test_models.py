@@ -57,6 +57,7 @@ class LandingZoneMixin:
         configuration: Optional[str] = None,
         config_data: dict = {},
         coll_creation: str = lc.ZONE_COLLS_NONE,
+        irods_path: str = '',
     ) -> LandingZone:
         values = {
             'title': title,
@@ -70,6 +71,7 @@ class LandingZoneMixin:
             'configuration': configuration,
             'config_data': config_data,
             'coll_creation': coll_creation,
+            'irods_path': irods_path,
         }
         return LandingZone.objects.create(**values)
 
@@ -126,6 +128,7 @@ class TestLandingZone(
             'configuration': None,
             'config_data': {},
             'coll_creation': lc.ZONE_COLLS_NONE,
+            'irods_path': '',
             'status': lc.ZONE_STATUS_CREATING,
             'status_info': ZONE_STATUS_INFO_INIT,
             'sodar_uuid': self.landing_zone.sodar_uuid,

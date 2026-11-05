@@ -144,6 +144,8 @@ class TestZoneCreateAPIView(ZoneAPIViewTaskflowTestBase):
         # Assert status after taskflow has finished
         zone = LandingZone.objects.first()
         self.assert_zone_status(zone, lc.ZONE_STATUS_ACTIVE)
+        # Assert immutable iRODS path has been created
+        self.assertEqual(zone.irods_path, self.irods_backend.get_path(zone))
 
         # NOTE: date_modified will be changend async, can't test
         response_data = json.loads(response.content)

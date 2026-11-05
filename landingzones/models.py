@@ -51,6 +51,11 @@ class LandingZone(models.Model):
         on_delete=models.CASCADE,
     )
 
+    #: iRODS path of the landing zone
+    irods_path = models.CharField(
+        blank=True, unique=False, help_text='iRODS path of the landing zone'
+    )
+
     #: Status of landing zone
     status = models.CharField(
         max_length=64,

@@ -242,6 +242,7 @@ class TestIrodsAPI(
 
     def test_get_path_zone(self):
         """Test get_irods_path() with LandingZone object"""
+        self.assertEqual(self.landing_zone.irods_path, '')
         expected = (
             '/{zone}/projects/{uuid_prefix}/{uuid}/{zone_dir}'
             '/{user}/{study_assay}/{zone_title}'.format(
@@ -258,6 +259,12 @@ class TestIrodsAPI(
         )
         path = self.irods_backend.get_path(self.landing_zone)
         self.assertEqual(expected, path)
+
+    def test_get_path_zone_existing(self):
+        """Test get_irods_path() with LandingZone object and existing path"""
+        path = '/sodarZone/preset/zone/path'
+        self.landing_zone.irods_path = path
+        self.assertEqual(self.irods_backend.get_path(self.landing_zone), path)
 
     def test_get_sample_path(self):
         """Test get_sample_path() with Project object"""

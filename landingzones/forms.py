@@ -36,6 +36,8 @@ ZONE_COLLS_CREATION_CHOICES = [
 class LandingZoneForm(forms.ModelForm):
     """Form for landing zone creation"""
 
+    #: IrodsAPI instance or None
+    irods_backend = None
     #: Title suffix field
     title_suffix = forms.CharField(max_length=64, required=False)
 
@@ -55,7 +57,7 @@ class LandingZoneForm(forms.ModelForm):
     ):
         """Override for form initialization"""
         super().__init__(*args, **kwargs)
-        irods_backend = plugin_api.get_backend_api('omics_irods')
+        self.irods_backend = plugin_api.get_backend_api('omics_irods')
         from landingzones.plugins import LandingZoneConfigPluginPoint
 
         config_plugins = LandingZoneConfigPluginPoint.get_plugins()
@@ -92,12 +94,14 @@ class LandingZoneForm(forms.ModelForm):
         if not self.instance.pk:
             self.fields['assay'].widget.choices = []
             # Only show choices for assays which are in iRODS
-            with irods_backend.get_session() as irods:
+            with self.irods_backend.get_session() as irods:
                 for assay in Assay.objects.filter(
                     study__investigation__project=self.project,
                     study__investigation__active=True,
                 ):
-                    if irods.collections.exists(irods_backend.get_path(assay)):
+                    if irods.collections.exists(
+                        self.irods_backend.get_path(assay)
+                    ):
                         self.fields['assay'].widget.choices.append(
                             (
                                 assay.sodar_uuid,
@@ -153,6 +157,8 @@ class LandingZoneForm(forms.ModelForm):
         if not self.instance.pk:
             obj.user = self.current_user
             obj.project = self.project
+            # Store immutable zone path to support study/assay renaming
+            obj.irods_path = self.irods_backend.get_path(obj)
         # Updating
         else:
             obj.user = self.instance.user

@@ -432,6 +432,8 @@ class TestZoneCreateView(ViewTestBase):
             response = self.client.get(self.url)
         self.assertEqual(response.status_code, 200)
 
+    # NOTE: See test_views_taskflow for POST tests
+
 
 class TestZoneUpdateView(ViewTestBase):
     """Tests for ZoneUpdateView"""

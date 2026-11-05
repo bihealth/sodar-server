@@ -18,9 +18,13 @@ Major feature release.
 - :ref:`Add SODAR metadata to ISA-Tab exports and version saving <metadata_advanced_sodar_export>`
 - Add ISA-Tab versions SODAR version storage and displaying
 - :ref:`Add support for study and assay renaming on sample sheet replace <app_samplesheets_create_replace>`
+- Add support for study and assay renaming for landing zones
 - :ref:`Add cache update controls for samplesheets REST API views <api_samplesheets>`
+- :ref:`Add setzonepaths management command <admin_commands_sodar>`
 - :ref:`Upgrade Sample Sheets REST API version to v1.3 <api_samplesheets_version_1_3>`
 - Remove samplesheets legacy Vue2 app
+
+:ref:`Administrator upgrade guide for v1.4 <admin_upgrade_v1.4>`
 
 REST API Updates
 ----------------

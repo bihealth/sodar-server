@@ -408,6 +408,9 @@ class IrodsAPI:
                     obj_class, ', '.join(ACCEPTED_PATH_TYPES)
                 )
             )
+        if obj_class == 'LandingZone' and obj.irods_path:
+            return obj.irods_path  # Return full LandingZone path if set
+
         if obj_class == 'Project':
             project = obj
         else:

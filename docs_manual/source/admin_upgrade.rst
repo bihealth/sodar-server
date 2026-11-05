@@ -32,6 +32,23 @@ All instructions assume you are running the previous major release of SODAR
 before performing the upgrade.
 
 
+.. _admin_upgrade_v1.4:
+
+v1.4
+====
+
+Legacy Landing Zone Update
+--------------------------
+
+For updating active legacy landing zones to correctly support study and assay
+renaming, we strongly recommend running the ``setzonepaths`` management command
+upon upgrading your deployment. Example:
+
+.. code-block:: bash
+
+    $ ./manage.py setzonepaths
+
+
 .. _admin_upgrade_v1.3:
 
 v1.3

@@ -41,6 +41,7 @@ ZONE2_TITLE = '20201123_143323_test_zone'
 ZONE3_TITLE = '20201218_172740_test_zone_moved'
 ZONE4_TITLE = '20201218_172743_test_zone_deleted'
 LOGGER_BUSY_ZONES = 'landingzones.management.commands.busyzones'
+ZONE_PRESET_PATH = '/sodarZone/existing/path'
 
 
 class LandingzonesCommandTestBase(
@@ -71,6 +72,66 @@ class LandingzonesCommandTestBase(
         self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
         self.study = self.investigation.studies.first()
         self.assay = self.study.assays.first()
+
+
+class TestBusyZones(LandingzonesCommandTestBase):
+    """Tests for the busyzones command"""
+
+    def setUp(self):
+        super().setUp()
+        # Create zones
+        self.zone = self.make_landing_zone(
+            title=ZONE1_TITLE,
+            project=self.project,
+            user=self.user,
+            assay=self.assay,
+            description=ZONE_DESC,
+            configuration=None,
+            config_data={},
+            status=lc.ZONE_STATUS_ACTIVE,
+        )
+        self.zone2 = self.make_landing_zone(
+            title=ZONE2_TITLE,
+            project=self.project,
+            user=self.user,
+            assay=self.assay,
+            description=ZONE_DESC,
+            configuration=None,
+            config_data={},
+            status=lc.ZONE_STATUS_ACTIVE,
+        )
+
+    def test_active_zones(self):
+        """Test command with active zones"""
+        out = io.StringIO()
+        call_command('busyzones', stdout=out)
+        self.assertEqual(out.getvalue(), '')
+
+    def test_command(self):
+        """Test command with a busy zone"""
+        self.zone2.status = lc.ZONE_STATUS_MOVING
+        self.zone2.save()
+        with self.assertLogs(LOGGER_BUSY_ZONES, level='INFO') as cm:
+            call_command('busyzones')
+        self.assertIn(
+            ';'.join(
+                [
+                    str(self.zone2.project.sodar_uuid),
+                    self.zone2.project.full_title,
+                    self.zone2.user.username,
+                    self.zone2.title,
+                    self.zone2.status,
+                    str(self.zone2.sodar_uuid),
+                ]
+            ),
+            cm.output[0],
+        )
+
+    def test_command_no_busy_zones(self):
+        """Test command with no busy zones"""
+        with self.assertLogs(LOGGER_BUSY_ZONES, level='INFO') as cm:
+            call_command('busyzones')
+        self.assertIn('Found 0 busy zones', cm.output[0])
 
 
 class TestInactiveZones(LandingzonesCommandTestBase):
@@ -171,8 +232,8 @@ class TestInactiveZones(LandingzonesCommandTestBase):
         self.assertIn(expected, cm.output[0])
 
 
-class TestBusyZones(LandingzonesCommandTestBase):
-    """Tests for the busyzones command"""
+class TestSetZonePaths(LandingzonesCommandTestBase):
+    """Tests for the setzonepaths command"""
 
     def setUp(self):
         super().setUp()
@@ -196,36 +257,60 @@ class TestBusyZones(LandingzonesCommandTestBase):
             configuration=None,
             config_data={},
             status=lc.ZONE_STATUS_ACTIVE,
+            irods_path=ZONE_PRESET_PATH,
         )
-
-    def test_active_zones(self):
-        """Test command with active zones"""
-        out = io.StringIO()
-        call_command('busyzones', stdout=out)
-        self.assertEqual(out.getvalue(), '')
+        self.irods_backend = plugin_api.get_backend_api('omics_irods')
+        self.cmd_name = 'setzonepaths'
+        self.log_name = 'landingzones.management.commands.' + self.cmd_name
 
     def test_command(self):
-        """Test command with a busy zone"""
-        self.zone2.status = lc.ZONE_STATUS_MOVING
-        self.zone2.save()
-        with self.assertLogs(LOGGER_BUSY_ZONES, level='INFO') as cm:
-            call_command('busyzones')
-        self.assertIn(
-            ';'.join(
-                [
-                    str(self.zone2.project.sodar_uuid),
-                    self.zone2.project.full_title,
-                    self.zone2.user.username,
-                    self.zone2.title,
-                    self.zone2.status,
-                    str(self.zone2.sodar_uuid),
-                ]
-            ),
-            cm.output[0],
-        )
+        """Test setzonepaths"""
+        self.assertEqual(self.zone.irods_path, '')
+        with self.assertLogs(self.log_name, level='INFO') as cm:
+            call_command(self.cmd_name)
 
-    def test_command_no_busy_zones(self):
-        """Test command with no busy zones"""
-        with self.assertLogs(LOGGER_BUSY_ZONES, level='INFO') as cm:
-            call_command('busyzones')
-        self.assertIn('Found 0 busy zones', cm.output[0])
+        self.zone.refresh_from_db()
+        # Empty zone path should be updated
+        self.assertEqual(
+            self.zone.irods_path, self.irods_backend.get_path(self.zone)
+        )
+        self.zone2.refresh_from_db()
+        # Existing path should be unchanged
+        self.assertEqual(self.zone2.irods_path, ZONE_PRESET_PATH)
+
+        self.assertEqual(len(cm.output), 2)
+        exp = '{}: {}: {}'.format(
+            self.zone.project.get_log_title(),
+            self.zone.title,
+            self.irods_backend.get_path(self.zone),
+        )
+        self.assertIn(exp, cm.output[0])
+        self.assertIn('1 zone path updated', cm.output[1])
+
+    def test_command_check(self):
+        """Test setzonepaths with check mode"""
+        with self.assertLogs(self.log_name, level='INFO') as cm:
+            call_command(self.cmd_name, check=True)
+
+        self.zone.refresh_from_db()
+        self.assertEqual(self.zone.irods_path, '')  # Data should be unchanged
+
+        self.assertEqual(len(cm.output), 2)
+        exp = '{}: {}: {}'.format(
+            self.zone.project.get_log_title(),
+            self.zone.title,
+            self.irods_backend.get_path(self.zone),
+        )
+        self.assertIn(exp, cm.output[0])
+        self.assertIn('1 zone path to be updated', cm.output[1])
+
+    def test_command_finished(self):
+        """Test setzonepaths with finished zone"""
+        self.zone.status = lc.ZONE_STATUS_MOVED
+        self.zone.save()
+        with self.assertLogs(self.log_name, level='INFO') as cm:
+            call_command(self.cmd_name)
+        self.zone.refresh_from_db()
+        self.assertEqual(self.zone.irods_path, '')  # Data should be unchanged
+        self.assertEqual(len(cm.output), 1)
+        self.assertIn('0 zone paths updated', cm.output[0])

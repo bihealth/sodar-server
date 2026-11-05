@@ -11,6 +11,10 @@ Unreleased
 Added
 -----
 
+- **Landingzones**
+    - ``LandingZone.irods_path`` field (#2620)
+    - Landing zone support for study and assay renaming (#2620)
+    - ``setzonepaths`` management command (#2620)
 - **Samplesheets**
     - ``IrodsDataRequestAcceptAPIView`` ``update_cache`` field (#2320)
     - ``SheetImportAPIView`` ``update_cache`` field (#2581)
@@ -37,6 +41,8 @@ Changed
 
 - **General**
     - Deprecate ``*_vue3`` commands in ``Makefile`` (#2393)
+- **Irodsbackend**
+    - Return ``LandingZone.irods_path`` from ``IrodsAPI.get_path()`` if set (#2620)
 - **Samplesheets**
     - Upgrade samplesheets REST API version to v1.3 (#2320)
     - Upgrade vue3app dependencies (#2578)

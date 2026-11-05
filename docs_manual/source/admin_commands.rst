@@ -86,6 +86,11 @@ operations regarding sample sheets, landing zones, iRODS data and ontologies.
     status to ``ACTIVE``, allowing for further user activity. Reset will not be
     performed if active Celery jobs for validation or moving of the same zone
     exist. Provide the landing zone UUID with the ``-z`` or ``--zone`` argument.
+``setzonepaths``
+    Set iRODS path values for existing active landing zones. This enables legacy
+    zones to support study and assay renaming. Recommended to be run once after
+    upgrading to SODAR >=v1.4. Checks for paths to be updated without altering
+    the database if given the ``-c`` or ``--check`` argument.
 ``syncnames``
     Synchronize alternative names for sample sheet material search.
 ``syncstudytables``

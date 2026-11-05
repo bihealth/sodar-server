@@ -66,13 +66,16 @@ class LandingZoneSerializer(SODARProjectModelSerializer):
         return obj.is_locked()
 
     def get_irods_path(self, obj: LandingZone) -> Optional[str]:
-        irods_backend = plugin_api.get_backend_api('omics_irods')
-        if irods_backend and obj.status not in [
+        if obj.status not in [
             lc.ZONE_STATUS_OK,
             lc.ZONE_STATUS_DELETED,
             lc.ZONE_STATUS_NOT_CREATED,
         ]:
-            return irods_backend.get_path(obj)
+            if obj.irods_path:
+                return obj.irods_path
+            irods_backend = plugin_api.get_backend_api('omics_irods')
+            if irods_backend:
+                return irods_backend.get_path(obj)
 
     def validate(self, attrs):
         # If there is no investigation, we can't have a landing zone
