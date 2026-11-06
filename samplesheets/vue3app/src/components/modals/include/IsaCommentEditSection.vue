@@ -67,24 +67,26 @@ function onInsertKeyInput () {
 <template>
   <tbody class="sodar-ss-isa-comment-edit-body">
     <tr v-for="(cKey, cIdx) in Object.keys(cFields)"
-        :key="cIdx">
+        :key="cIdx"
+        class="sodar-ss-isa-comment-edit-row">
       <td>
         {{ cKey }}
         <i v-if="mandatory.includes(cKey)"
-           class="iconify text-muted"
+           class="iconify text-muted sodar-ss-isa-comment-mandatory-icon"
            data-icon="mdi:lock">
         </i>
       </td>
       <td>
         <BFormInput
             v-model="cFields[cKey]"
-            class="sodar-ss-isa-input-comment">
+            class="sodar-ss-isa-comment-input">
         </BFormInput>
       </td>
       <td>
         <BButton
             variant="danger"
-            class="sodar-list-btn sodar-ss-row-btn"
+            class="sodar-list-btn sodar-ss-row-btn
+                   sodar-ss-isa-comment-delete-btn"
             :disabled="mandatory.includes(cKey)"
             @click="onDeleteClick(cKey)">
           <i class="iconify" data-icon="mdi:close-thick"></i>
@@ -92,23 +94,24 @@ function onInsertKeyInput () {
       </td>
     </tr>
   <tr>
-    <td class="sodar-ss-isa-td-comment-insert-key">
+    <td class="sodar-ss-isa-comment-td-insert-key">
       <BFormInput
           v-model="insKey"
-          :class="'sodar-ss-isa-input-comment-insert-key ' + insKeyClass"
+          :class="'sodar-ss-isa-comment-insert-key ' + insKeyClass"
           @update:model-value="onInsertKeyInput()">
       </BFormInput>
     </td>
     <td>
       <BFormInput
           v-model="insVal"
-          class="sodar-ss-isa-input-comment-insert-value">
+          class="sodar-ss-isa-comment-insert-value">
       </BFormInput>
     </td>
     <td>
       <BButton
           variant="primary"
-          class="sodar-list-btn sodar-ss-row-btn"
+          class="sodar-list-btn sodar-ss-row-btn
+                 sodar-ss-isa-comment-insert-btn"
           :disabled="!enableInsert()"
           @click="onInsertClick()">
         <i class="iconify" data-icon="mdi:plus-thick"></i>
@@ -119,7 +122,7 @@ function onInsertKeyInput () {
 </template>
 
 <style scoped>
-.sodar-ss-isa-td-comment-insert-key {
+.sodar-ss-isa-comment-td-insert-key {
   padding-top: 12px !important;
 }
 </style>

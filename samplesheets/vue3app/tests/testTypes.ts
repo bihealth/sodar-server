@@ -3,8 +3,14 @@ import { type Mock } from 'vitest'
 import {
   type NotifyCb,
   type SodarContextAssay,
+  type SodarContextComments,
   type SodarContextStudy
 } from '@/types.ts'
+
+export interface IsaCommentEditSectionProps {
+  comments: SodarContextComments
+  mandatory?: Array<string>
+}
 
 export interface IrodsButtonsProps {
   enabled: boolean
