@@ -138,7 +138,7 @@ defineExpose({ show })
     <div id="sodar-ss-inv-edit-content">
       <table
           v-if="invMeta"
-          class="table table-borderless w-100 mb-3"
+          class="table table-borderless sodar-ss-isa-isa-edit-table w-100 mb-3"
           id="sodar-ss-inv-edit-table">
         <InvStudyMetaEditSection
             :file-names="[]"
@@ -150,7 +150,7 @@ defineExpose({ show })
     </div>
     <div id="sodar-ss-inv-edit-controls">
       <BButtonGroup
-          class="pull-right"
+          class="sodar-ss-isa-edit-btn-group pull-right"
           id="sodar-ss-inv-edit-btn-group">
         <BButton
             variant="secondary"

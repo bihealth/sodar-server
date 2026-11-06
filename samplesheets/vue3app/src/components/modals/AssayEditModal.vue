@@ -2,7 +2,10 @@
 import { ref, useTemplateRef } from 'vue'
 import { BButton, BButtonGroup, BFormInput, BModal } from 'bootstrap-vue-next'
 
+import IsaCommentEditSection from '@/components/modals/include/IsaCommentEditSection.vue'
 import ModalHeader from '@/components/modals/include/ModalHeader.vue'
+import ModalTableSeparator from '@/components/modals/include/ModalTableSeparator.vue'
+
 import { useAppStore } from '@/stores/appStore.ts'
 import { getAjaxRequestInit } from '@/utils/appUtils.ts'
 import {
@@ -10,6 +13,7 @@ import {
   type AssayEditRequestBody,
   type GenericResponseBody,
   type SodarContextAssay,
+  type SodarContextComments,
 } from '@/types.ts'
 import {
   AJAX_RES_OK,
@@ -26,6 +30,9 @@ import {
 // Constants -------------------------------------------------------------------
 
 const INVALID_CLASS = 'text-danger'
+const MANDATORY_COMMENTS = [
+    SODAR_ISA_ASSAY_DISPLAY_NAME
+]
 
 // External Data ---------------------------------------------------------------
 
@@ -33,6 +40,7 @@ const appStore = useAppStore()
 
 // Refs ------------------------------------------------------------------------
 
+const assayComments = ref<SodarContextComments | null>(null)
 const assayMeta = ref<AssayEditMeta | null>(null)
 const fileNameValid = ref<boolean>(true)
 const modalRef = useTemplateRef('assayEditModalRef')
@@ -78,7 +86,7 @@ async function updateAssay () {
       file_name: assayMeta.value!.fileName.trim(),
       technology_platform: assayMeta.value!.technologyPlatform.trim(),
     }
-  }
+  } // TODO: Add comments
   const response = await fetch(url, getAjaxRequestInit(REQ_POST, updateBody))
   const resBody: GenericResponseBody = await response.json()
   if (resBody.detail == AJAX_RES_OK) {
@@ -97,6 +105,7 @@ async function updateAssay () {
 function updateTableContext () {
   tableContext.file_name = assayMeta.value!.fileName.trim()
   tableContext.technology_platform = assayMeta.value!.technologyPlatform.trim()
+  // TODO: Update comments
 
   // Update display name if SODAR assay display name is not set
   if (!tableContext.comments ||
@@ -129,6 +138,7 @@ function show (uuid: string) {
     fileName: tableContext.file_name,
     technologyPlatform: tableContext.technology_platform,
   }
+  assayComments.value = tableContext.comments
   updating.value = false
   valid.value = true // We assume all data must be valid when opening
   fileNameValid.value = true
@@ -171,9 +181,10 @@ defineExpose({ show })
     <div id="sodar-ss-assay-edit-content">
       <table
           v-if="assayMeta"
-          class="table table-borderless w-100 mb-3"
+          class="table table-borderless sodar-ss-isa-isa-edit-table w-100 mb-3"
           id="sodar-ss-assay-edit-table">
-        <tbody>
+        <!-- Metadata -->
+        <tbody class="sodar-ss-assay-meta-edit-body">
           <tr>
             <td>File Name</td>
             <td>
@@ -195,11 +206,18 @@ defineExpose({ show })
             </td>
           </tr>
         </tbody>
+        <ModalTableSeparator colspan="3" />
+        <!-- Comments -->
+        <IsaCommentEditSection
+            v-if="assayComments"
+            :comments="assayComments"
+            :mandatory="MANDATORY_COMMENTS">
+        </IsaCommentEditSection>
       </table>
     </div>
     <div id="sodar-ss-assay-edit-controls">
       <BButtonGroup
-          class="pull-right"
+          class="sodar-ss-isa-edit-btn-group pull-right"
           id="sodar-ss-assay-edit-btn-group">
         <BButton
             variant="secondary"
@@ -222,15 +240,4 @@ defineExpose({ show })
 </template>
 
 <style scoped>
-table#sodar-ss-assay-edit-table tbody td:first-child {
-  width: 100px;
-  max-width: 250px;
-  vertical-align: top;
-  white-space: nowrap;
-  padding-top: 20px;
-}
-#sodar-ss-assay-edit-btn-group {
-  padding-right: 12px;
-}
 </style>
-

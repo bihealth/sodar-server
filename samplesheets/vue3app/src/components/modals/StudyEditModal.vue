@@ -154,7 +154,7 @@ defineExpose({ show })
     <div id="sodar-ss-study-edit-content">
       <table
           v-if="studyMeta"
-          class="table table-borderless w-100 mb-3"
+          class="table table-borderless sodar-ss-isa-isa-edit-table w-100 mb-3"
           id="sodar-ss-study-edit-table">
         <InvStudyMetaEditSection
             :file-names="studyFileNames"
@@ -166,7 +166,7 @@ defineExpose({ show })
     </div>
     <div id="sodar-ss-study-edit-controls">
       <BButtonGroup
-          class="pull-right"
+          class="sodar-ss-isa-edit-btn-group pull-right"
           id="sodar-ss-study-edit-btn-group">
         <BButton
             variant="secondary"
@@ -189,14 +189,4 @@ defineExpose({ show })
 </template>
 
 <style scoped>
-table#sodar-ss-study-edit-table tbody td:first-child {
-  width: 100px;
-  max-width: 250px;
-  vertical-align: top;
-  white-space: nowrap;
-  padding-top: 20px;
-}
-#sodar-ss-study-edit-btn-group {
-  padding-right: 12px;
-}
 </style>

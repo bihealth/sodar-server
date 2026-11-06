@@ -15,13 +15,17 @@ import {
 
 // SODAR Context ---------------------------------------------------------------
 
+export interface SodarContextComments {
+  [key: string]: string
+}
+
 export interface SodarContextLinkLabel {
   label: string
   url: string | null
 }
 
 export interface SodarContextInvestigation {
-  comments: { [key: string]: string } | null
+  comments: SodarContextComments | null
   description: string
   identifier: string
   public_release_date: string
@@ -31,7 +35,7 @@ export interface SodarContextInvestigation {
 }
 
 export interface SodarContextAssay {
-  comments: { [key: string]: string } | null
+  comments: SodarContextComments | null
   display_name: string
   display_row_links: boolean
   file_name: string
@@ -46,7 +50,7 @@ export interface SodarContextAssay {
 
 export interface SodarContextStudy {
   assays: { [key: string]: SodarContextAssay }
-  comments: { [key: string]: string } | null
+  comments: SodarContextComments | null
   description: string
   display_name: string
   file_name: string
