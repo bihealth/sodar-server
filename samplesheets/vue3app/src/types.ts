@@ -15,13 +15,17 @@ import {
 
 // SODAR Context ---------------------------------------------------------------
 
+export interface SodarContextComments {
+  [key: string]: string
+}
+
 export interface SodarContextLinkLabel {
   label: string
   url: string | null
 }
 
 export interface SodarContextInvestigation {
-  comments: { [key: string]: string } | null
+  comments: SodarContextComments | null
   description: string
   identifier: string
   public_release_date: string
@@ -31,7 +35,7 @@ export interface SodarContextInvestigation {
 }
 
 export interface SodarContextAssay {
-  comments: { [key: string]: string } | null
+  comments: SodarContextComments | null
   display_name: string
   display_row_links: boolean
   file_name: string
@@ -46,7 +50,7 @@ export interface SodarContextAssay {
 
 export interface SodarContextStudy {
   assays: { [key: string]: SodarContextAssay }
-  comments: { [key: string]: string } | null
+  comments: SodarContextComments | null
   description: string
   display_name: string
   file_name: string
@@ -771,11 +775,17 @@ export interface InvStudyEditRequestMetadata {
   title: string
 }
 
-export interface InvestigationEditRequestBody {
+export interface IsaSectionEditRequestBody {
+  comments: SodarContextComments
+}
+
+export interface InvestigationEditRequestBody extends
+    IsaSectionEditRequestBody {
   inv_meta: InvStudyEditRequestMetadata
 }
 
-export interface StudyEditRequestBody {
+export interface StudyEditRequestBody extends
+    IsaSectionEditRequestBody {
   study_meta: InvStudyEditRequestMetadata
 }
 
@@ -785,7 +795,8 @@ export interface AssayEditRequestMetadata {
   technology_platform: string
 }
 
-export interface AssayEditRequestBody {
+export interface AssayEditRequestBody extends
+    IsaSectionEditRequestBody {
   assay_meta: AssayEditRequestMetadata
 }
 

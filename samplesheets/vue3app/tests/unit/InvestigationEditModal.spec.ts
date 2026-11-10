@@ -6,14 +6,18 @@ import { createBootstrap } from 'bootstrap-vue-next/plugins/createBootstrap'
 
 import InvestigationEditModal from '@/components/modals/InvestigationEditModal.vue'
 import { useAppStore } from '@/stores/appStore.ts'
+import { useEditStore } from '@/stores/editStore.ts'
 import {
   type SodarContext,
+  type SodarContextComments,
   type SodarContextInvestigation,
 } from '@/types.ts'
 import {
   AJAX_RES_OK,
   INV_UPDATE_FAIL_PREFIX,
   INV_UPDATE_OK_MSG,
+  SODAR_ISA_CONFIG_CREATE,
+  SODAR_ISA_CONFIG_OPEN,
   URL_INV_UPDATE_PREFIX,
   VARIANT_DANGER,
   VARIANT_SUCCESS,
@@ -29,6 +33,20 @@ import { copy } from '../testUtils.ts'
 let fetchDetail: string
 let fetchStatus: number
 const url = URL_INV_UPDATE_PREFIX + INV_UUID
+const defaultMetadata = {
+  description: '',
+  file_name: 'i_small.txt',
+  identifier: 'i_small',
+  public_release_date: '',
+  submission_date: '2026-10-15',
+  title: 'Small Investigation',
+}
+const configName = 'bih_germline'
+const configUp = 'updated_config'
+const defaultComments: SodarContextComments = {
+  [SODAR_ISA_CONFIG_CREATE]: configName,
+  [SODAR_ISA_CONFIG_OPEN]: configName
+}
 
 const metaDescUp = 'Updated description'
 const metaFileUp = 'i_small_update.txt'
@@ -43,6 +61,9 @@ const metaFileSel = '#sodar-ss-inv-input-meta-file'
 const metaDescSel = '#sodar-ss-inv-input-meta-desc'
 const metaSubDateSel = '#sodar-ss-inv-input-meta-sub-date'
 const metaPubDateSel = '#sodar-ss-inv-input-meta-pub-date'
+const commRowSel = '.sodar-ss-isa-comment-edit-row'
+const commInputSel = '.sodar-ss-isa-comment-input'
+const commDelBtnSel = '.sodar-ss-isa-comment-delete-btn'
 const updateBtnSel = '#sodar-ss-inv-edit-btn-update'
 
 const INVALID_CLASS = 'text-danger'
@@ -74,6 +95,9 @@ describe('InvestigationEditModal.vue', () => {
     const appStore = useAppStore()
     appStore.notifyCb = mockNotifyCb
     appStore.sodarContext = copy(sodarContext) as SodarContext
+    (appStore.sodarContext!.investigation as
+      SodarContextInvestigation).comments = copy(defaultComments) as
+        SodarContextComments
     fetchDetail = AJAX_RES_OK
     fetchStatus = 200
   })
@@ -84,6 +108,7 @@ describe('InvestigationEditModal.vue', () => {
     const wrapper = await showModal()
     expect(wrapper.find('#sodar-ss-inv-edit-content').exists()).toBe(true)
     expect(wrapper.find('#sodar-ss-inv-edit-table').exists()).toBe(true)
+
     expect(wrapper.find(metaIdSel).attributes().value).toBe(ic.identifier)
     expect(wrapper.find(metaTitleSel).attributes().value).toBe(ic.title)
     expect(wrapper.find(metaFileSel).attributes().value).toBe(
@@ -93,10 +118,21 @@ describe('InvestigationEditModal.vue', () => {
       metaSubDateSel).attributes().value).toBe(ic.submission_date)
     expect(wrapper.find(
       metaPubDateSel).attributes().value).toBe(ic.public_release_date)
+
+    const comments = wrapper.findAll(commRowSel)
+    expect(comments.length).toBe(2)
+    expect(comments![0]!.findAll('td')![0]!.text()).toBe(
+      SODAR_ISA_CONFIG_CREATE)
+    // Mandatory comment = delete button disabled
+    expect(comments![0]!.find(
+      commDelBtnSel).attributes().disabled).toBeDefined()
+    expect(comments![1]!.findAll('td')![0]!.text()).toBe(SODAR_ISA_CONFIG_OPEN)
+    expect(comments![1]!.find(
+      commDelBtnSel).attributes().disabled).not.toBeDefined()
     expect(wrapper.find(updateBtnSel).attributes().disabled).not.toBeDefined()
   })
 
-  test('update study metadata', async () => {
+  test('update investigation metadata', async () => {
     const appStore = useAppStore()
     const ic = appStore.sodarContext!.investigation as SodarContextInvestigation
 
@@ -119,8 +155,10 @@ describe('InvestigationEditModal.vue', () => {
       title: metaTitleUp,
     }
     expect(fetch).toHaveBeenCalledWith(
-      url, expect.objectContaining(
-        { body: JSON.stringify({ inv_meta: expMeta })}))
+      url, expect.objectContaining({
+        body: JSON.stringify({
+          inv_meta: expMeta,
+          comments: defaultComments })}))
     expect(mockNotifyCb).toHaveBeenCalledWith(
       INV_UPDATE_OK_MSG, VARIANT_SUCCESS)
 
@@ -130,6 +168,56 @@ describe('InvestigationEditModal.vue', () => {
     expect(ic.description).toBe(metaDescUp)
     expect(ic.submission_date).toBe(metaSubDateUp)
     expect(ic.public_release_date).toBe(metaPubDateUp)
+  })
+
+  test('update optional investigation comment', async () => {
+    const appStore = useAppStore()
+    const editStore = useEditStore()
+    const ic = appStore.sodarContext!.investigation as SodarContextInvestigation
+    expect(editStore.updateCache).toBe(false)
+
+    const wrapper = await showModal()
+    await wrapper.findAll(commInputSel)![1]!.setValue(configUp)
+    await wrapper.find('#sodar-ss-inv-edit-btn-update').trigger('click')
+
+    const expComments = copy(defaultComments) as SodarContextComments
+    expComments[SODAR_ISA_CONFIG_OPEN] = configUp
+    expect(fetch).toHaveBeenCalledWith(
+      url, expect.objectContaining({
+        body: JSON.stringify({
+          inv_meta: defaultMetadata,
+          comments: expComments })}))
+    expect(mockNotifyCb).toHaveBeenCalledWith(
+      INV_UPDATE_OK_MSG, VARIANT_SUCCESS)
+
+    expect(ic.comments![SODAR_ISA_CONFIG_CREATE]).toBe(configName)
+    expect(ic.comments![SODAR_ISA_CONFIG_OPEN]).toBe(configUp)
+    expect(editStore.updateCache).toBe(false) // Should be unchanged
+  })
+
+  test('update mandatory investigation comment', async () => {
+    const appStore = useAppStore()
+    const editStore = useEditStore()
+    const ic = appStore.sodarContext!.investigation as SodarContextInvestigation
+    expect(editStore.updateCache).toBe(false)
+
+    const wrapper = await showModal()
+    await wrapper.findAll(commInputSel)![0]!.setValue(configUp)
+    await wrapper.find('#sodar-ss-inv-edit-btn-update').trigger('click')
+
+    const expComments = copy(defaultComments) as SodarContextComments
+    expComments[SODAR_ISA_CONFIG_CREATE] = configUp
+    expect(fetch).toHaveBeenCalledWith(
+      url, expect.objectContaining({
+        body: JSON.stringify({
+          inv_meta: defaultMetadata,
+          comments: expComments })}))
+    expect(mockNotifyCb).toHaveBeenCalledWith(
+      INV_UPDATE_OK_MSG, VARIANT_SUCCESS)
+
+    expect(ic.comments![SODAR_ISA_CONFIG_CREATE]).toBe(configUp)
+    expect(ic.comments![SODAR_ISA_CONFIG_OPEN]).toBe(configName)
+    expect(editStore.updateCache).toBe(true) // Should be updated
   })
 
   test('handle failed update', async () => {

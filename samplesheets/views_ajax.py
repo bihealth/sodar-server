@@ -242,6 +242,27 @@ class BaseISAPropertyEditAjaxView(BaseSheetEditAjaxView):
         obj.description = data['description'].strip()
 
     @classmethod
+    def update_comments(
+        cls, obj: Union[Investigation, Study, Assay], post_data: dict
+    ):
+        """
+        Update comments for Investigation, Study or Assay. Replaces the existing
+        comment set.
+
+        :param obj: Related object (Investigation/Study/Assay)
+        :param post_data: POST request data (dict)
+        """
+        comments = post_data.get('comments')
+        if comments is None:
+            return  # Empty dict is OK to update, but skip if None
+        res = {}
+        for k, v in comments.items():
+            if v is None:
+                v = ''
+            res[k.strip()] = v.strip()
+        obj.comments = res
+
+    @classmethod
     def validate_isa_file_name(
         cls, obj: Union[Investigation, Study, Assay], name: str
     ) -> bool:
@@ -1081,6 +1102,7 @@ class InvestigationUpdateAjaxView(BaseISAPropertyEditAjaxView):
         inv_meta = request.data.get('inv_meta')
         if inv_meta:
             self.update_inv_study_metadata(obj, inv_meta)
+        self.update_comments(obj, request.data)
         obj.save()
 
 
@@ -1094,6 +1116,7 @@ class StudyUpdateAjaxView(BaseISAPropertyEditAjaxView):
         study_meta = request.data.get('study_meta')
         if study_meta:
             self.update_inv_study_metadata(obj, study_meta)
+        self.update_comments(obj, request.data)
         obj.save()
 
 
@@ -1128,6 +1151,7 @@ class AssayUpdateAjaxView(BaseISAPropertyEditAjaxView):
         assay_meta = request.data.get('assay_meta')
         if assay_meta:
             self._update_metadata(obj, assay_meta)
+        self.update_comments(obj, request.data)
         obj.save()
 
 

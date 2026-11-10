@@ -2,13 +2,17 @@
 import { ref, useTemplateRef } from 'vue'
 import { BButton, BButtonGroup, BModal } from 'bootstrap-vue-next'
 
-import ModalHeader from '@/components/modals/include/ModalHeader.vue'
 import InvStudyMetaEditSection from '@/components/modals/include/InvStudyMetaEditSection.vue'
+import IsaCommentEditSection from '@/components/modals/include/IsaCommentEditSection.vue'
+import ModalHeader from '@/components/modals/include/ModalHeader.vue'
+import ModalTableSeparator from '@/components/modals/include/ModalTableSeparator.vue'
+
 import { useAppStore } from '@/stores/appStore.ts'
 import { useEditStore } from '@/stores/editStore.ts'
 import { getAjaxRequestInit } from '@/utils/appUtils.ts'
 import {
   type GenericResponseBody,
+  type SodarContextComments,
   type SodarContextStudy,
   type InvStudyEditMeta,
   type StudyEditRequestBody,
@@ -16,12 +20,17 @@ import {
 import {
   AJAX_RES_OK,
   REQ_POST,
+  SODAR_ISA_STUDY_PLUGIN,
   STUDY_UPDATE_FAIL_PREFIX,
   STUDY_UPDATE_OK_MSG,
   URL_STUDY_UPDATE_PREFIX,
   VARIANT_DANGER,
   VARIANT_SUCCESS
 } from '@/constants.ts'
+
+// Constants -------------------------------------------------------------------
+
+const CACHE_UPDATE_COMMENTS = [SODAR_ISA_STUDY_PLUGIN]
 
 // External Data ---------------------------------------------------------------
 
@@ -32,11 +41,13 @@ const editStore = useEditStore()
 
 const modalRef = useTemplateRef('studyEditModalRef')
 const showModal = ref<boolean>(false)
+const studyComments = ref<SodarContextComments | null>(null)
 const studyMeta = ref<InvStudyEditMeta | null>(null)
 const updating = ref<boolean>(true)
 
 // Internal Vars ---------------------------------------------------------------
 
+let ogContext: SodarContextStudy
 let studyFileNames: Array<string> = []
 let studyIds: Array<string> = []
 let tableContext: SodarContextStudy
@@ -59,12 +70,13 @@ async function updateStudy () {
       public_release_date: studyMeta.value!.publicReleaseDate.trim(),
       submission_date: studyMeta.value!.submissionDate.trim(),
       title: studyMeta.value!.title.trim(),
-    } // TODO: Trim with a oneliner or otherwise ensure sanitization
+    }, // TODO: Trim with a oneliner or otherwise ensure sanitization
+    comments: studyComments.value!,
   }
   const response = await fetch(url, getAjaxRequestInit(REQ_POST, updateBody))
   const resBody: GenericResponseBody = await response.json()
   if (resBody.detail == AJAX_RES_OK) {
-    updateTableContext()
+    updateContext()
     if (appStore.notifyCb) {
       appStore.notifyCb(STUDY_UPDATE_OK_MSG, VARIANT_SUCCESS)
     }
@@ -75,8 +87,9 @@ async function updateStudy () {
   }
 }
 
-// Update tableContext with edited values
-function updateTableContext () {
+// Update tableContext and editStore
+function updateContext () {
+  // Update metadata
   const identifier = studyMeta.value!.identifier
   const title = studyMeta.value!.title
   tableContext.description = studyMeta.value!.description
@@ -87,6 +100,18 @@ function updateTableContext () {
   tableContext.title = title
   if (studyMeta.value!.title) tableContext.display_name = title
   else tableContext.display_name = identifier
+
+  // Update comments
+  tableContext.comments = studyComments.value
+
+  // Update editStore
+  if (editStore.updateCache) return
+  for (const c of CACHE_UPDATE_COMMENTS) {
+    if (tableContext.comments![c] !== ogContext.comments![c]) {
+      editStore.updateCache = true
+      break
+    }
+  }
 }
 
 // API and Life Cycle ----------------------------------------------------------
@@ -94,6 +119,10 @@ function updateTableContext () {
 function show (uuid: string) {
   tableContext = appStore.sodarContext!.studies[uuid]!
   tableUuid = uuid
+  // Force null study comments into empty object
+  if (!tableContext.comments) tableContext.comments = {}
+  // Store original values
+  ogContext = JSON.parse(JSON.stringify(tableContext)) as SodarContextStudy
 
   // Store info from other studies for uniqueness checks
   studyFileNames = []
@@ -113,6 +142,7 @@ function show (uuid: string) {
     submissionDate: tableContext.submission_date,
     title: tableContext.title,
   }
+  studyComments.value = tableContext.comments
   editStore.modalEditValid = true // Assume all data must be valid when opening
   updating.value = false
   showModal.value = true
@@ -154,19 +184,25 @@ defineExpose({ show })
     <div id="sodar-ss-study-edit-content">
       <table
           v-if="studyMeta"
-          class="table table-borderless w-100 mb-3"
+          class="table table-borderless sodar-ss-isa-isa-edit-table w-100 mb-3"
           id="sodar-ss-study-edit-table">
+        <!-- Metadata -->
         <InvStudyMetaEditSection
             :file-names="studyFileNames"
             :identifiers="studyIds"
             :metadata="studyMeta"
             :study-mode="true">
         </InvStudyMetaEditSection>
+        <ModalTableSeparator colspan="3" />
+        <!-- Comments -->
+        <IsaCommentEditSection
+            :comments="studyComments">
+        </IsaCommentEditSection>
       </table>
     </div>
     <div id="sodar-ss-study-edit-controls">
       <BButtonGroup
-          class="pull-right"
+          class="sodar-ss-isa-edit-btn-group pull-right"
           id="sodar-ss-study-edit-btn-group">
         <BButton
             variant="secondary"
@@ -189,14 +225,4 @@ defineExpose({ show })
 </template>
 
 <style scoped>
-table#sodar-ss-study-edit-table tbody td:first-child {
-  width: 100px;
-  max-width: 250px;
-  vertical-align: top;
-  white-space: nowrap;
-  padding-top: 20px;
-}
-#sodar-ss-study-edit-btn-group {
-  padding-right: 12px;
-}
 </style>

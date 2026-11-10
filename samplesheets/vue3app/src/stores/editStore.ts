@@ -11,6 +11,7 @@ export const useEditStore = defineStore('edit', () => {
   const modalEditValid = ref<boolean>(true)
   const unsavedData = ref<boolean>(false)
   const unsavedRow = ref<EditUnsavedRow | null>(null)
+  const updateCache = ref<boolean>(false)
   const updatingRow = ref<boolean>(false)
   const versionSaved = ref<boolean>(true) // NOTE: Should be true by default
 
@@ -21,6 +22,7 @@ export const useEditStore = defineStore('edit', () => {
     enableRowSave.value = false
     unsavedData.value = false
     unsavedRow.value = null
+    updateCache.value = false
     updatingRow.value = false
     versionSaved.value = true
   }
@@ -34,6 +36,7 @@ export const useEditStore = defineStore('edit', () => {
     modalEditValid,
     unsavedData,
     unsavedRow,
+    updateCache,
     updatingRow,
     versionSaved,
     // Functions

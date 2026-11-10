@@ -82,6 +82,9 @@ function onIdentifierInput () {
 <template>
   <tbody class="sodar-ss-inv-study-meta-edit-body">
     <tr>
+      <th colspan="3">Metadata</th>
+    </tr>
+    <tr>
       <td>Identifier</td>
       <td>
         <BFormInput

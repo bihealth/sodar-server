@@ -240,4 +240,14 @@ export const OBO_HEADER_OMIM = 'omim disease'
 export const OBO_HEADER_ORDO = 'orphanet disease'
 
 // SODAR ISA-Tab Metadata
+export const SODAR_ISA_CONFIG_CREATE = 'Created With Configuration'
+export const SODAR_ISA_CONFIG_OPEN = 'Last Opened With Configuration'
+export const SODAR_ISA_STUDY_PLUGIN = 'SODAR Study Plugin'
 export const SODAR_ISA_ASSAY_DISPLAY_NAME = 'SODAR Assay Display Name'
+export const SODAR_ISA_ASSAY_PLUGIN = 'SODAR Assay Plugin'
+
+// SODAR generic assay plugin
+export const SODAR_ISA_ASSAY_MISC = 'SODAR Assay Link MiscFiles'
+export const SODAR_ISA_ASSAY_RESULTS = 'SODAR Assay Link ResultsReports'
+export const SODAR_ISA_ASSAY_PATH_PREFIX = 'SODAR Assay Row Path'
+export const SODAR_ISA_ASSAY_LINK_ROW = 'SODAR Assay Link Row'

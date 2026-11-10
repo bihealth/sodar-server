@@ -6,12 +6,20 @@ import { createBootstrap } from 'bootstrap-vue-next/plugins/createBootstrap'
 
 import AssayEditModal from '@/components/modals/AssayEditModal.vue'
 import { useAppStore } from '@/stores/appStore.ts'
-import { type SodarContext, type SodarContextAssay } from '@/types.ts'
+import { useEditStore } from '@/stores/editStore.ts'
+import {
+  type SodarContext,
+  type SodarContextAssay,
+  type SodarContextComments
+} from '@/types.ts'
 import {
   AJAX_RES_OK,
   ASSAY_UPDATE_FAIL_PREFIX,
   ASSAY_UPDATE_OK_MSG,
   SODAR_ISA_ASSAY_DISPLAY_NAME,
+  SODAR_ISA_ASSAY_LINK_ROW,
+  SODAR_ISA_ASSAY_PATH_PREFIX,
+  SODAR_ISA_ASSAY_PLUGIN,
   URL_ASSAY_UPDATE_PREFIX,
   VARIANT_DANGER,
   VARIANT_SUCCESS,
@@ -27,11 +35,22 @@ let fetchDetail: string
 let fetchStatus: number
 const url = URL_ASSAY_UPDATE_PREFIX + ASSAY_UUID
 
+const defaultComments: SodarContextComments = {
+  [SODAR_ISA_ASSAY_DISPLAY_NAME]: 'Custom Assay Name',
+  'Test Assay Comment': 'test value',
+}
+
 const metaFileUp = 'a_small_update.txt'
 const metaTechPlatUp = 'Sequencer McSequencerface 9000'
+const pluginName = 'samplesheets_assay_dna_sequencing'
 
 const metaFileSel = '#sodar-ss-assay-input-meta-file'
 const metaTechPlatSel = '#sodar-ss-assay-input-meta-tech-platform'
+const commInputSel = '.sodar-ss-isa-comment-input'
+const commInsKeySel = '.sodar-ss-isa-comment-insert-key'
+const commInsValSel = '.sodar-ss-isa-comment-insert-value'
+const commInsBtnSel = '.sodar-ss-isa-comment-insert-btn'
+const commDelBtnSel = '.sodar-ss-isa-comment-delete-btn'
 const updateBtnSel = '#sodar-ss-assay-edit-btn-update'
 
 const INVALID_CLASS = 'text-danger'
@@ -66,6 +85,8 @@ describe('AssayEditModal.vue', () => {
     appStore.currentStudyUuid = STUDY_UUID
     appStore.notifyCb = mockNotifyCb
     appStore.sodarContext = copy(sodarContext) as SodarContext
+    appStore.sodarContext.studies[STUDY_UUID]!.assays[
+      ASSAY_UUID]!.comments = copy(defaultComments) as SodarContextComments
 
     fetchDetail = AJAX_RES_OK
     fetchStatus = 200
@@ -77,17 +98,57 @@ describe('AssayEditModal.vue', () => {
     const wrapper = await showModal()
     expect(wrapper.find('#sodar-ss-assay-edit-content').exists()).toBe(true)
     expect(wrapper.find('#sodar-ss-assay-edit-table').exists()).toBe(true)
+    expect(wrapper.find('.sodar-ss-isa-comment-edit-body').exists()).toBe(true)
     expect(wrapper.find(metaFileSel).attributes().value).toBe(ac.file_name)
     expect(wrapper.find(
       metaTechPlatSel).attributes().value).toBe(ac.technology_platform)
     expect(wrapper.find(updateBtnSel).attributes().disabled).not.toBeDefined()
   })
 
-  test('update assay metadata', async () => {
+  test('render component with null comments', async () => {
     const appStore = useAppStore()
     const ac = appStore.sodarContext!.studies[STUDY_UUID]!.assays[ASSAY_UUID]!
-    expect(ac.comments).toBe(null)
+    ac.comments = null
+    const wrapper = await showModal()
+    expect(wrapper.find('.sodar-ss-isa-comment-edit-body').exists()).toBe(true)
+  })
+
+  test('update assay metadata', async () => {
+    const appStore = useAppStore()
+    const editStore = useEditStore()
+    const ac = appStore.sodarContext!.studies[STUDY_UUID]!.assays[ASSAY_UUID]!
+    expect(ac.comments).toEqual(defaultComments)
+    expect(editStore.updateCache).toBe(false)
+
+    const wrapper = await showModal()
     expect(fetch).not.toHaveBeenCalled()
+    await wrapper.find(metaFileSel).setValue(metaFileUp)
+    await wrapper.find(metaTechPlatSel).setValue(metaTechPlatUp)
+    await wrapper.find('#sodar-ss-assay-edit-btn-update').trigger('click')
+
+    const expMeta = {
+      file_name: metaFileUp,
+      technology_platform: metaTechPlatUp,
+    }
+    expect(fetch).toHaveBeenCalledWith(
+      url, expect.objectContaining({
+        body: JSON.stringify({
+          assay_meta: expMeta,
+          comments: defaultComments })}))
+    expect(mockNotifyCb).toHaveBeenCalledWith(
+      ASSAY_UPDATE_OK_MSG, VARIANT_SUCCESS)
+
+    expect(ac.file_name).toBe(metaFileUp)
+    expect(ac.technology_platform).toBe(metaTechPlatUp)
+    // Display name updated to override
+    expect(ac.display_name).toBe(defaultComments[SODAR_ISA_ASSAY_DISPLAY_NAME])
+    expect(editStore.updateCache).toBe(false) // Should be unchanged
+  })
+
+    test('update assay metadata with empty display name', async () => {
+    const appStore = useAppStore()
+    const ac = appStore.sodarContext!.studies[STUDY_UUID]!.assays[ASSAY_UUID]!
+    ac.comments![SODAR_ISA_ASSAY_DISPLAY_NAME] = ''
 
     const wrapper = await showModal()
     await wrapper.find(metaFileSel).setValue(metaFileUp)
@@ -98,15 +159,21 @@ describe('AssayEditModal.vue', () => {
       file_name: metaFileUp,
       technology_platform: metaTechPlatUp,
     }
+    const expComments = {
+      [SODAR_ISA_ASSAY_DISPLAY_NAME]: '',
+      'Test Assay Comment': 'test value',
+    }
     expect(fetch).toHaveBeenCalledWith(
-      url, expect.objectContaining(
-        { body: JSON.stringify({ assay_meta: expMeta })}))
+      url, expect.objectContaining({
+        body: JSON.stringify({
+          assay_meta: expMeta,
+          comments: expComments })}))
     expect(mockNotifyCb).toHaveBeenCalledWith(
       ASSAY_UPDATE_OK_MSG, VARIANT_SUCCESS)
 
     expect(ac.file_name).toBe(metaFileUp)
     expect(ac.technology_platform).toBe(metaTechPlatUp)
-    // No override in comments = display name should be updated
+    // No override = display name updated to match assay name
     expect(ac.display_name).toBe('Small Update')
   })
 
@@ -117,7 +184,6 @@ describe('AssayEditModal.vue', () => {
     expect(ac.display_name).toBe('Small')
 
     const wrapper = await showModal()
-    expect(fetch).not.toHaveBeenCalled()
     await wrapper.find(metaFileSel).setValue(metaFileUp)
     await wrapper.find(metaTechPlatSel).setValue(metaTechPlatUp)
     await wrapper.find('#sodar-ss-assay-edit-btn-update').trigger('click')
@@ -126,6 +192,149 @@ describe('AssayEditModal.vue', () => {
     expect(ac.technology_platform).toBe(metaTechPlatUp)
     // Override in comments = display name should remain
     expect(ac.display_name).toBe('Small')
+  })
+
+  test('update assay comments with plugin name inserted', async () => {
+    const editStore = useEditStore()
+    expect(editStore.updateCache).toBe(false)
+
+    const wrapper = await showModal()
+    await wrapper.find(commInsKeySel).setValue(SODAR_ISA_ASSAY_PLUGIN)
+    await wrapper.find(commInsValSel).setValue(pluginName)
+    await wrapper.find(commInsBtnSel).trigger('click')
+    await wrapper.find('#sodar-ss-assay-edit-btn-update').trigger('click')
+
+    expect(fetch).toHaveBeenCalled()
+    expect(mockNotifyCb).toHaveBeenCalledWith(
+      ASSAY_UPDATE_OK_MSG, VARIANT_SUCCESS)
+    expect(editStore.updateCache).toBe(true) // Should be updated
+  })
+
+  test('update assay comments with plugin name unchanged', async () => {
+    const appStore = useAppStore()
+    const editStore = useEditStore()
+    const comments = appStore.sodarContext!.studies[STUDY_UUID]!.assays[
+      ASSAY_UUID]!.comments as SodarContextComments
+    comments[SODAR_ISA_ASSAY_PLUGIN] = pluginName
+    expect(editStore.updateCache).toBe(false)
+
+    const wrapper = await showModal()
+    await wrapper.find(metaFileSel).setValue(metaFileUp)
+    await wrapper.find(commInsBtnSel).trigger('click')
+    await wrapper.find('#sodar-ss-assay-edit-btn-update').trigger('click')
+
+    expect(fetch).toHaveBeenCalled()
+    expect(mockNotifyCb).toHaveBeenCalledWith(
+      ASSAY_UPDATE_OK_MSG, VARIANT_SUCCESS)
+    expect(editStore.updateCache).toBe(false) // Should be unchanged
+  })
+
+  test('update assay comments with plugin name changed', async () => {
+    const appStore = useAppStore()
+    const editStore = useEditStore()
+    const comments = appStore.sodarContext!.studies[STUDY_UUID]!.assays[
+      ASSAY_UUID]!.comments as SodarContextComments
+    comments[SODAR_ISA_ASSAY_PLUGIN] = pluginName
+    expect(editStore.updateCache).toBe(false)
+
+    const wrapper = await showModal()
+    const commFields = wrapper.findAll(commInputSel)
+    await commFields![2]!.setValue('updated_plugin_name')
+    await wrapper.find('#sodar-ss-assay-edit-btn-update').trigger('click')
+
+    expect(fetch).toHaveBeenCalled()
+    expect(mockNotifyCb).toHaveBeenCalledWith(
+      ASSAY_UPDATE_OK_MSG, VARIANT_SUCCESS)
+    expect(editStore.updateCache).toBe(true) // Should be updated
+  })
+
+  test('update comments with generic plugin link row inserted', async () => {
+    const editStore = useEditStore()
+    expect(editStore.updateCache).toBe(false)
+
+    const wrapper = await showModal()
+    await wrapper.find(commInsKeySel).setValue(SODAR_ISA_ASSAY_LINK_ROW)
+    await wrapper.find(commInsValSel).setValue('abc;def')
+    await wrapper.find(commInsBtnSel).trigger('click')
+    await wrapper.find('#sodar-ss-assay-edit-btn-update').trigger('click')
+
+    expect(fetch).toHaveBeenCalled()
+    expect(mockNotifyCb).toHaveBeenCalledWith(
+      ASSAY_UPDATE_OK_MSG, VARIANT_SUCCESS)
+    expect(editStore.updateCache).toBe(true) // Should be updated
+  })
+
+  test('update comments with generic plugin row path inserted', async () => {
+    const editStore = useEditStore()
+    expect(editStore.updateCache).toBe(false)
+
+    const wrapper = await showModal()
+    await wrapper.find(commInsKeySel).setValue(
+      SODAR_ISA_ASSAY_PATH_PREFIX + ' 1')
+    await wrapper.find(commInsValSel).setValue('abc')
+    await wrapper.find(commInsBtnSel).trigger('click')
+    await wrapper.find('#sodar-ss-assay-edit-btn-update').trigger('click')
+
+    expect(fetch).toHaveBeenCalled()
+    expect(mockNotifyCb).toHaveBeenCalledWith(
+      ASSAY_UPDATE_OK_MSG, VARIANT_SUCCESS)
+    expect(editStore.updateCache).toBe(true) // Should be updated
+  })
+
+  test('update comments with generic plugin row path deleted', async () => {
+    const appStore = useAppStore()
+    const editStore = useEditStore()
+    const comments = appStore.sodarContext!.studies[STUDY_UUID]!.assays[
+      ASSAY_UUID]!.comments as SodarContextComments
+    comments[SODAR_ISA_ASSAY_PATH_PREFIX + ' 1'] = 'abc'
+    expect(editStore.updateCache).toBe(false)
+
+    const wrapper = await showModal()
+    const delButtons = wrapper.findAll(commDelBtnSel)
+    expect(delButtons.length).toBe(3)
+    await delButtons![2]!.trigger('click')
+    await wrapper.find('#sodar-ss-assay-edit-btn-update').trigger('click')
+
+    expect(fetch).toHaveBeenCalled()
+    expect(mockNotifyCb).toHaveBeenCalledWith(
+      ASSAY_UPDATE_OK_MSG, VARIANT_SUCCESS)
+    expect(editStore.updateCache).toBe(true) // Should be updated
+  })
+
+  test('update comments with generic plugin row path changed', async () => {
+    const appStore = useAppStore()
+    const editStore = useEditStore()
+    const comments = appStore.sodarContext!.studies[STUDY_UUID]!.assays[
+      ASSAY_UUID]!.comments as SodarContextComments
+    comments[SODAR_ISA_ASSAY_PATH_PREFIX + ' 1'] = 'abc'
+    expect(editStore.updateCache).toBe(false)
+
+    const wrapper = await showModal()
+    const commFields = wrapper.findAll(commInputSel)
+    await commFields![2]!.setValue('def')
+    await wrapper.find('#sodar-ss-assay-edit-btn-update').trigger('click')
+
+    expect(fetch).toHaveBeenCalled()
+    expect(mockNotifyCb).toHaveBeenCalledWith(
+      ASSAY_UPDATE_OK_MSG, VARIANT_SUCCESS)
+    expect(editStore.updateCache).toBe(true) // Should be updated
+  })
+
+  test('update comments with generic plugin row path unchanged', async () => {
+    const appStore = useAppStore()
+    const editStore = useEditStore()
+    const comments = appStore.sodarContext!.studies[STUDY_UUID]!.assays[
+      ASSAY_UUID]!.comments as SodarContextComments
+    comments[SODAR_ISA_ASSAY_PATH_PREFIX + ' 1'] = 'abc'
+    expect(editStore.updateCache).toBe(false)
+
+    const wrapper = await showModal()
+    await wrapper.find('#sodar-ss-assay-edit-btn-update').trigger('click')
+
+    expect(fetch).toHaveBeenCalled()
+    expect(mockNotifyCb).toHaveBeenCalledWith(
+      ASSAY_UPDATE_OK_MSG, VARIANT_SUCCESS)
+    expect(editStore.updateCache).toBe(false) // Should be unchanged
   })
 
   test('handle failed update', async () => {
@@ -152,7 +361,7 @@ describe('AssayEditModal.vue', () => {
     expect(ac.technology_platform).toBe(og.technology_platform)
   })
 
-  test('cancel assay metadata update', async () => {
+  test('cancel assay property update', async () => {
     const appStore = useAppStore()
     const ac = appStore.sodarContext!.studies[STUDY_UUID]!.assays[ASSAY_UUID]!
     const og = sodarContext.studies[STUDY_UUID]!.assays[ASSAY_UUID]!

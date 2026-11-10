@@ -2,17 +2,21 @@
 import { ref, useTemplateRef } from 'vue'
 import { BButton, BButtonGroup, BModal } from 'bootstrap-vue-next'
 
-import ModalHeader from '@/components/modals/include/ModalHeader.vue'
 import InvStudyMetaEditSection from '@/components/modals/include/InvStudyMetaEditSection.vue'
-import { useEditStore } from '@/stores/editStore.ts'
+import IsaCommentEditSection from '@/components/modals/include/IsaCommentEditSection.vue'
+import ModalHeader from '@/components/modals/include/ModalHeader.vue'
+import ModalTableSeparator from '@/components/modals/include/ModalTableSeparator.vue'
 
 import { useAppStore } from '@/stores/appStore.ts'
+import { useEditStore } from '@/stores/editStore.ts'
+
 import { getAjaxRequestInit } from '@/utils/appUtils.ts'
 import {
   type GenericResponseBody,
   type InvStudyEditMeta,
   type InvestigationEditRequestBody,
   type SodarContextInvestigation,
+  type SodarContextComments,
 } from '@/types.ts'
 
 import {
@@ -20,10 +24,15 @@ import {
   REQ_POST,
   INV_UPDATE_FAIL_PREFIX,
   INV_UPDATE_OK_MSG,
+  SODAR_ISA_CONFIG_CREATE,
   URL_INV_UPDATE_PREFIX,
   VARIANT_DANGER,
   VARIANT_SUCCESS
 } from '@/constants.ts'
+
+// Constants -------------------------------------------------------------------
+
+const MANDATORY_COMMENTS = [SODAR_ISA_CONFIG_CREATE]
 
 // External Data ---------------------------------------------------------------
 
@@ -32,11 +41,15 @@ const editStore = useEditStore()
 
 // Refs ------------------------------------------------------------------------
 
-// const fieldsValid = ref<FieldValidStatus>({})
 const modalRef = useTemplateRef('invEditModalRef')
 const showModal = ref<boolean>(false)
+const invComments = ref<SodarContextComments | null>(null)
 const invMeta = ref<InvStudyEditMeta | null>(null)
 const updating = ref<boolean>(true)
+
+// Internal Vars ---------------------------------------------------------------
+
+let ogComments: SodarContextComments
 
 // Helpers ---------------------------------------------------------------------
 
@@ -57,12 +70,13 @@ async function updateInvestigation () {
       public_release_date: invMeta.value!.publicReleaseDate.trim(),
       submission_date: invMeta.value!.submissionDate.trim(),
       title: invMeta.value!.title.trim(),
-    } // TODO: Trim with a oneliner or otherwise ensure sanitization
+    }, // TODO: Trim with a oneliner or otherwise ensure sanitization
+    comments: invComments.value!
   }
   const response = await fetch(url, getAjaxRequestInit(REQ_POST, updateBody))
   const resBody: GenericResponseBody = await response.json()
   if (resBody.detail == AJAX_RES_OK) {
-    updateInvContext()
+    updateContext()
     if (appStore.notifyCb) {
       appStore.notifyCb(INV_UPDATE_OK_MSG, VARIANT_SUCCESS)
     }
@@ -73,16 +87,27 @@ async function updateInvestigation () {
   }
 }
 
-// Update investigation context with edited values
-function updateInvContext () {
+// Update tableContext and editStore
+function updateContext () {
   const invContext = appStore.sodarContext!.investigation as
     SodarContextInvestigation
+
+  // Update metadata
   invContext.description = invMeta.value!.description
   appStore.sodarContext!.inv_file_name = invMeta.value!.fileName
   invContext.identifier = invMeta.value!.identifier
   invContext.public_release_date = invMeta.value!.publicReleaseDate
   invContext.submission_date = invMeta.value!.submissionDate
   invContext.title = invMeta.value!.title
+  // Update comments
+  invContext.comments = invComments.value
+
+  // Update editStore
+  if (!editStore.updateCache &&
+      invContext.comments![SODAR_ISA_CONFIG_CREATE] !==
+        ogComments[SODAR_ISA_CONFIG_CREATE]) {
+    editStore.updateCache = true
+  }
 }
 
 // API and Life Cycle ----------------------------------------------------------
@@ -90,6 +115,11 @@ function updateInvContext () {
 function show () {
   const invContext = appStore.sodarContext!.investigation as
     SodarContextInvestigation
+  // Force null comments into empty object
+  if (!invContext.comments) invContext.comments = {}
+  // Store original comments
+  ogComments = JSON.parse(JSON.stringify(invContext.comments)) as
+    SodarContextComments
   invMeta.value = {
     description: invContext.description,
     fileName: appStore.sodarContext!.inv_file_name as string,
@@ -98,6 +128,7 @@ function show () {
     submissionDate: invContext.submission_date,
     title: invContext.title,
   }
+  invComments.value = invContext.comments
   updating.value = false
   editStore.modalEditValid = true // Assume all data must be valid when opening
   showModal.value = true
@@ -138,19 +169,26 @@ defineExpose({ show })
     <div id="sodar-ss-inv-edit-content">
       <table
           v-if="invMeta"
-          class="table table-borderless w-100 mb-3"
+          class="table table-borderless sodar-ss-isa-isa-edit-table w-100 mb-3"
           id="sodar-ss-inv-edit-table">
+        <!-- Metadata -->
         <InvStudyMetaEditSection
             :file-names="[]"
             :identifiers="[]"
             :metadata="invMeta"
             :study-mode="false">
         </InvStudyMetaEditSection>
+        <ModalTableSeparator colspan="3" />
+        <!-- Comments -->
+        <IsaCommentEditSection
+            :comments="invComments"
+            :mandatory="MANDATORY_COMMENTS">
+        </IsaCommentEditSection>
       </table>
     </div>
     <div id="sodar-ss-inv-edit-controls">
       <BButtonGroup
-          class="pull-right"
+          class="sodar-ss-isa-edit-btn-group pull-right"
           id="sodar-ss-inv-edit-btn-group">
         <BButton
             variant="secondary"

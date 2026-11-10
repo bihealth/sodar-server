@@ -898,7 +898,8 @@ class TestInvestigationUpdateAjaxView(
                 'file_name': 'i_small_updated.txt',
                 'submission_date': '2026-10-15',
                 'public_release_date': '2026-11-27',
-            }
+            },
+            'comments': {'Test Inv Comment': 'test value'},
         }
         self.url = reverse(
             'samplesheets:ajax_inv_update',
@@ -913,6 +914,7 @@ class TestInvestigationUpdateAjaxView(
         self.assertEqual(self.inv.file_name, 'i_small/i_small.txt')
         self.assertEqual(self.inv.submission_date, None)
         self.assertEqual(self.inv.public_release_date, None)
+        self.assertEqual(self.inv.comments, {})
         self.assertIsNone(self._get_tl_event())
 
         with self.login(self.user):
@@ -935,6 +937,7 @@ class TestInvestigationUpdateAjaxView(
             self.inv.public_release_date.strftime('%Y-%m-%d'),
             p_meta['public_release_date'],
         )
+        self.assertEqual(self.inv.comments, self.post_data['comments'])
 
         tl_event = self._get_tl_event()
         self.assertEqual(tl_event.extra_data, self.post_data)
@@ -1105,7 +1108,11 @@ class TestStudyUpdateAjaxView(SampleSheetModelMixin, SamplesheetsViewTestBase):
                 'file_name': 's_small_updated.txt',
                 'submission_date': '2026-10-15',
                 'public_release_date': '2026-11-27',
-            }
+            },
+            'comments': {
+                'Study Grant Number': '123',
+                'Study Funding Agency': 'The Agency of Study Funding',
+            },
         }
         self.url = reverse(
             'samplesheets:ajax_study_update',
@@ -1120,6 +1127,10 @@ class TestStudyUpdateAjaxView(SampleSheetModelMixin, SamplesheetsViewTestBase):
         self.assertEqual(self.study.file_name, 's_small.txt')
         self.assertEqual(self.study.submission_date, None)
         self.assertEqual(self.study.public_release_date, None)
+        self.assertEqual(
+            self.study.comments,
+            {'Study Grant Number': '', 'Study Funding Agency': ''},
+        )
         self.assertIsNone(self._get_tl_event())
 
         with self.login(self.user):
@@ -1142,6 +1153,7 @@ class TestStudyUpdateAjaxView(SampleSheetModelMixin, SamplesheetsViewTestBase):
             self.study.public_release_date.strftime('%Y-%m-%d'),
             p_meta['public_release_date'],
         )
+        self.assertEqual(self.study.comments, self.post_data['comments'])
 
         tl_event = self._get_tl_event()
         self.assertEqual(tl_event.extra_data, self.post_data)
@@ -1336,7 +1348,11 @@ class TestAssayUpdateAjaxView(SampleSheetModelMixin, SamplesheetsViewTestBase):
             'assay_meta': {
                 'file_name': 'a_small_updated.txt',
                 'technology_platform': 'ACME 9000',
-            }
+            },
+            'comments': {
+                'Test Assay Comment': 'test value',
+                sc.ISA_META_ASSAY_DISPLAY_NAME: 'Updated Small Assay',
+            },
         }
         self.url = reverse(
             'samplesheets:ajax_assay_update',
@@ -1347,6 +1363,7 @@ class TestAssayUpdateAjaxView(SampleSheetModelMixin, SamplesheetsViewTestBase):
         """Test AssayUpdateAjaxView POST"""
         self.assertEqual(self.assay.file_name, 'a_small.txt')
         self.assertEqual(self.assay.technology_platform, '')
+        self.assertEqual(self.assay.comments, {})
         self.assertIsNone(self._get_tl_event())
 
         with self.login(self.user):
@@ -1360,6 +1377,11 @@ class TestAssayUpdateAjaxView(SampleSheetModelMixin, SamplesheetsViewTestBase):
         self.assertEqual(self.assay.file_name, a_meta['file_name'])
         self.assertEqual(
             self.assay.technology_platform, a_meta['technology_platform']
+        )
+        self.assertEqual(self.assay.comments, self.post_data['comments'])
+        self.assertEqual(
+            self.assay.get_display_name(),
+            self.post_data['comments'][sc.ISA_META_ASSAY_DISPLAY_NAME],
         )
 
         tl_event = self._get_tl_event()
@@ -1439,6 +1461,22 @@ class TestAssayUpdateAjaxView(SampleSheetModelMixin, SamplesheetsViewTestBase):
             )
         self.assertEqual(response.status_code, 400)
         self.assertEqual(response.data['detail'], FILE_INVALID_MSG)
+
+    def test_post_comments_override(self):
+        """Test POST with comments override"""
+        comm_key = 'Another Test Comment'
+        self.assay.comments = {comm_key: 'test value'}
+        self.assay.save()
+
+        with self.login(self.user):
+            response = self.client.post(
+                self.url, json.dumps(self.post_data), **POST_KW
+            )
+        self.assertEqual(response.status_code, 200)
+
+        self.assay.refresh_from_db()
+        self.assertEqual(self.assay.comments, self.post_data['comments'])
+        self.assertNotIn(comm_key, self.assay.comments)
 
 
 class TestSheetCellEditAjaxView(

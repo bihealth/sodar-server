@@ -6,9 +6,16 @@ import { createBootstrap } from 'bootstrap-vue-next/plugins/createBootstrap'
 
 import StudyEditModal from '@/components/modals/StudyEditModal.vue'
 import { useAppStore } from '@/stores/appStore.ts'
-import { type SodarContext, type SodarContextStudy } from '@/types.ts'
+import { useEditStore } from '@/stores/editStore.ts'
+import {
+  type InvStudyEditRequestMetadata,
+  type SodarContext,
+  type SodarContextComments,
+  type SodarContextStudy
+} from '@/types.ts'
 import {
   AJAX_RES_OK,
+  SODAR_ISA_STUDY_PLUGIN,
   STUDY_UPDATE_FAIL_PREFIX,
   STUDY_UPDATE_OK_MSG,
   URL_STUDY_UPDATE_PREFIX,
@@ -26,12 +33,28 @@ let fetchDetail: string
 let fetchStatus: number
 const url = URL_STUDY_UPDATE_PREFIX + STUDY_UUID
 
+const defaultMetadata: InvStudyEditRequestMetadata = {
+  description: '',
+  file_name: 's_small.txt',
+  identifier: 's_small',
+  public_release_date: '',
+  submission_date: '2026-10-15',
+  title: 'Small Germline Study',
+}
+const grantNumComm = 'Study Grant Number'
+const studyFundComm = 'Study Funding Agency'
+const defaultComments: SodarContextComments = {
+  [grantNumComm]: '',
+  [studyFundComm]: ''
+}
+
 const metaDescUp = 'Updated description'
 const metaFileUp = 's_small_update.txt'
 const metaIdUp = 'updated_id'
 const metaPubDateUp = '2026-02-02'
 const metaSubDateUp = '2026-01-01'
 const metaTitleUp = 'Updated Title'
+const pluginName = 'samplesheets_study_germline'
 
 const metaIdSel = '#sodar-ss-study-input-meta-id'
 const metaTitleSel = '#sodar-ss-study-input-meta-title'
@@ -39,6 +62,11 @@ const metaFileSel = '#sodar-ss-study-input-meta-file'
 const metaDescSel = '#sodar-ss-study-input-meta-desc'
 const metaSubDateSel = '#sodar-ss-study-input-meta-sub-date'
 const metaPubDateSel = '#sodar-ss-study-input-meta-pub-date'
+const commInputSel = '.sodar-ss-isa-comment-input'
+const commInsKeySel = '.sodar-ss-isa-comment-insert-key'
+const commInsValSel = '.sodar-ss-isa-comment-insert-value'
+const commInsBtnSel = '.sodar-ss-isa-comment-insert-btn'
+const commDelBtnSel = '.sodar-ss-isa-comment-delete-btn'
 const updateBtnSel = '#sodar-ss-study-edit-btn-update'
 
 const INVALID_CLASS = 'text-danger'
@@ -114,8 +142,10 @@ describe('StudyEditModal.vue', () => {
       title: metaTitleUp,
     }
     expect(fetch).toHaveBeenCalledWith(
-      url, expect.objectContaining(
-        { body: JSON.stringify({ study_meta: expMeta })}))
+      url, expect.objectContaining({
+        body: JSON.stringify({
+            study_meta: expMeta,
+            comments: defaultComments })}))
     expect(mockNotifyCb).toHaveBeenCalledWith(
       STUDY_UPDATE_OK_MSG, VARIANT_SUCCESS)
 
@@ -125,6 +155,101 @@ describe('StudyEditModal.vue', () => {
     expect(sc.description).toBe(metaDescUp)
     expect(sc.submission_date).toBe(metaSubDateUp)
     expect(sc.public_release_date).toBe(metaPubDateUp)
+  })
+
+  test('update study comments', async () => {
+    const appStore = useAppStore()
+    const editStore = useEditStore()
+    const sc = appStore.sodarContext!.studies[STUDY_UUID]!
+    expect(editStore.updateCache).toBe(false)
+
+    const wrapper = await showModal()
+    const commFields = wrapper.findAll(commInputSel)
+    await commFields![0]!.setValue('123')
+    await commFields![1]!.setValue('Agency')
+    await wrapper.find('#sodar-ss-study-edit-btn-update').trigger('click')
+
+    const expComments = {
+      [grantNumComm]: '123',
+      [studyFundComm]: 'Agency'
+    }
+    expect(fetch).toHaveBeenCalledWith(
+      url, expect.objectContaining({
+        body: JSON.stringify({
+            study_meta: defaultMetadata,
+            comments: expComments })}))
+    expect(mockNotifyCb).toHaveBeenCalledWith(
+      STUDY_UPDATE_OK_MSG, VARIANT_SUCCESS)
+
+    expect(sc.comments![grantNumComm]).toBe('123')
+    expect(sc.comments![studyFundComm]).toBe('Agency')
+    expect(editStore.updateCache).toBe(false) // Should be unchanged
+  })
+
+  test('update study comments with plugin name inserted', async () => {
+    const editStore = useEditStore()
+    expect(editStore.updateCache).toBe(false)
+
+    const wrapper = await showModal()
+    await wrapper.find(commInsKeySel).setValue(SODAR_ISA_STUDY_PLUGIN)
+    await wrapper.find(commInsValSel).setValue(pluginName)
+    await wrapper.find(commInsBtnSel).trigger('click')
+    await wrapper.find('#sodar-ss-study-edit-btn-update').trigger('click')
+
+    expect(fetch).toHaveBeenCalled()
+    expect(mockNotifyCb).toHaveBeenCalledWith(
+      STUDY_UPDATE_OK_MSG, VARIANT_SUCCESS)
+    expect(editStore.updateCache).toBe(true) // Should be updated
+  })
+
+  test('update study comments with plugin name deleted', async () => {
+    const appStore = useAppStore()
+    const editStore = useEditStore()
+    const sc = appStore.sodarContext!.studies[STUDY_UUID]!
+    sc.comments![SODAR_ISA_STUDY_PLUGIN] = pluginName
+    expect(editStore.updateCache).toBe(false)
+
+    const wrapper = await showModal()
+    await wrapper.findAll(commDelBtnSel)![2]!.trigger('click')
+    await wrapper.find('#sodar-ss-study-edit-btn-update').trigger('click')
+
+    expect(fetch).toHaveBeenCalled()
+    expect(mockNotifyCb).toHaveBeenCalledWith(
+      STUDY_UPDATE_OK_MSG, VARIANT_SUCCESS)
+    expect(editStore.updateCache).toBe(true) // Should be updated
+  })
+
+  test('update study comments with plugin name changed', async () => {
+    const appStore = useAppStore()
+    const editStore = useEditStore()
+    const sc = appStore.sodarContext!.studies[STUDY_UUID]!
+    sc.comments![SODAR_ISA_STUDY_PLUGIN] = pluginName
+    expect(editStore.updateCache).toBe(false)
+
+    const wrapper = await showModal()
+    await wrapper.findAll(commInputSel)![2]!.setValue('updated_plugin_name')
+    await wrapper.find('#sodar-ss-study-edit-btn-update').trigger('click')
+
+    expect(fetch).toHaveBeenCalled()
+    expect(mockNotifyCb).toHaveBeenCalledWith(
+      STUDY_UPDATE_OK_MSG, VARIANT_SUCCESS)
+    expect(editStore.updateCache).toBe(true) // Should be updated
+  })
+
+  test('update study comments with plugin name unchanged', async () => {
+    const appStore = useAppStore()
+    const editStore = useEditStore()
+    const sc = appStore.sodarContext!.studies[STUDY_UUID]!
+    sc.comments![SODAR_ISA_STUDY_PLUGIN] = pluginName
+    expect(editStore.updateCache).toBe(false)
+
+    const wrapper = await showModal()
+    await wrapper.find('#sodar-ss-study-edit-btn-update').trigger('click')
+
+    expect(fetch).toHaveBeenCalled()
+    expect(mockNotifyCb).toHaveBeenCalledWith(
+      STUDY_UPDATE_OK_MSG, VARIANT_SUCCESS)
+    expect(editStore.updateCache).toBe(false) // Should be unchanged
   })
 
   test('handle failed update', async () => {
@@ -156,7 +281,7 @@ describe('StudyEditModal.vue', () => {
     expect(sc.public_release_date).toBe(og.public_release_date)
   })
 
-  test('cancel study metadata update', async () => {
+  test('cancel study property update', async () => {
     const appStore = useAppStore()
     const sc = appStore.sodarContext!.studies[STUDY_UUID]!
     const og = sodarContext.studies[STUDY_UUID]!

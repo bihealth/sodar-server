@@ -2,14 +2,19 @@
 import { ref, useTemplateRef } from 'vue'
 import { BButton, BButtonGroup, BFormInput, BModal } from 'bootstrap-vue-next'
 
+import IsaCommentEditSection from '@/components/modals/include/IsaCommentEditSection.vue'
 import ModalHeader from '@/components/modals/include/ModalHeader.vue'
+import ModalTableSeparator from '@/components/modals/include/ModalTableSeparator.vue'
+
 import { useAppStore } from '@/stores/appStore.ts'
+import { useEditStore } from '@/stores/editStore.ts'
 import { getAjaxRequestInit } from '@/utils/appUtils.ts'
 import {
   type AssayEditMeta,
   type AssayEditRequestBody,
   type GenericResponseBody,
   type SodarContextAssay,
+  type SodarContextComments,
 } from '@/types.ts'
 import {
   AJAX_RES_OK,
@@ -18,6 +23,11 @@ import {
   EDIT_REGEX_FILE_NAME,
   REQ_POST,
   SODAR_ISA_ASSAY_DISPLAY_NAME,
+  SODAR_ISA_ASSAY_MISC,
+  SODAR_ISA_ASSAY_PATH_PREFIX,
+  SODAR_ISA_ASSAY_PLUGIN,
+  SODAR_ISA_ASSAY_RESULTS,
+  SODAR_ISA_ASSAY_LINK_ROW,
   URL_ASSAY_UPDATE_PREFIX,
   VARIANT_DANGER,
   VARIANT_SUCCESS,
@@ -26,13 +36,22 @@ import {
 // Constants -------------------------------------------------------------------
 
 const INVALID_CLASS = 'text-danger'
+const MANDATORY_COMMENTS = [SODAR_ISA_ASSAY_DISPLAY_NAME]
+const CACHE_UPDATE_COMMENTS = [
+  SODAR_ISA_ASSAY_MISC,
+  SODAR_ISA_ASSAY_PLUGIN,
+  SODAR_ISA_ASSAY_RESULTS,
+  SODAR_ISA_ASSAY_LINK_ROW
+]
 
 // External Data ---------------------------------------------------------------
 
 const appStore = useAppStore()
+const editStore = useEditStore()
 
 // Refs ------------------------------------------------------------------------
 
+const assayComments = ref<SodarContextComments | null>(null)
 const assayMeta = ref<AssayEditMeta | null>(null)
 const fileNameValid = ref<boolean>(true)
 const modalRef = useTemplateRef('assayEditModalRef')
@@ -43,10 +62,25 @@ const valid = ref<boolean>(true)
 // Internal Vars ---------------------------------------------------------------
 
 let assayFileNames: Array<string> = []
+let ogContext: SodarContextAssay
 let tableContext: SodarContextAssay
 let tableUuid: string
 
 // Helpers ---------------------------------------------------------------------
+
+// Check dynamic generic plugin row paths for cache updating
+function checkGenericRowPaths (
+    comments1: SodarContextComments,
+    comments2: SodarContextComments) {
+  if (editStore.updateCache) return
+  for (const c in comments1) {
+    if (c.startsWith(SODAR_ISA_ASSAY_PATH_PREFIX) &&
+        (comments1[c] !== comments2[c] || !(c in comments2))) {
+      editStore.updateCache = true
+      return
+    }
+  }
+}
 
 function enableSubmit (): boolean {
   return !updating.value && valid.value
@@ -77,12 +111,13 @@ async function updateAssay () {
     assay_meta: {
       file_name: assayMeta.value!.fileName.trim(),
       technology_platform: assayMeta.value!.technologyPlatform.trim(),
-    }
+    },
+    comments: assayComments.value!
   }
   const response = await fetch(url, getAjaxRequestInit(REQ_POST, updateBody))
   const resBody: GenericResponseBody = await response.json()
   if (resBody.detail == AJAX_RES_OK) {
-    updateTableContext()
+    updateContext()
     if (appStore.notifyCb) {
       appStore.notifyCb(ASSAY_UPDATE_OK_MSG, VARIANT_SUCCESS)
     }
@@ -93,12 +128,14 @@ async function updateAssay () {
   }
 }
 
-// Update tableContext with edited values
-function updateTableContext () {
+// Update tableContext and editStore
+function updateContext () {
+  // Update table context
   tableContext.file_name = assayMeta.value!.fileName.trim()
   tableContext.technology_platform = assayMeta.value!.technologyPlatform.trim()
+  tableContext.comments = assayComments.value
 
-  // Update display name if SODAR assay display name is not set
+  // Update display name
   if (!tableContext.comments ||
       !(SODAR_ISA_ASSAY_DISPLAY_NAME in tableContext.comments) ||
       tableContext.comments[SODAR_ISA_ASSAY_DISPLAY_NAME] === '') {
@@ -106,7 +143,22 @@ function updateTableContext () {
     title = title.split(' ').map(
       w => w[0]!.toUpperCase() + w.substring(1).toLowerCase()).join(' ')
     tableContext.display_name = title
+  } else {
+    tableContext.display_name = tableContext.comments[
+      SODAR_ISA_ASSAY_DISPLAY_NAME]
   }
+
+  // Update editStore
+  // TODO: Add technology type and measurement type checks (see #2612)
+  if (editStore.updateCache) return
+  for (const c of CACHE_UPDATE_COMMENTS) {
+    if (tableContext.comments![c] !== ogContext.comments![c]) {
+      editStore.updateCache = true
+      break
+    }
+  }
+  checkGenericRowPaths(tableContext.comments!, ogContext.comments!)
+  checkGenericRowPaths(ogContext.comments!, tableContext.comments!)
 }
 
 // API and Life Cycle ----------------------------------------------------------
@@ -115,6 +167,10 @@ function show (uuid: string) {
   tableContext = appStore.sodarContext!.studies[
     appStore.currentStudyUuid]!.assays[uuid]!
   tableUuid = uuid
+  // Force null assay comments into empty object
+  if (!tableContext.comments) tableContext.comments = {}
+  // Store original values
+  ogContext = JSON.parse(JSON.stringify(tableContext)) as SodarContextAssay
 
   // Store assay file names for uniqueness check
   assayFileNames = []
@@ -129,6 +185,7 @@ function show (uuid: string) {
     fileName: tableContext.file_name,
     technologyPlatform: tableContext.technology_platform,
   }
+  assayComments.value = tableContext.comments
   updating.value = false
   valid.value = true // We assume all data must be valid when opening
   fileNameValid.value = true
@@ -171,9 +228,13 @@ defineExpose({ show })
     <div id="sodar-ss-assay-edit-content">
       <table
           v-if="assayMeta"
-          class="table table-borderless w-100 mb-3"
+          class="table table-borderless sodar-ss-isa-isa-edit-table w-100 mb-3"
           id="sodar-ss-assay-edit-table">
-        <tbody>
+        <!-- Metadata -->
+        <tbody class="sodar-ss-assay-meta-edit-body">
+          <tr>
+            <th colspan="3">Metadata</th>
+          </tr>
           <tr>
             <td>File Name</td>
             <td>
@@ -195,11 +256,17 @@ defineExpose({ show })
             </td>
           </tr>
         </tbody>
+        <ModalTableSeparator colspan="3" />
+        <!-- Comments -->
+        <IsaCommentEditSection
+            :comments="assayComments"
+            :mandatory="MANDATORY_COMMENTS">
+        </IsaCommentEditSection>
       </table>
     </div>
     <div id="sodar-ss-assay-edit-controls">
       <BButtonGroup
-          class="pull-right"
+          class="sodar-ss-isa-edit-btn-group pull-right"
           id="sodar-ss-assay-edit-btn-group">
         <BButton
             variant="secondary"
@@ -222,15 +289,4 @@ defineExpose({ show })
 </template>
 
 <style scoped>
-table#sodar-ss-assay-edit-table tbody td:first-child {
-  width: 100px;
-  max-width: 250px;
-  vertical-align: top;
-  white-space: nowrap;
-  padding-top: 20px;
-}
-#sodar-ss-assay-edit-btn-group {
-  padding-right: 12px;
-}
 </style>
-
