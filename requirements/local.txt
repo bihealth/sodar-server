@@ -3,7 +3,7 @@
 
 django-extensions==4.1
 Werkzeug==3.1.9
-django-debug-toolbar==7.0.0
+django-debug-toolbar==8.0.0
 
 # improved REPL
 ipdb==0.13.13

@@ -1,4 +1,4 @@
-FROM python:3.13-trixie
+FROM python:3.14-trixie
 
 LABEL org.opencontainers.image.source=https://github.com/bihealth/sodar-server
 LABEL org.opencontainers.image.authors="Mikko Nieminen <mikko.nieminen@bih-charite.de>"

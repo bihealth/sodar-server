@@ -1,17 +1,17 @@
 # Setuptools
-setuptools==83.0.0
+setuptools==84.2.1
 
 # Packaging
-packaging==26.2
+packaging==26.3
 
 # Django
-django==5.2.17
+django==5.2.19
 
 # Configuration
-django-environ==0.13.0
+django-environ==0.14.0
 
 # Forms
-django-crispy-forms==2.6
+django-crispy-forms==2.7
 crispy-bootstrap4==2026.2
 
 # Models
@@ -21,32 +21,33 @@ django-model-utils==5.0.0
 argon2-cffi==25.1.0
 
 # Python-PostgreSQL Database Adapter
-psycopg2-binary==2.9.12
+psycopg2-binary==2.9.13
 
 # Unicode slugification
-python-slugify==8.0.4
+python-slugify==9.0.0
 
 # SVG icon support
 django-iconify==0.5.0
 
 # OpenID Connect (OIDC) authentication support
-social-auth-app-django==5.9.0
+social-auth-app-django==6.0.1
 
 # Login security
 django-axes[ipware]==8.3.1
 
 # Online documentation via django-docs
 docutils==0.22.4
-Sphinx==9.0.4
-django-docs==0.3.3
+Sphinx==9.1.0
 sphinx-rtd-theme==3.1.0
 sphinxcontrib-youtube==1.5.0
 
 # Versioning
+setuptools-scm==10.3.4
+# TODO: Replace with setuptools-scm (see #2582)
 versioneer==0.29
 
 # Redis support
-redis>=8.0.0
+redis>=8.1.0
 
 
 #####################
@@ -57,24 +58,24 @@ redis>=8.0.0
 rules==3.5
 
 # REST framework
-djangorestframework==3.17.2
+djangorestframework==3.18.3
 
 # Token authentication
-django-rest-knox==5.0.4
+django-rest-knox==5.1.0
 
 # Markdown field support
-markdown==3.10.2
+markdown==3.10.3
+# Replaced by Martor, still needed for migrations.
+# To be removed after SODAR Core v2.1 upgrade.
 django-markupfield==2.0.1
-django-pagedown==2.2.1
-mistune==3.3.3
-martor==1.8.2
+martor==1.8.6
 
 # Django autocomplete light (DAL)
 django-autocomplete-light==5.0.0
 
 # SODAR Core
-django-sodar-core==1.4.5
-# -e git+https://github.com/bihealth/sodar-core.git@82c6acf88567748de7a2928c7a832bef7bdf7ec5#egg=django-sodar-core
+# django-sodar-core==1.5.0
+-e git+https://github.com/bihealth/sodar-core.git@070cbf7e08a3d9e98e74fff9e70c279462dcaf7b#egg=django-sodar-core
 
 # Celery
 celery==5.6.3
@@ -113,4 +114,4 @@ tooz==9.0.1
 taskflow==6.3.0
 
 # DRF-spectacular for OpenAPI schema generation
-drf-spectacular>=0.29.0, <0.30
+drf-spectacular>=0.30.0, <0.31

@@ -1,23 +1,25 @@
 # Test dependencies go here.
 -r base.txt
 
-django-test-plus==2.4.1
+django-test-plus==2.6.2
 factory-boy==3.3.3
-coverage==7.15.0
+coverage==7.16.1
 django_coverage_plugin==3.2.2
 
 # pytest
-pytest-django==4.12.0
+pytest-django==4.14.0
 pytest-sugar==1.1.1
 
 # Selenium for UI testing
-selenium==4.46.0
+selenium==4.49.0
 
 # BeautifulSoup for HTML testing
 beautifulsoup4==4.15.0
 
 # Ruff for linting and formatting (replaces black and flake8)
+# TODO: Upgrade to 0.16.8 and reformat
 ruff==0.15.17
 
 # JQuery beautifying
+# TODO: Upgrade to 2.0.3 and reformat
 jsbeautifier==2.0.3

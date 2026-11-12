@@ -11,6 +11,8 @@ Unreleased
 Added
 -----
 
+- **General**
+    - Python v3.14 support (#2557)
 - **Landingzones**
     - ``LandingZone.irods_path`` field (#2620)
     - Landing zone support for study and assay renaming (#2620)
@@ -41,6 +43,8 @@ Changed
 -------
 
 - **General**
+    - Upgrade to django-sodar-core v1.5.0 (#2557)
+    - Upgrade Docker build for Python v3.14 (#2557)
     - Deprecate ``*_vue3`` commands in ``Makefile`` (#2393)
 - **Irodsbackend**
     - Return ``LandingZone.irods_path`` from ``IrodsAPI.get_path()`` if set (#2620)
@@ -75,6 +79,7 @@ Removed
 -------
 
 - **General**
+    - Python v3.11 support (#2557)
     - ``django-webpack-loader`` dependency (#2393)
 - **Samplesheets**
     - Legacy Vue2 app from ``vueapp`` (#2393)

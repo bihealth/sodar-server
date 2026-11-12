@@ -58,13 +58,10 @@ THIRD_PARTY_APPS = [
     'rules.apps.AutodiscoverRulesConfig',  # Django rules engine
     'djangoplugins',  # Django plugins
     'martor',  # For markdown
-    'pagedown',  # For markdown
-    'markupfield',  # For markdown
     'rest_framework',  # For API views
     'knox',  # For token auth
     'social_django',  # For OIDC authentication
     'axes',  # Django-axes for login security
-    'docs',  # For the online user documentation/manual
     'dal',  # For user search combo box
     'dal_select2',
     'dj_iconify.apps.DjIconifyConfig',  # Iconify for SVG icons
@@ -618,13 +615,6 @@ LOGGING = set_logging(LOGGING_LEVEL)
 
 ENABLE_SENTRY = env.bool('ENABLE_SENTRY', False)
 
-
-# Django-docs Settings
-# ------------------------------------------------------------------------------
-
-# Note: for serving to work, the docs have to be built after deployment.
-DOCS_ROOT = ROOT_DIR.path('docs_manual/build/html/')
-# DOCS_ACCESS = 'public'  # default
 
 # Local App Settings
 # ------------------------------------------------------------------------------

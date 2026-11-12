@@ -23,7 +23,9 @@ Major feature release.
 - :ref:`Add cache update controls for samplesheets REST API views <api_samplesheets>`
 - :ref:`Add setzonepaths management command <admin_commands_sodar>`
 - :ref:`Upgrade Sample Sheets REST API version to v1.3 <api_samplesheets_version_1_3>`
+- Upgrade to SODAR Core v1.5.0
 - Remove samplesheets legacy Vue2 app
+- SODAR Core v1.5 updates
 
 :ref:`Administrator upgrade guide for v1.4 <admin_upgrade_v1.4>`
 

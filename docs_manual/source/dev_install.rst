@@ -21,9 +21,9 @@ System requirements for SODAR development are as follows:
     - Other Ubuntu versions and Linux distributions may work but are not
       supported. The instructions in this section assume the use of Ubuntu
       24.04.
-- Python 3.11, 3.12 or 3.13
-    - 3.13 is recommended.
-- Nodejs (v22 recommended) and NPM
+- Python 3.12, 3.13 or 3.14
+    - 3.14 is recommended.
+- Nodejs (v24 recommended) and NPM
 - `Docker <https://docs.docker.com/get-docker/>`_
 - `Docker Compose <https://docs.docker.com/compose/install/>`_
 - `OpenSSL <https://www.openssl.org/>`_
