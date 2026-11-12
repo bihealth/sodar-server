@@ -74,9 +74,16 @@ class TestZoneFileListModal(
         container.
 
         :param wait_by: Locator for element waiting
-        :param wait_selector: Selcetor for element waiting
+        :param wait_selector: Selector for element waiting
         :return: Modal content container element
         """
+        dropdown_btn = self.selenium.find_element(
+            By.CLASS_NAME, 'sodar-irods-dropdown-btn'
+        )
+        dropdown_btn.click()
+        WebDriverWait(self.selenium, self.wait_time).until(
+            ec.element_to_be_clickable((By.CLASS_NAME, MODAL_BTN_CLASS))
+        )
         WebDriverWait(self.selenium, self.wait_time).until(
             ec.element_to_be_clickable((By.CLASS_NAME, MODAL_BTN_CLASS))
         )
