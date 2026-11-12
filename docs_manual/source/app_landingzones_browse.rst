@@ -62,8 +62,10 @@ Status
     A coloured representation of the current zone status. If the zone is
     currently locked for read-only access due to an ongoing operation, a lock
     icon is also displayed.
-iRODS Links
-    Four buttons with iRODS links for the zone are presented here.
+iRODS Dropdown
+    A dropdown menu for iRODS-related actions. Here, you can find links to list
+    the iRODS files, copy the zone's path to clipboard, copy the WebDAV URL to
+    clipboard, or open the zone in WebDAV.
 Zone Dropdown
     For each active zone, there is a dropdown menu for zone specific operations.
 
