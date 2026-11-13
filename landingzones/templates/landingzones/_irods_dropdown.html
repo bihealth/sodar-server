@@ -15,7 +15,7 @@
           {# NOTE: Modal not triggered here as data is async, see JQuery #}
           title="Open a modal with the file list"
           {% if not irods_colls or disable_all %} disabled{% endif %}>
-    <i class="iconify" data-icon="mdi:folder-open-outline"></i> List files
+    <i class="iconify" data-icon="mdi:folder-open"></i> Open file list
   </a>
   {{ block.super }}
 {% endblock %}
