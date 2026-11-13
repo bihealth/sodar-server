@@ -142,6 +142,7 @@ class TestProjectUpdateAPIView(CoreTaskflowAPITestBase):
             'archive': False,
             'full_title': UPDATED_TITLE,
             'has_public_children': False,
+            'title_slug': '',
             'sodar_uuid': self.category.sodar_uuid,
         }
         self.assertEqual(model_dict, expected)
@@ -186,6 +187,7 @@ class TestProjectUpdateAPIView(CoreTaskflowAPITestBase):
             'archive': False,
             'full_title': self.category.title + ' / ' + UPDATED_TITLE,
             'has_public_children': False,
+            'title_slug': '',
             'sodar_uuid': self.project.sodar_uuid,
         }
         self.assertEqual(model_dict, expected)
@@ -238,6 +240,7 @@ class TestProjectUpdateAPIView(CoreTaskflowAPITestBase):
             'archive': False,
             'full_title': UPDATED_TITLE,
             'has_public_children': False,
+            'title_slug': '',
             'sodar_uuid': self.category.sodar_uuid,
         }
         self.assertEqual(model_dict, expected)
@@ -275,6 +278,7 @@ class TestProjectUpdateAPIView(CoreTaskflowAPITestBase):
             'archive': False,
             'full_title': self.category.title + ' / ' + UPDATED_TITLE,
             'has_public_children': False,
+            'title_slug': '',
             'sodar_uuid': self.project.sodar_uuid,
         }
         self.assertEqual(model_dict, expected)

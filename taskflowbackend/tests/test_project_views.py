@@ -91,6 +91,7 @@ class TestProjectCreateView(TaskflowViewTestBase):
             'archive': False,
             'full_title': self.category.title + ' / TestProject',
             'has_public_children': False,
+            'title_slug': '',
             'sodar_uuid': project.sodar_uuid,
         }
         model_dict = model_to_dict(project)
@@ -217,6 +218,7 @@ class TestProjectUpdateView(TaskflowViewTestBase):
             'archive': False,
             'full_title': self.category.title + ' / updated title',
             'has_public_children': False,
+            'title_slug': '',
             'sodar_uuid': self.project.sodar_uuid,
         }
         model_dict = model_to_dict(self.project)
