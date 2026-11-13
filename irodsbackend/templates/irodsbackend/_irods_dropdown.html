@@ -1,0 +1,47 @@
+{# Projectroles dependency #}
+{% load projectroles_common_tags %}
+{% load irodsbackend_tags %}
+
+{# Parameters #}
+{# project: Project object #}
+{# irods_colls: Whether iRODS collections exist (boolean) #}
+{# irods_path: full iRODS path to link to #}
+{# disable_all: Show but disable buttons if True (boolean) #}
+
+{% get_django_setting 'IRODS_WEBDAV_ENABLED' as irods_webdav_enabled %}
+{% get_webdav_url project request.user as irods_webdav_url %}
+
+<div class="btn-group sodar-list-btn-group" role="group" title="iRODS Links">
+  <button class="btn btn-secondary dropdown-toggle sodar-irods-dropdown-btn py-0"
+          type="button"
+          data-toggle="dropdown"
+          aria-haspopup="true"
+          aria-expanded="false">
+    <i class="iconify" data-icon="mdi:database"></i> iRODS
+  </button>
+  <div class="dropdown-menu dropdown-menu-right">
+    {% block irods_links %}
+      <a class="dropdown-item sodar-irods-btn sodar-irods-copy-btn sodar-irods-path-btn
+               {% if not irods_webdav_enabled or not irods_colls or disable_all %} no-colls {% endif %}"
+         data-clipboard-text="{{ irods_path }}"
+         role="submit"
+         title="Copy iRODS path into clipboard"
+         {% if not irods_colls or disable_all %} disabled{% endif %}>
+        <i class="iconify" data-icon="mdi:console-line"></i> Copy iRODS path
+      </a>
+      <a class="dropdown-item sodar-irods-btn sodar-irods-copy-btn sodar-irods-dav-btn"
+         data-clipboard-text="{{ irods_webdav_url }}{{ irods_path }}"
+         role="submit"
+         title="Copy WebDAV URL into clipboard"
+         {% if not irods_colls or disable_all %} disabled{% endif %}>
+        <i class="iconify" data-icon="mdi:clipboard-text-multiple"></i> Copy WebDAV URL
+      </a>
+      <a class="dropdown-item sodar-irods-btn sodar-irods-browse-btn sodar-irods-dav-btn"
+         href="{{ irods_webdav_url }}{{ irods_path }}"
+         role="button"
+         title="Browse files in WebDAV">
+        <i class="iconify" data-icon="mdi:open-in-new"></i> Browse files in WebDAV
+      </a>
+    {% endblock %}
+  </div>
+</div>
