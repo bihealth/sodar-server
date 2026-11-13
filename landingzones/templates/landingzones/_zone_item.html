@@ -103,7 +103,7 @@
   {% if not details_card_mode %}
     <td class="sodar-lz-zone-links">
       {% if irods_backend_enabled %}
-        {% include 'landingzones/_irods_buttons.html' with project=project irods_colls=True irods_path=zone_irods_path disable_all=disable_zone_ui %}
+        {% include 'landingzones/_irods_dropdown.html' with project=project irods_colls=True irods_path=zone_irods_path disable_all=disable_zone_ui %}
       {% endif %}
     </td>
     <td class="sodar-lz-zone-edit">
