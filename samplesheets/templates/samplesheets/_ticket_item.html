@@ -33,9 +33,8 @@
     <code>{{ ticket.ticket }}</code>
   </td>
   {% if ticket.user %}
-    <td>
-      {% get_user_html ticket.user as user_html %}{{ user_html | safe }}
-    </td>
+    {% get_user_html ticket.user request as user_html %}
+    <td>{{ user_html | safe }}</td>
   {% else %}
     <td class="text-muted">N/A</td>
   {% endif %}

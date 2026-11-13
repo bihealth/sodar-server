@@ -49,7 +49,7 @@
         </dt>
         {% if object.user %}
           <dd class="col-md-10">
-            {% get_user_html object.user as user_html %}
+            {% get_user_html object.user request as user_html %}
             {{ user_html | safe }}
           </dd>
         {% else %}

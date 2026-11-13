@@ -106,7 +106,7 @@
               </td>
               {% if t.user %}
                 <td>
-                  {% get_user_html t.user as t_user %}
+                  {% get_user_html t.user request as t_user %}
                   {{ t_user | safe }}
                 </td>
               {% else %}

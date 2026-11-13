@@ -22,7 +22,7 @@
   </td>
   {% if sv.user %}
     <td>
-      {% get_user_html sv.user as user_html %}{{ user_html | safe }}
+      {% get_user_html sv.user request as user_html %}{{ user_html | safe }}
     </td>
   {% else %}
     <td class="text-muted">N/A</td>

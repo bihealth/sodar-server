@@ -25,11 +25,14 @@
       The selected version was saved on
       <strong>{{ sheet_version.date_created | date:'Y-m-d H:i:s' }}</strong>
       {% if sheet_version.user %}
-        by user {% get_user_html sheet_version.user as user_html %}{{ user_html | safe }}
+        {% get_user_html sheet_version.user request as user_html %}
+        by user { user_html | safe }}
       {% endif %}
     </p>
     <p class="mb-0">
-      <a href="{% url 'samplesheets:export_isa' isatab=sheet_version.sodar_uuid %}">You can export and review the version to be restored here</a>.
+      <a href="{% url 'samplesheets:export_isa' isatab=sheet_version.sodar_uuid %}">
+        You can export and review the version to be restored here
+      </a>.
     </p>
   </div>
 
