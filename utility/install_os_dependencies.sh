@@ -33,11 +33,6 @@ echo "***********************************************"
 apt-get -y install graphviz-dev
 
 echo "***********************************************"
-echo "Installing SAML dependencies"
-echo "***********************************************"
-apt-get -y install xmlsec1
-
-echo "***********************************************"
 echo "Installing lxml dependencies"
 echo "***********************************************"
 apt-get -y install libxml2-dev

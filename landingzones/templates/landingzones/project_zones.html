@@ -102,7 +102,7 @@
       Landing zone operations are disabled for non-superusers on this site.
     </div>
   {% elif zone_access_restricted %}
-    {% get_user_html zone_access_restrict_user as restrict_user %}
+    {% get_user_html zone_access_restrict_user request as restrict_user %}
     <div class="alert alert-info" role="alert" id="sodar-lz-alert-restrict">
       <i class="iconify" data-icon="mdi:account-lock"></i>
       Contributor landing zone operations in this project have been restricted

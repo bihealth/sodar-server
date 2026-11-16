@@ -7,9 +7,9 @@ jobs:
     strategy:
       matrix:
         python-version:
-          - '3.11'
           - '3.12'
           - '3.13'
+          - '3.14'
     services:
       postgres:
         image: postgres:16
@@ -57,7 +57,7 @@ jobs:
           sudo apt-get install -qq liblcms2-dev libwebp-dev libpq-dev graphviz-dev
       - name: Install server production dependencies for docs building
         run: sudo apt-get install -qq libsasl2-dev libldap2-dev libssl-dev
-        if: ${{ matrix.python-version == '3.13' }}
+        if: ${{ matrix.python-version == '3.14' }}
       - name: Install Python
         uses: actions/setup-python@v6
         with:
@@ -70,7 +70,7 @@ jobs:
           pip install -r requirements/test.txt --use-pep517
       - name: Install production dependencies for docs building
         run: pip install -r requirements/production.txt --use-pep517
-        if: ${{ matrix.python-version == '3.13' }}
+        if: ${{ matrix.python-version == '3.14' }}
       - name: Setup Node.js
         uses: actions/setup-node@v6
         with:
@@ -85,17 +85,17 @@ jobs:
         run: python manage.py collectstatic --noinput --settings=config.settings.test
       - name: Check Python formatting
         run: make format-check
-        if: ${{ matrix.python-version == '3.13' }}
+        if: ${{ matrix.python-version == '3.14' }}
       - name: Check Python linting
         run: make lint
-        if: ${{ matrix.python-version == '3.13' }}
+        if: ${{ matrix.python-version == '3.14' }}
       - name: Check docs building
         working-directory: ./docs_manual
         run: make html
-        if: ${{ matrix.python-version == '3.13' }}
+        if: ${{ matrix.python-version == '3.14' }}
       - name: Run Vue3 app tests
         run: make test_samplesheets_vue
-        if: ${{ matrix.python-version == '3.13' }}
+        if: ${{ matrix.python-version == '3.14' }}
       - name: Run Django tests
         run: |
           coverage run --rcfile=.coveragerc manage.py test -v 2 --settings=config.settings.test
@@ -107,4 +107,4 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           path-to-lcov: './coverage.lcov'
           fail-on-error: false
-        if: ${{ matrix.python-version == '3.13' }}
+        if: ${{ matrix.python-version == '3.14' }}

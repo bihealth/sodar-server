@@ -25,7 +25,7 @@
       The selected ticket was created on
       {{ object.date_created | date:'Y-m-d H:i:s' }}
       {% if object.user %}
-        {% get_user_html object.user as user_html %}
+        {% get_user_html object.user request as user_html %}
         by user {{ user_html | safe }}.
       {% endif %}
     </p>

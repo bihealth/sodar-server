@@ -1,5 +1,5 @@
 function buildDiffCard(category, filename, counter, table, url, source,
-target) {
+  target) {
   return `
     <div class="card" id="sodar-ss-${category}-diff${counter}">
       <div class="card-header">

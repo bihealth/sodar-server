@@ -157,7 +157,7 @@
                 </button>
               </td>
               <td>
-                {% get_user_html irods_request.user as user_html %}
+                {% get_user_html irods_request.user request as user_html %}
                 {{ user_html | safe }}
               </td>
               <td>{{ irods_request.get_date_created }}</td>

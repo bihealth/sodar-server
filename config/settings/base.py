@@ -58,13 +58,10 @@ THIRD_PARTY_APPS = [
     'rules.apps.AutodiscoverRulesConfig',  # Django rules engine
     'djangoplugins',  # Django plugins
     'martor',  # For markdown
-    'pagedown',  # For markdown
-    'markupfield',  # For markdown
     'rest_framework',  # For API views
     'knox',  # For token auth
     'social_django',  # For OIDC authentication
     'axes',  # Django-axes for login security
-    'docs',  # For the online user documentation/manual
     'dal',  # For user search combo box
     'dal_select2',
     'dj_iconify.apps.DjIconifyConfig',  # Iconify for SVG icons
@@ -348,6 +345,7 @@ MARTOR_ENABLE_CONFIGS = {
     'spellcheck': 'false',
     'hljs': 'false',
 }
+MARTOR_PREVIEW_PLACEHOLDER = 'Markdown preview'
 # By default, martor loads bootstrap v5. We don't want that, so we supply an
 # alternative CSS file.
 MARTOR_ALTERNATIVE_CSS_FILE_THEME = 'projectroles/css/martor_theme.css'
@@ -619,13 +617,6 @@ LOGGING = set_logging(LOGGING_LEVEL)
 ENABLE_SENTRY = env.bool('ENABLE_SENTRY', False)
 
 
-# Django-docs Settings
-# ------------------------------------------------------------------------------
-
-# Note: for serving to work, the docs have to be built after deployment.
-DOCS_ROOT = ROOT_DIR.path('docs_manual/build/html/')
-# DOCS_ACCESS = 'public'  # default
-
 # Local App Settings
 # ------------------------------------------------------------------------------
 
@@ -672,6 +663,7 @@ PROJECTROLES_ENABLE_SEARCH = env.bool('PROJECTROLES_ENABLE_SEARCH', True)
 PROJECTROLES_SEARCH_PAGINATION = env.int('PROJECTROLES_SEARCH_PAGINATION', 5)
 PROJECTROLES_ROLE_PAGINATION = env.int('PROJECTROLES_ROLE_PAGINATION', 15)
 PROJECTROLES_DELEGATE_LIMIT = env.int('PROJECTROLES_DELEGATE_LIMIT', 1)
+PROJECTROLES_TITLE_SLUG_MAX_LEN = env.int('PROJECTROLES_TITLE_SLUG_MAX_LEN', 80)
 PROJECTROLES_DEFAULT_ADMIN = env.str('PROJECTROLES_DEFAULT_ADMIN', 'admin')
 PROJECTROLES_ALLOW_LOCAL_USERS = env.bool(
     'PROJECTROLES_ALLOW_LOCAL_USERS', False
@@ -694,6 +686,9 @@ PROJECTROLES_READ_ONLY_MSG = env.str(
     'This includes landing zone operations.',
 )
 PROJECTROLES_SUPPORT_CONTACT = env.str('PROJECTROLES_SUPPORT_CONTACT', None)
+PROJECTROLES_USER_PROFILE_LINK = env.bool(
+    'PROJECTROLES_USER_PROFILE_LINK', True
+)
 
 # Warn about unsupported browsers (IE)
 PROJECTROLES_BROWSER_WARNING = True
