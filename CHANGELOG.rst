@@ -44,6 +44,7 @@ Changed
 
 - **General**
     - Upgrade to django-sodar-core v1.5.1 (#2557)
+    - Upgrade general Python dependencies (#2578)
     - Upgrade Docker build for Python v3.14 (#2557)
     - Deprecate ``*_vue3`` commands in ``Makefile`` (#2393)
 - **Irodsbackend**
