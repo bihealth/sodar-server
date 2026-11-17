@@ -315,28 +315,12 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
         item_name = f'irods/{study.sodar_uuid}'
         bam_paths = {}
         vcf_paths = {}
+
         # Get/build render tables
         study_tables = table_builder.get_study_tables(study)
-
         # Pre-fetch study objects to eliminate redundant queries
-        obj_len = 0
-        study_objs = None
-        try:
-            logger.debug('Querying for study objects in iRODS..')
-            with irods_backend.get_session() as irods:
-                study_objs = irods_backend.get_objects(
-                    irods, irods_backend.get_path(study)
-                )
-            obj_len = len(study_objs)
-            logger.debug(
-                'Query returned {} data object{}'.format(
-                    obj_len, 's' if obj_len != 1 else ''
-                )
-            )
-        except FileNotFoundError:
-            logger.debug('No data objects found')
-        except Exception as ex:
-            logger.error(f'Error querying for study objects: {ex}')
+        study_objs = cls.get_study_objects(study, irods_backend)
+        obj_len = len(study_objs)
 
         project = study.get_project()
         bam_omit_list = get_igv_omit_list(project, 'bam')

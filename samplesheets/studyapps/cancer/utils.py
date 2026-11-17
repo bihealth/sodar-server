@@ -3,7 +3,6 @@
 from typing import Any
 
 from irods.path import iRODSPath
-from irods.session import iRODSSession
 
 from samplesheets.models import Assay
 from samplesheets.studyapps.utils import (
@@ -19,7 +18,7 @@ def get_library_file_path(
     library_name: str,
     file_type: str,
     irods_backend: Any,
-    irods: iRODSSession,
+    study_objs: list[dict],
 ):
     """
     Return iRODS path for the most recent file of type "bam" or "vcf"
@@ -29,16 +28,16 @@ def get_library_file_path(
     :param library_name: Library name (string)
     :param file_type: String ("bam" or "vcf", "bam" is also used for CRAM)
     :param irods_backend: IrodsAPI object
-    :param irods: IRODSSession object
+    :param study_objs: Study objects (list of dicts)
     :return: String
     """
     assay_path = irods_backend.get_path(assay)
-    query_path = iRODSPath(assay_path, library_name)
+    query_path = iRODSPath(assay_path, library_name) + '/'
+    lib_objs = [o for o in study_objs if o['path'].startswith(query_path)]
     file_paths = []
     omit_list = get_igv_omit_list(assay.get_project(), file_type)
     try:
-        obj_list = irods_backend.get_objects(irods, query_path)
-        for obj in obj_list:
+        for obj in lib_objs:
             if check_igv_file_suffix(
                 obj['name'].lower(), file_type
             ) and check_igv_file_path(obj['path'], omit_list):

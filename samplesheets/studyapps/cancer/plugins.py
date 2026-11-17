@@ -263,8 +263,11 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
         item_name = f'irods/{study.sodar_uuid}'
         bam_paths = {}
         vcf_paths = {}
+
         # Get/build render tables
         study_tables = table_builder.get_study_tables(study)
+        # Pre-fetch study objects to eliminate redundant queries
+        study_objs = cls.get_study_objects(study, irods_backend)
 
         # Get libraries and library file paths
         for k, assay_table in study_tables['assays'].items():
@@ -275,28 +278,27 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
                 if lib_name not in libs:
                     libs.append(lib_name)
             assay = Assay.objects.get(sodar_uuid=k)
-            with irods_backend.get_session() as irods:
-                # NOTE: If multiple libraries with the same name are found, they
-                #       are treated as one with only the latest file returned
-                for lib in libs:
-                    bam_path = get_library_file_path(
-                        assay, lib, 'bam', irods_backend, irods
+            # NOTE: If multiple libraries with the same name are found, they
+            #       are treated as one with only the latest file returned
+            for lib in libs:
+                bam_path = get_library_file_path(
+                    assay, lib, 'bam', irods_backend, study_objs
+                )
+                if bam_path and bam_paths.get(lib):
+                    bam_paths[lib] = get_latest_file_path(
+                        [bam_paths[lib], bam_path]
                     )
-                    if bam_path and bam_paths.get(lib):
-                        bam_paths[lib] = get_latest_file_path(
-                            [bam_paths[lib], bam_path]
-                        )
-                    elif not bam_paths.get(lib):
-                        bam_paths[lib] = bam_path
-                    vcf_path = get_library_file_path(
-                        assay, lib, 'vcf', irods_backend, irods
+                elif not bam_paths.get(lib):
+                    bam_paths[lib] = bam_path
+                vcf_path = get_library_file_path(
+                    assay, lib, 'vcf', irods_backend, study_objs
+                )
+                if vcf_path and vcf_paths.get(lib):
+                    vcf_paths[lib] = get_latest_file_path(
+                        [vcf_paths[lib], vcf_path]
                     )
-                    if vcf_path and vcf_paths.get(lib):
-                        vcf_paths[lib] = get_latest_file_path(
-                            [vcf_paths[lib], vcf_path]
-                        )
-                    elif not vcf_paths.get(lib):
-                        vcf_paths[lib] = vcf_path
+                elif not vcf_paths.get(lib):
+                    vcf_paths[lib] = vcf_path
 
         updated_data = {'bam': bam_paths, 'vcf': vcf_paths}
         logger.debug(f'Set cache item "{item_name}": {updated_data}')

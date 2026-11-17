@@ -1357,6 +1357,38 @@ class SampleSheetStudyPluginPoint(PluginPoint):
     # TODO: TBD: Do we need this?
     permission = None
 
+    # Helpers ------------------------------------------------------------------
+
+    @classmethod
+    def get_study_objects(cls, study: Study, irods_backend: Any) -> list[dict]:
+        """
+        Return study objects, log query debug information.
+
+        :param study: Study object
+        :param irods_backend: IrodsAPI or None
+        :return: list of dicts
+        """
+        ret = []
+        try:
+            logger.debug('Querying for study objects in iRODS..')
+            with irods_backend.get_session() as irods:
+                ret = irods_backend.get_objects(
+                    irods, irods_backend.get_path(study)
+                )
+            obj_len = len(ret)
+            logger.debug(
+                'Query returned {} data object{}'.format(
+                    obj_len, 's' if obj_len != 1 else ''
+                )
+            )
+        except FileNotFoundError:
+            logger.debug('No data objects found')
+        except Exception as ex:
+            logger.error(f'Error querying for study objects: {ex}')
+        return ret
+
+    # Plutin API ---------------------------------------------------------------
+
     def get_shortcut_column(
         self, study: Study, study_tables: dict
     ) -> Optional[dict]:

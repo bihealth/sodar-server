@@ -38,6 +38,7 @@ Added
     - Investigation, study and assay property updating timeline events (#2623)
     - ``Investigation.get_display_name()`` helper (#2625)
     - Investigation, study and assay comment editing (#2609)
+    - ``SampleSheetStudyPluginPoint.get_study_objects()`` helper (#477)
 
 Changed
 -------
@@ -63,6 +64,7 @@ Changed
     - Hide vue3app nav tabs and dropdown in edit mode (#2616)
     - Update vue3app modals for dynamic initialization (#2615)
     - Omit top header "name" suffixes in vue3app rendering (#1772)
+    - Optimize ``cancer`` study app cache update iRODS queries (#477)
 
 Fixed
 -----

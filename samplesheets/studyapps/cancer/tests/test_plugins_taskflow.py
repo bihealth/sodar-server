@@ -200,6 +200,7 @@ class TestCancerPlugin(
         sl = self.plugin.get_shortcut_links(
             self.study, study_tables, case=[SOURCE_ID_NORMAL]
         )
+        s_objs = self.plugin.get_study_objects(self.study, self.irods_backend)
 
         self.assertEqual(len(sl['data']['session']['files']), 1)
         self.assertEqual(len(sl['data']['bam']['files']), 1)
@@ -215,22 +216,14 @@ class TestCancerPlugin(
             sl['data']['bam']['files'][0]['url'],
             settings.IRODS_WEBDAV_URL
             + get_library_file_path(
-                self.assay,
-                LIBRARY_ID_NORMAL,
-                'bam',
-                self.irods_backend,
-                self.irods,
+                self.assay, LIBRARY_ID_NORMAL, 'bam', self.irods_backend, s_objs
             ),
         )
         self.assertEqual(
             sl['data']['vcf']['files'][0]['url'],
             settings.IRODS_WEBDAV_URL
             + get_library_file_path(
-                self.assay,
-                LIBRARY_ID_NORMAL,
-                'vcf',
-                self.irods_backend,
-                self.irods,
+                self.assay, LIBRARY_ID_NORMAL, 'vcf', self.irods_backend, s_objs
             ),
         )
 
@@ -249,6 +242,7 @@ class TestCancerPlugin(
         sl = self.plugin.get_shortcut_links(
             self.study, study_tables, case=[SOURCE_ID_NORMAL]
         )
+        s_objs = self.plugin.get_study_objects(self.study, self.irods_backend)
 
         self.assertEqual(len(sl['data']['session']['files']), 1)
         self.assertEqual(len(sl['data']['bam']['files']), 1)
@@ -264,22 +258,14 @@ class TestCancerPlugin(
             sl['data']['bam']['files'][0]['url'],
             settings.IRODS_WEBDAV_URL
             + get_library_file_path(
-                self.assay,
-                LIBRARY_ID_NORMAL,
-                'bam',
-                self.irods_backend,
-                self.irods,
+                self.assay, LIBRARY_ID_NORMAL, 'bam', self.irods_backend, s_objs
             ),
         )
         self.assertEqual(
             sl['data']['vcf']['files'][0]['url'],
             settings.IRODS_WEBDAV_URL
             + get_library_file_path(
-                self.assay,
-                LIBRARY_ID_NORMAL,
-                'vcf',
-                self.irods_backend,
-                self.irods,
+                self.assay, LIBRARY_ID_NORMAL, 'vcf', self.irods_backend, s_objs
             ),
         )
 
@@ -402,6 +388,7 @@ class TestCancerPlugin(
         sl = self.plugin.get_shortcut_links(
             self.study, study_tables, case=[SOURCE_ID_NORMAL]
         )
+        s_objs = self.plugin.get_study_objects(self.study, self.irods_backend)
 
         self.assertEqual(len(sl['data']['session']['files']), 1)
         self.assertEqual(len(sl['data']['bam']['files']), 1)
@@ -417,22 +404,14 @@ class TestCancerPlugin(
             sl['data']['bam']['files'][0]['url'],
             settings.IRODS_WEBDAV_URL
             + get_library_file_path(
-                self.assay,
-                LIBRARY_ID_NORMAL,
-                'bam',
-                self.irods_backend,
-                self.irods,
+                self.assay, LIBRARY_ID_NORMAL, 'bam', self.irods_backend, s_objs
             ),
         )
         self.assertEqual(
             sl['data']['vcf']['files'][0]['url'],
             settings.IRODS_WEBDAV_URL
             + get_library_file_path(
-                self.assay,
-                LIBRARY_ID_NORMAL,
-                'vcf',
-                self.irods_backend,
-                self.irods,
+                self.assay, LIBRARY_ID_NORMAL, 'vcf', self.irods_backend, s_objs
             ),
         )
 
