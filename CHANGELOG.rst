@@ -48,6 +48,7 @@ Changed
     - Upgrade general Python dependencies (#2578)
     - Upgrade Docker build for Python v3.14 (#2557)
     - Deprecate ``*_vue3`` commands in ``Makefile`` (#2393)
+    - Disable changelog and release notes collapsing in docs (#2630)
 - **Irodsbackend**
     - Return ``LandingZone.irods_path`` from ``IrodsAPI.get_path()`` if set (#2620)
 - **Samplesheets**

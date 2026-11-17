@@ -160,6 +160,8 @@ Table of Contents
     :maxdepth: 1
     :caption: SODAR History
     :name: sodar_history
+    :hidden:
+    :titlesonly:
 
     Release Notes <sodar_release_notes>
     Changelog <sodar_changelog>
