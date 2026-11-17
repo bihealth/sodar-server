@@ -74,7 +74,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v6
         with:
-          node-version: 24.x
+          node-version: 26.x
       - name: Build and run Vue3 app
         run: |
           npm ci --prefix samplesheets/vue3app

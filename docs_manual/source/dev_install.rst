@@ -23,7 +23,7 @@ System requirements for SODAR development are as follows:
       24.04.
 - Python 3.12, 3.13 or 3.14
     - 3.14 is recommended.
-- Nodejs (v24 recommended) and NPM
+- Node.js (v26 recommended) and NPM
 - `Docker <https://docs.docker.com/get-docker/>`_
 - `Docker Compose <https://docs.docker.com/compose/install/>`_
 - `OpenSSL <https://www.openssl.org/>`_
