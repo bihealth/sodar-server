@@ -49,7 +49,8 @@ const updating = ref<boolean>(true)
 
 // Internal Vars ---------------------------------------------------------------
 
-let ogComments: SodarContextComments
+let invContext: SodarContextInvestigation
+let ogContext: SodarContextInvestigation
 
 // Helpers ---------------------------------------------------------------------
 
@@ -89,9 +90,6 @@ async function updateInvestigation () {
 
 // Update tableContext and editStore
 function updateContext () {
-  const invContext = appStore.sodarContext!.investigation as
-    SodarContextInvestigation
-
   // Update metadata
   invContext.description = invMeta.value!.description
   appStore.sodarContext!.inv_file_name = invMeta.value!.fileName
@@ -105,7 +103,7 @@ function updateContext () {
   // Update editStore
   if (!editStore.updateCache &&
       invContext.comments![SODAR_ISA_CONFIG_CREATE] !==
-        ogComments[SODAR_ISA_CONFIG_CREATE]) {
+        ogContext.comments![SODAR_ISA_CONFIG_CREATE]) {
     editStore.updateCache = true
   }
 }
@@ -113,13 +111,12 @@ function updateContext () {
 // API and Life Cycle ----------------------------------------------------------
 
 function show () {
-  const invContext = appStore.sodarContext!.investigation as
+  invContext = appStore.sodarContext!.investigation as
     SodarContextInvestigation
   // Force null comments into empty object
   if (!invContext.comments) invContext.comments = {}
-  // Store original comments
-  ogComments = JSON.parse(JSON.stringify(invContext.comments)) as
-    SodarContextComments
+  // Store original context
+  ogContext = JSON.parse(JSON.stringify(invContext))
   invMeta.value = {
     description: invContext.description,
     fileName: appStore.sodarContext!.inv_file_name as string,
@@ -144,6 +141,8 @@ function hide (update: boolean) {
       if (appStore.notifyCb) appStore.notifyCb(msg, VARIANT_DANGER)
       console.error(msg)
     }
+  } else { // Cancel
+    appStore.sodarContext!.investigation = ogContext
   }
   modalRef.value?.hide()
 }
@@ -157,7 +156,11 @@ defineExpose({ show })
       ref="invEditModalRef"
       v-model="showModal"
       size="lg"
-      centered no-footer no-animation teleport-disabled>
+      centered
+      no-animation
+      no-footer
+      no-close-on-backdrop
+      teleport-disabled>
     <template #header>
       <ModalHeader
           :hide-close-button="true"
@@ -168,11 +171,12 @@ defineExpose({ show })
     </template>
     <div id="sodar-ss-inv-edit-content">
       <table
-          v-if="invMeta"
+          v-if="invMeta && showModal"
           class="table table-borderless sodar-ss-isa-isa-edit-table w-100 mb-3"
           id="sodar-ss-inv-edit-table">
         <!-- Metadata -->
         <InvStudyMetaEditSection
+            v-if="showModal"
             :file-names="[]"
             :identifiers="[]"
             :metadata="invMeta"
@@ -181,6 +185,7 @@ defineExpose({ show })
         <ModalTableSeparator colspan="3" />
         <!-- Comments -->
         <IsaCommentEditSection
+            v-if="showModal"
             :comments="invComments"
             :mandatory="MANDATORY_COMMENTS">
         </IsaCommentEditSection>

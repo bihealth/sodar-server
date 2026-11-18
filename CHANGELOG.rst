@@ -31,7 +31,7 @@ Added
     - Study and assay renaming support in sheet replace (#2590)
     - Investigation, study and assay metadata editing (#2285, #2613)
     - ISA property updating Ajax views (#2285, #2613)
-    - Vue3app ISA property updating modals (#2285, #2613, #2624)
+    - Vue3app ISA property updating modals (#2285, #2613, #2624, #2637)
     - Vue3app ``ModalHeader`` icon support (#2624)
     - SODAR UUID in vue3app details table (#2611)
     - Investigation and study dates in vue3app details tables (#2611)
@@ -69,6 +69,7 @@ Changed
     - Update vue3app modals for dynamic initialization (#2615)
     - Omit top header "name" suffixes in vue3app rendering (#1772)
     - Optimize ``cancer`` study app cache update iRODS queries (#477)
+    - Prevent ``ColumnConfigModal`` closing on backdrop click (#2627)
 
 Fixed
 -----

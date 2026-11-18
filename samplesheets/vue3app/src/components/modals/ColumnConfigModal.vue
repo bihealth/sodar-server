@@ -788,7 +788,11 @@ function hide (update: boolean) {
       ref="columnConfigModal"
       v-model="showModal"
       size="md"
-      centered no-footer no-animation teleport-disabled>
+      centered
+      no-animation
+      no-footer
+      no-close-on-backdrop
+      teleport-disabled>
     <template #header>
       <ModalHeader
           :modal-ref="modalRef"

@@ -185,7 +185,8 @@ function show (uuid: string) {
     fileName: tableContext.file_name,
     technologyPlatform: tableContext.technology_platform,
   }
-  assayComments.value = tableContext.comments
+  assayComments.value = JSON.parse(
+    JSON.stringify(tableContext.comments)) as SodarContextComments
   updating.value = false
   valid.value = true // We assume all data must be valid when opening
   fileNameValid.value = true
@@ -202,6 +203,8 @@ function hide (update: boolean) {
       if (appStore.notifyCb) appStore.notifyCb(msg, VARIANT_DANGER)
       console.error(msg)
     }
+  } else { // Cancel
+    tableContext = ogContext
   }
   modalRef.value?.hide()
 }
@@ -215,7 +218,11 @@ defineExpose({ show })
       ref="assayEditModalRef"
       v-model="showModal"
       size="lg"
-      centered no-footer no-animation teleport-disabled>
+      centered
+      no-animation
+      no-footer
+      no-close-on-backdrop
+      teleport-disabled>
     <template #header>
       <ModalHeader
           :hide-close-button="true"
@@ -259,6 +266,7 @@ defineExpose({ show })
         <ModalTableSeparator colspan="3" />
         <!-- Comments -->
         <IsaCommentEditSection
+            v-if="showModal"
             :comments="assayComments"
             :mandatory="MANDATORY_COMMENTS">
         </IsaCommentEditSection>

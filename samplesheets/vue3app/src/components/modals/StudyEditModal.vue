@@ -142,7 +142,8 @@ function show (uuid: string) {
     submissionDate: tableContext.submission_date,
     title: tableContext.title,
   }
-  studyComments.value = tableContext.comments
+  studyComments.value = JSON.parse(
+    JSON.stringify(tableContext.comments)) as SodarContextComments
   editStore.modalEditValid = true // Assume all data must be valid when opening
   updating.value = false
   showModal.value = true
@@ -158,6 +159,8 @@ function hide (update: boolean) {
       if (appStore.notifyCb) appStore.notifyCb(msg, VARIANT_DANGER)
       console.error(msg)
     }
+  } else { // Cancel
+    tableContext = ogContext
   }
   modalRef.value?.hide()
 }
@@ -171,7 +174,11 @@ defineExpose({ show })
       ref="studyEditModalRef"
       v-model="showModal"
       size="lg"
-      centered no-footer no-animation teleport-disabled>
+      centered
+      no-animation
+      no-footer
+      no-close-on-backdrop
+      teleport-disabled>
     <template #header>
       <ModalHeader
           :hide-close-button="true"
@@ -183,11 +190,12 @@ defineExpose({ show })
     </template>
     <div id="sodar-ss-study-edit-content">
       <table
-          v-if="studyMeta"
+          v-if="showModal && studyMeta"
           class="table table-borderless sodar-ss-isa-isa-edit-table w-100 mb-3"
           id="sodar-ss-study-edit-table">
         <!-- Metadata -->
         <InvStudyMetaEditSection
+            v-if="showModal"
             :file-names="studyFileNames"
             :identifiers="studyIds"
             :metadata="studyMeta"
@@ -196,6 +204,7 @@ defineExpose({ show })
         <ModalTableSeparator colspan="3" />
         <!-- Comments -->
         <IsaCommentEditSection
+            v-if="showModal"
             :comments="studyComments">
         </IsaCommentEditSection>
       </table>
