@@ -800,6 +800,13 @@ export interface AssayEditRequestBody extends
   assay_meta: AssayEditRequestMetadata
 }
 
+export interface EditFinishRequestBody {
+  data_updated: boolean
+  update_cache: boolean
+  version_saved: boolean
+}
+
+
 // Function Callbacks ----------------------------------------------------------
 
 export interface RowEditFinishCb {

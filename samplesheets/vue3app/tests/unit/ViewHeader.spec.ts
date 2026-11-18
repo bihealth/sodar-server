@@ -9,7 +9,7 @@ import { useAppStore } from '@/stores/appStore.ts'
 import { useEditStore } from '@/stores/editStore.ts'
 import { useTableStore } from '@/stores/tableStore.ts'
 import { routes } from '@/router/index.ts'
-import { type SodarContext, type SodarContextStudy } from '@/types.ts'
+import { type SodarContext } from '@/types.ts'
 import {
   EDIT_BADGE_DEFAULT_LABEL,
   EDIT_BADGE_SAVED_LABEL,
@@ -18,9 +18,12 @@ import {
   EDIT_MODE_SAVE_MSG,
   EDIT_MODE_UNSAVED_MSG,
   EDIT_MSG_FINISH,
+  EDIT_MSG_FINISH_CACHE,
   EDIT_MSG_SAVE_FAIL_PREFIX,
   STUDY_NAV_DROPDOWN_LEN,
   STUDY_NAV_TAB_LEN,
+  TOAST_INTERVAL_DANGER,
+  TOAST_INTERVAL_DEFAULT,
   URL_EDIT_FINISH_PREFIX,
   VIEW_PARSER_WARNING,
   VIEW_OVERVIEW,
@@ -33,7 +36,6 @@ import {
   ASSAY_UUID,
   PROJECT_UUID,
   STUDY_UUID,
-  TMP_UUID
 } from '../testConstants.ts'
 
 // Test Data -------------------------------------------------------------------
@@ -231,21 +233,37 @@ describe('ViewHeader.vue', () => {
     expect(wrapper.find(
       '#sodar-ss-subtitle-badge-container').exists()).toBe(true)
     expect(wrapper.find('#sodar-ss-badge-edit').exists()).toBe(false)
+    expect(wrapper.find('#sodar-ss-badge-edit-cache').exists()).toBe(false)
   })
 
   test('show badge container with editMode=true', async() => {
     const appStore = useAppStore()
+    const editStore = useEditStore()
     appStore.editMode = true
+    expect(editStore.updateCache).toBe(false)
     const wrapper = mountComponent()
     const badge = wrapper.find('#sodar-ss-badge-edit')
     expect(badge.exists()).toBe(true)
     expect(badge.text()).toBe(EDIT_BADGE_DEFAULT_LABEL)
+    expect(wrapper.find('#sodar-ss-badge-edit').exists()).toBe(true)
+    expect(wrapper.find('#sodar-ss-badge-edit-cache').exists()).toBe(false)
+  })
+
+  test('show badge container with editMode and cacheUpdate=true', async() => {
+    const appStore = useAppStore()
+    const editStore = useEditStore()
+    appStore.editMode = true
+    editStore.updateCache = true
+    const wrapper = mountComponent()
+    expect(wrapper.find('#sodar-ss-badge-edit').exists()).toBe(true)
+    // Cache update should be visible
+    expect(wrapper.find('#sodar-ss-badge-edit').exists()).toBe(true)
   })
 
   test('show badge container with editMode and unsavedData', async() => {
     const appStore = useAppStore()
-    appStore.editMode = true
     const editStore = useEditStore()
+    appStore.editMode = true
     editStore.unsavedData = true
     const wrapper = mountComponent()
     const badge = wrapper.find('#sodar-ss-badge-edit')
@@ -689,13 +707,14 @@ describe('ViewHeader.vue', () => {
     expect(appStore.viewActive).toBe(VIEW_STUDY)
   })
 
-  test('disable edit mode with finish edit button click',  async () => {
+  test('finish editing',  async () => {
     const appStore = useAppStore()
     const editStore = useEditStore()
     appStore.editMode = true
     appStore.selectEnabled = false
     editStore.editDataUpdated = true
     editStore.enableRowSave = true
+    editStore.updateCache = true
 
     mockFetch()
     const wrapper = mountComponent()
@@ -711,6 +730,7 @@ describe('ViewHeader.vue', () => {
     expect(editStore.enableRowSave).toBe(false)
     expect(editStore.unsavedData).toBe(false)
     expect(editStore.unsavedRow).toBe(null)
+    expect(editStore.updateCache).toBe(false)
     expect(editStore.updatingRow).toBe(false)
     expect(editStore.versionSaved).toBe(true)
 
@@ -718,11 +738,45 @@ describe('ViewHeader.vue', () => {
       finishUrl,
       expect.objectContaining({
         body: JSON.stringify({
-          updated: true, version_saved: true
+          data_updated: true,
+          update_cache: true,
+          version_saved: true,
         })
       }))
     expect(mockCreate).toHaveBeenCalledWith({
-      body: EDIT_MSG_FINISH, modelValue: 1000, variant: 'success'
+      body: EDIT_MSG_FINISH + EDIT_MSG_FINISH_CACHE,
+      modelValue: TOAST_INTERVAL_DEFAULT,
+      variant: 'success'
+    })
+  })
+
+  test('finish editing with editStore.updateCache=false',  async () => {
+    const appStore = useAppStore()
+    const editStore = useEditStore()
+    appStore.editMode = true
+    appStore.selectEnabled = false
+    editStore.editDataUpdated = true
+    editStore.enableRowSave = true
+    editStore.updateCache = false
+
+    mockFetch()
+    const wrapper = mountComponent()
+    expect(fetch).not.toHaveBeenCalled()
+    await wrapper.find('#sodar-ss-btn-edit-finish').trigger('click')
+    await flushPromises()
+    expect(fetch).toHaveBeenCalledWith(
+      finishUrl,
+      expect.objectContaining({
+        body: JSON.stringify({
+          data_updated: true,
+          update_cache: false,
+          version_saved: true,
+        })
+      }))
+    expect(mockCreate).toHaveBeenCalledWith({
+      body: EDIT_MSG_FINISH, // No cache msg
+      modelValue: TOAST_INTERVAL_DEFAULT,
+      variant: 'success'
     })
   })
 
@@ -744,7 +798,7 @@ describe('ViewHeader.vue', () => {
     expect(fetch).toHaveBeenCalled()
     expect(mockCreate).toHaveBeenCalledWith({
       body: EDIT_MSG_SAVE_FAIL_PREFIX + 'error',
-      modelValue: 2000,
+      modelValue: TOAST_INTERVAL_DANGER,
       variant: 'danger',
     })
   })

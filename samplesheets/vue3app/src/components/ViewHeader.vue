@@ -17,6 +17,7 @@ import { useEditStore } from '@/stores/editStore.ts'
 import { useTableStore } from '@/stores/tableStore.ts'
 
 import { getAjaxRequestInit } from '@/utils/appUtils.ts'
+import { type EditFinishRequestBody } from '@/types.ts'
 import {
   AJAX_RES_OK,
   EDIT_BADGE_DEFAULT_LABEL,
@@ -25,12 +26,16 @@ import {
   EDIT_MODE_EXIT_MSG,
   EDIT_MODE_SAVE_MSG,
   EDIT_MODE_UNSAVED_MSG,
+  EDIT_CACHE_TITLE_MSG,
   EDIT_MSG_FINISH,
+  EDIT_MSG_FINISH_CACHE,
   EDIT_MSG_SAVE_ERR_PREFIX,
   EDIT_MSG_SAVE_FAIL_PREFIX,
   REQ_POST,
   STUDY_NAV_DROPDOWN_LEN,
   STUDY_NAV_TAB_LEN,
+  TOAST_INTERVAL_DANGER,
+  TOAST_INTERVAL_DEFAULT,
   URL_EDIT_FINISH_PREFIX,
   URL_ISA_EXPORT_PREFIX,
   VIEW_OVERVIEW,
@@ -138,26 +143,37 @@ function toggleEditMode () {
     }
   } else { // Browsing mode
     // Call finish update on server
+    const reqBody: EditFinishRequestBody = {
+      data_updated: editStore.editDataUpdated,
+      update_cache: editStore.updateCache,
+      version_saved: editStore.versionSaved,
+    }
+    let finishMsg: string = EDIT_MSG_FINISH
+    if (editStore.updateCache) finishMsg += EDIT_MSG_FINISH_CACHE
     fetch(
         URL_EDIT_FINISH_PREFIX + appStore.projectUuid,
-        getAjaxRequestInit(REQ_POST, {
-          updated: editStore.editDataUpdated,
-          version_saved: editStore.versionSaved,
-        })
+        getAjaxRequestInit(REQ_POST, reqBody)
     ).then(data => data.json())
       .then(data => {
         if (data.detail === AJAX_RES_OK) {
-          create(
-            { body: EDIT_MSG_FINISH, variant: 'success', modelValue: 1000 })
+          create({
+            body: finishMsg,
+            variant: 'success',
+            modelValue: TOAST_INTERVAL_DEFAULT
+          })
         } else {
           const msg = EDIT_MSG_SAVE_FAIL_PREFIX + data.detail
           console.error(msg)
-          create({ body: msg, variant: 'danger', modelValue: 2000 })
+          create({
+            body: msg, variant: 'danger', modelValue: TOAST_INTERVAL_DANGER
+          })
         }
       }).catch(function (e) {
         const msg = EDIT_MSG_SAVE_ERR_PREFIX + e
         console.error(msg)
-        create({ body: msg, variant: 'danger', modelValue: 2000 })
+        create({
+          body: msg, variant: 'danger', modelValue: TOAST_INTERVAL_DANGER
+        })
     })
 
     // Update stores
@@ -219,25 +235,6 @@ function truncate (s: string, maxLen: number): string {
     </div>
     <div class="col d-flex justify-content-end"
          id="sodar-ss-subtitle-right">
-      <!-- Edit mode badge -->
-      <div class="mr-1"
-           id="sodar-ss-subtitle-badge-container">
-      <span v-if="appStore.editMode"
-            class="badge badge-pill badge-info mr-2"
-            id="sodar-ss-badge-edit">
-        <a id="sodar-ss-link-edit-help"
-           title="Editor status">
-          <i class="iconify mr-1" data-icon="mdi:lead-pencil"></i>
-          <span v-if="editStore.unsavedData || editStore.unsavedRow">
-            {{ EDIT_BADGE_UNSAVED_LABEL }}
-          </span>
-          <span v-else-if="editStore.editDataUpdated">
-            {{ EDIT_BADGE_SAVED_LABEL }}
-          </span>
-          <span v-else>{{ EDIT_BADGE_DEFAULT_LABEL }}</span>
-        </a>
-      </span>
-        </div>
       <!-- Nav dropdown -->
       <BDropdown
           v-if="appStore.sheetsAvailable && !appStore.editMode"
@@ -277,6 +274,32 @@ function truncate (s: string, maxLen: number): string {
           <i class="iconify" data-icon="mdi:sitemap"></i> Overview
         </BDropdownItem>
       </BDropdown>
+      <!-- Edit mode badges -->
+      <div class="mr-1"
+           id="sodar-ss-subtitle-badge-container">
+        <span v-if="appStore.editMode && editStore.updateCache"
+              class="badge badge-pill badge-warning mr-2"
+              id="sodar-ss-badge-edit-cache"
+              :title="EDIT_CACHE_TITLE_MSG">
+          <i class="iconify" data-icon="mdi:warning"></i>
+          Update Cache
+        </span>
+        <span v-if="appStore.editMode"
+              class="badge badge-pill badge-info mr-2"
+              id="sodar-ss-badge-edit">
+          <a id="sodar-ss-link-edit-help"
+             title="Editor status">
+            <i class="iconify mr-1" data-icon="mdi:lead-pencil"></i>
+            <span v-if="editStore.unsavedData || editStore.unsavedRow">
+              {{ EDIT_BADGE_UNSAVED_LABEL }}
+            </span>
+            <span v-else-if="editStore.editDataUpdated">
+              {{ EDIT_BADGE_SAVED_LABEL }}
+            </span>
+            <span v-else>{{ EDIT_BADGE_DEFAULT_LABEL }}</span>
+          </a>
+        </span>
+      </div>
       <!-- Edit investigation button -->
       <BButton
           v-if="appStore.editMode"

@@ -39,6 +39,8 @@ Added
     - ``Investigation.get_display_name()`` helper (#2625)
     - Investigation, study and assay comment editing (#2609)
     - ``SampleSheetStudyPluginPoint.get_study_objects()`` helper (#477)
+    - Vue3app edit finish cache updating (#1802)
+    - ``SheetEditFinishAjaxView`` cache updating (#1802)
 
 Changed
 -------

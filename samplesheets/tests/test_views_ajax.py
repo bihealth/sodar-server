@@ -12,6 +12,7 @@ from irods.path import iRODSPath
 
 from django.conf import settings
 from django.http import HttpResponse
+from django.test import override_settings
 from django.urls import reverse
 
 # Projectroles dependency
@@ -2749,6 +2750,12 @@ class TestSheetVersionSaveAjaxView(SamplesheetsViewTestBase):
 class TestSheetEditFinishAjaxView(SamplesheetsViewTestBase):
     """Tests for SheetEditFinishAjaxView"""
 
+    def _assert_cache_obj_count(self, count: int):
+        """Assert count of cache objects for the project"""
+        self.assertEqual(
+            self.cache_model.objects.filter(project=self.project).count(), count
+        )
+
     def setUp(self):
         super().setUp()
         self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
@@ -2757,6 +2764,13 @@ class TestSheetEditFinishAjaxView(SamplesheetsViewTestBase):
             'samplesheets:ajax_edit_finish',
             kwargs={'project': self.project.sodar_uuid},
         )
+        self.post_data = {
+            'data_updated': True,
+            'update_cache': False,
+            'version_saved': False,
+        }
+        self.cache_backend = plugin_api.get_backend_api('sodar_cache')
+        self.cache_model = self.cache_backend.get_model()
 
     def test_post(self):
         """Test POST with updates=True"""
@@ -2764,7 +2778,7 @@ class TestSheetEditFinishAjaxView(SamplesheetsViewTestBase):
         with self.login(self.user):
             response = self.client.post(
                 self.url,
-                json.dumps({'updated': True, 'version_saved': False}),
+                json.dumps(self.post_data),
                 **POST_KW,
             )
         self.assertEqual(response.status_code, 200)
@@ -2778,27 +2792,64 @@ class TestSheetEditFinishAjaxView(SamplesheetsViewTestBase):
 
     def test_post_version_saved(self):
         """Test POST with version_saved=True"""
+        self.post_data['version_saved'] = True
         self.assertEqual(ISATab.objects.count(), 1)
         with self.login(self.user):
             response = self.client.post(
-                self.url,
-                json.dumps({'updated': True, 'version_saved': True}),
-                **POST_KW,
+                self.url, json.dumps(self.post_data), **POST_KW
             )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(ISATab.objects.count(), 1)  # No new version
 
-    def test_post_no_updates(self):
-        """Test POST with updates=False"""
+    def test_post_data_updated_false(self):
+        """Test POST with data_updated=False"""
+        self.post_data['data_updated'] = False
         self.assertEqual(ISATab.objects.count(), 1)
         with self.login(self.user):
             response = self.client.post(
-                self.url,
-                json.dumps({'updated': False, 'version_saved': True}),
-                **POST_KW,
+                self.url, json.dumps(self.post_data), **POST_KW
             )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(ISATab.objects.count(), 1)
+
+    @override_settings(SHEETS_ENABLE_CACHE=True)
+    def test_post_update_cache(self):
+        """Test POST with update_cache=True"""
+        self._assert_cache_obj_count(0)
+        self.post_data['update_cache'] = True
+        self.assertEqual(ISATab.objects.count(), 1)
+        with self.login(self.user):
+            response = self.client.post(
+                self.url, json.dumps(self.post_data), **POST_KW
+            )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(ISATab.objects.count(), 2)
+        self._assert_cache_obj_count(1)  # Cache object should be created
+
+    @override_settings(SHEETS_ENABLE_CACHE=True)
+    def test_post_update_cache_false(self):
+        """Test POST with update_cache=False"""
+        self.assertEqual(self.post_data['update_cache'], False)
+        self.assertEqual(ISATab.objects.count(), 1)
+        with self.login(self.user):
+            response = self.client.post(
+                self.url, json.dumps(self.post_data), **POST_KW
+            )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(ISATab.objects.count(), 2)
+        self._assert_cache_obj_count(0)  # No cache object
+
+    def test_post_update_cache_disabled(self):
+        """Test POST with update_cache=True and server cache updates disabled"""
+        self.post_data['update_cache'] = True
+        self.assertEqual(ISATab.objects.count(), 1)
+        with self.login(self.user):
+            response = self.client.post(
+                self.url, json.dumps(self.post_data), **POST_KW
+            )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(ISATab.objects.count(), 2)
+        self._assert_cache_obj_count(0)  # No cache object
 
 
 class TestSheetEditConfigUpdateAjaxView(

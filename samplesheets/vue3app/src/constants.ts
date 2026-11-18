@@ -189,7 +189,11 @@ export const CONFIG_PASTE_INVALID_TERM_MSG = 'Invalid term'
 export const CONFIG_PASTE_LIST_ALLOW_MSG = 'List not allowed'
 export const CONFIG_PASTE_OK_MSG = 'Configuration pasted'
 
+export const EDIT_CACHE_TITLE_MSG = 'Changes require a study cache update. ' +
+  'Click on "Finish Editing" once done or select "Update Study Cache" ' +
+  'in the sheet operations dropdown.'
 export const EDIT_MSG_FINISH = 'Finished editing'
+export const EDIT_MSG_FINISH_CACHE = ', cache update initiated'
 export const EDIT_MSG_SAVE = 'Sheet version saved'
 export const EDIT_MSG_SAVE_ERR_PREFIX = 'Error saving version: '
 export const EDIT_MSG_SAVE_FAIL_PREFIX = 'Saving version failed: '

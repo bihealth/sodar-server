@@ -2027,8 +2027,9 @@ class SheetEditFinishAjaxView(SheetVersionMixin, SODARBaseProjectAjaxView):
 
     def post(self, request, *args, **kwargs):
         log_msg = 'Finish editing: '
-        updated = request.data.get('updated')
-        if not updated:
+        data_updated = request.data.get('data_updated')
+        update_cache = request.data.get('update_cache')
+        if not data_updated:
             logger.info(log_msg + 'nothing updated')
             return Response({'detail': 'ok'}, status=200)  # Nothing to do
 
@@ -2082,6 +2083,15 @@ class SheetEditFinishAjaxView(SheetVersionMixin, SODARBaseProjectAjaxView):
                     log_msg + f'Saved ISA-Tab "{isa_version.get_full_name()}"'
                 )
             inv.save()  # Update date_modified
+            # Update cache
+            if settings.SHEETS_ENABLE_CACHE and update_cache:
+                from samplesheets.tasks_celery import update_project_cache_task
+
+                logger.info(log_msg + 'Triggering cache update')
+                update_project_cache_task.delay(
+                    project_uuid=str(project.sodar_uuid),
+                    user_uuid=str(request.user.sodar_uuid),
+                )
             return Response({'detail': 'ok'}, status=200)
         return Response({'detail': export_ex}, status=500)
 

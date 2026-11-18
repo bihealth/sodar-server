@@ -412,6 +412,30 @@ For further details on browsing and managing backup sheet versions, see
 :ref:`app_samplesheets_version`.
 
 
+.. _app_samplesheets_edit_finish:
+
+Finish Editing
+==============
+
+To finish editing and return to the sample sheet browsing view, you can click on
+the :guilabel:`Finish Editing` button. In most cases this is not strictly
+necessary, as all the edits you have made have already been committed.
+
+Certain changes will require a study cache update for the UI to be correctly
+displayed for browsing. In that case, you will see an :guilabel:`Update Cache`
+badge next to the application title bar edit buttons. When displayed, you are
+strongly recommended to trigger cache updating by either clicking on
+:guilabel:`Finish Editing`, or selecting :guilabel:`Update Sheet Cache` from
+the :guilabel:`Sheet Operations` dropdown while in the browsing view. For more
+information, see :ref:`app_samplesheets_edit_cache`.
+
+.. figure:: _static/app_samplesheets/edit_finish_cache.png
+    :align: center
+    :scale: 75%
+
+    Edit mode buttons with cache update alert displayed
+
+
 .. _app_samplesheets_edit_column_config:
 
 Column Configuration
@@ -568,6 +592,8 @@ Contacts and Dates
 These special column types only feature the *Editable* checkbox, with
 instructions on the expected input format for cell values.
 
+
+.. _app_samplesheets_edit_cache:
 
 Update Sheet Cache
 ==================

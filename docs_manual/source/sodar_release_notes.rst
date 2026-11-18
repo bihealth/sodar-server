@@ -20,6 +20,7 @@ Major feature release.
 - Add ISA-Tab versions SODAR version storage and displaying
 - :ref:`Add support for study and assay renaming on sample sheet replace <app_samplesheets_create_replace>`
 - Add support for study and assay renaming for landing zones
+- :ref:`Add edit finish cache updating <app_samplesheets_edit_finish>`
 - :ref:`Add cache update controls for samplesheets REST API views <api_samplesheets>`
 - :ref:`Add setzonepaths management command <admin_commands_sodar>`
 - Add Python v3.14 support
