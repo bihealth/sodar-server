@@ -6,7 +6,7 @@
 
 {% block irods_links %}
   {% get_irods_path zone as zone_irods_path %}
-  <a class="dropdown-item sodar-irods-btn sodar-lz-list-modal-btn"
+  <a class="dropdown-item sodar-lz-list-modal-item"
           data-irods-path="{{ zone_irods_path }}"
           data-list-url="{% url 'landingzones:ajax_irods_list' landingzone=zone.sodar_uuid %}"
           data-checksum-url="{% url 'landingzones:ajax_irods_checksum' landingzone=zone.sodar_uuid %}"
@@ -15,7 +15,7 @@
           {# NOTE: Modal not triggered here as data is async, see JQuery #}
           title="Open a modal with the file list"
           {% if not irods_colls or disable_all %} disabled{% endif %}>
-    <i class="iconify" data-icon="mdi:folder-open"></i> Open file list
+    <i class="iconify" data-icon="mdi:folder-open"></i> Open File List
   </a>
   {{ block.super }}
 {% endblock %}

@@ -514,7 +514,7 @@ $(document).ready(function () {
   updateButtons()
 
   // iRODS dir list modal
-  $('.sodar-lz-list-modal-btn').click(function () {
+  $('.sodar-lz-list-modal-item').click(function () {
     let listElem = $('#sodar-lz-zone-list')
     let hashScheme = listElem.attr('data-hash-scheme')
     let listUrl = $(this).attr('data-list-url')

@@ -45,7 +45,7 @@ TEST_OBJ_NAME = 'test1.txt'
 TEST_COLL_NAME = 'test_coll'
 MODAL_CONTAINER_ID = 'sodar-lz-obj-list-container'
 MODAL_EMPTY_ID = 'sodar-lz-obj-list-empty'
-MODAL_BTN_CLASS = 'sodar-lz-list-modal-btn'
+MODAL_ITEM_CLASS = 'sodar-lz-list-modal-item'
 MODAL_HEADER_TITLE_ID = 'sodar-lz-obj-list-title'
 MODAL_HEADER_PAGE_ID = 'sodar-lz-obj-list-title-page'
 MODAL_HEADER_TOGGLE_BTN_ID = 'sodar-lz-obj-list-coll-toggle-btn'
@@ -78,16 +78,16 @@ class TestZoneFileListModal(
         :return: Modal content container element
         """
         dropdown_btn = self.selenium.find_element(
-            By.CLASS_NAME, 'sodar-irods-dropdown-btn'
+            By.CSS_SELECTOR, '.sodar-irods-dropdown button'
         )
         dropdown_btn.click()
         WebDriverWait(self.selenium, self.wait_time).until(
-            ec.element_to_be_clickable((By.CLASS_NAME, MODAL_BTN_CLASS))
+            ec.element_to_be_clickable((By.CLASS_NAME, MODAL_ITEM_CLASS))
         )
         WebDriverWait(self.selenium, self.wait_time).until(
-            ec.element_to_be_clickable((By.CLASS_NAME, MODAL_BTN_CLASS))
+            ec.element_to_be_clickable((By.CLASS_NAME, MODAL_ITEM_CLASS))
         )
-        btn_elem = self.selenium.find_element(By.CLASS_NAME, MODAL_BTN_CLASS)
+        btn_elem = self.selenium.find_element(By.CLASS_NAME, MODAL_ITEM_CLASS)
         btn_elem.click()
         WebDriverWait(self.selenium, self.wait_time).until(
             ec.presence_of_element_located((By.ID, MODAL_CONTAINER_ID))

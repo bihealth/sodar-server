@@ -81,22 +81,19 @@ let setPeriodicStatsUpdate = function () {
   }, statsInterval)
 }
 
-/***************************************
- Toggling buttons in one row function
- ***************************************/
-//enables or disables every .sodar-list-btn button in a row
-let toggleButtons = function (row, status, stats) {
-  $(row).find('.sodar-list-btn').each(function () {
+/******************************************
+ Toggling items in one dropdown function
+ ******************************************/
+//enables or disables every .sodar-irods-*-item in a dropdown
+let toggleDropdownItems = function (row, status, stats) {
+  $(row).find('a.dropdown-item').each(function () {
     if (status === '200') {
-      if ($(this).is('button')) {
-        $(this).removeAttr('disabled')
-      }
       $(this).removeClass('disabled')
       // $(this).tooltip('enable')
 
       //collection is empty; disable all but the copy path buttons
       if (stats['file_count'] === 0) {
-        if ($(this).is('.sodar-irods-dav-btn')) {
+        if ($(this).is('.sodar-irods-dav-item')) {
           $(this).addClass('disabled')
           // $(this).tooltip('disable')
         }
@@ -104,11 +101,7 @@ let toggleButtons = function (row, status, stats) {
     }
     //collection doesn't exist; disable all buttons
     else {
-      if ($(this).is('button')) {
-        $(this).attr('disabled', 'disabled')
-      } else if ($(this).is('a')) {
-        $(this).addClass('disabled')
-      }
+      $(this).addClass('disabled')
     }
   })
 }
@@ -120,7 +113,7 @@ let updateButtons = function () {
   let ipaths = []
   let projectUUID = ''
 
-  $('button.sodar-irods-path-btn').each(function () {
+  $('button.sodar-irods-path-item').each(function () {
     if (!$(this).hasClass('no-colls')) {
       let buttonPath = $(this).attr('data-clipboard-text')
       projectUUID = buttonPath.split('/')[4]
@@ -152,18 +145,19 @@ let updateButtons = function () {
         method: 'POST',
         dataType: 'json',
         data: d,
-        contentType: "application/x-www-form-urlencoded; charset=UTF-8",
+        contentType: 'application/x-www-form-urlencoded; charset=UTF-8',
         traditional: true
       }).done(function (data) {
-        $('button.sodar-irods-path-btn').each(function () {
-          let buttonPath = $(this).attr('data-clipboard-text')
-          let buttonRow = $(this).closest('span')
+        $('a.sodar-irods-path-item').each(function () {
+          let itemPath = $(this).attr('data-clipboard-text')
+          let parentDropdown = $(this).closest(
+            '.sodar-irods-dropdown')
           for (idx in data['coll_objects']) {
             if (data['coll_objects'].hasOwnProperty(idx)) {
-              if (buttonPath === data['coll_objects'][idx]['path']) {
+              if (itemPath === data['coll_objects'][idx]['path']) {
                 let status = data['coll_objects'][idx]['status']
                 let stats = data['coll_objects'][idx]['stats']
-                toggleButtons(buttonRow, status, stats)
+                toggleDropdownItems(parentDropdown, status, stats)
                 break
               }
             }
@@ -178,17 +172,18 @@ let updateButtons = function () {
  Copy path display method
 *************************/
 function displayCopyStatus(elem) {
-  elem.addClass('text-warning')
+  parentButton = elem.closest('.sodar-irods-dropdown').find('button')
+  parentButton.addClass('text-warning')
   elem.delay(250).queue(function () {
-    elem.removeClass('text-warning').dequeue()
+    parentButton.removeClass('text-warning').dequeue()
   })
 }
 
 $(document).ready(function () {
   // Init Clipboards
-  new ClipboardJS('.sodar-irods-copy-btn')
+  new ClipboardJS('.sodar-irods-copy-item')
   // Add copy link handler
-  $('.sodar-irods-copy-btn').click(function () {
+  $('.sodar-irods-copy-item').click(function () {
     displayCopyStatus($(this))
   })
 })

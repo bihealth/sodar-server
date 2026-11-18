@@ -11,8 +11,8 @@
 {% get_django_setting 'IRODS_WEBDAV_ENABLED' as irods_webdav_enabled %}
 {% get_webdav_url project request.user as irods_webdav_url %}
 
-<div class="btn-group sodar-list-btn-group" role="group" title="iRODS Links">
-  <button class="btn btn-secondary dropdown-toggle sodar-irods-dropdown-btn py-0"
+<div class="btn-group sodar-list-btn-group sodar-irods-dropdown" role="group" title="iRODS Links">
+  <button class="btn btn-secondary dropdown-toggle py-0 px-2"
           type="button"
           data-toggle="dropdown"
           aria-haspopup="true"
@@ -21,26 +21,26 @@
   </button>
   <div class="dropdown-menu dropdown-menu-right">
     {% block irods_links %}
-      <a class="dropdown-item sodar-irods-btn sodar-irods-copy-btn sodar-irods-path-btn
+      <a class="dropdown-item sodar-irods-copy-item sodar-irods-path-item
                {% if not irods_webdav_enabled or not irods_colls or disable_all %} no-colls {% endif %}"
          data-clipboard-text="{{ irods_path }}"
          role="submit"
          title="Copy iRODS path into clipboard"
          {% if not irods_colls or disable_all %} disabled{% endif %}>
-        <i class="iconify" data-icon="mdi:console-line"></i> Copy iRODS path
+        <i class="iconify" data-icon="mdi:console-line"></i> Copy iRODS Path
       </a>
-      <a class="dropdown-item sodar-irods-btn sodar-irods-copy-btn sodar-irods-dav-btn"
+      <a class="dropdown-item sodar-irods-copy-item sodar-irods-dav-item"
          data-clipboard-text="{{ irods_webdav_url }}{{ irods_path }}"
          role="submit"
          title="Copy WebDAV URL into clipboard"
          {% if not irods_colls or disable_all %} disabled{% endif %}>
         <i class="iconify" data-icon="mdi:clipboard-text-multiple"></i> Copy WebDAV URL
       </a>
-      <a class="dropdown-item sodar-irods-btn sodar-irods-browse-btn sodar-irods-dav-btn"
+      <a class="dropdown-item sodar-irods-browse-item sodar-irods-dav-item"
          href="{{ irods_webdav_url }}{{ irods_path }}"
          role="button"
          title="Browse files in WebDAV">
-        <i class="iconify" data-icon="mdi:open-in-new"></i> Browse files in WebDAV
+        <i class="iconify" data-icon="mdi:open-in-new"></i> Browse Files in WebDAV
       </a>
     {% endblock %}
   </div>
