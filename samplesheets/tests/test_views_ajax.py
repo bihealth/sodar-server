@@ -127,6 +127,8 @@ PLUGIN_TITLE_PEP_MS = (
     'Sample Sheets Protein Expression Profiling / Mass Spectrometry Assay '
     'Plugin'
 )
+COMMENT_KEY = 'Test Comment'
+COMMENT_KEY2 = 'Test Comment 2'
 POST_KW = {'content_type': 'application/json'}
 
 
@@ -900,7 +902,7 @@ class TestInvestigationUpdateAjaxView(
                 'submission_date': '2026-10-15',
                 'public_release_date': '2026-11-27',
             },
-            'comments': {'Test Inv Comment': 'test value'},
+            'comments': {COMMENT_KEY: 'test value'},
         }
         self.url = reverse(
             'samplesheets:ajax_inv_update',
@@ -916,6 +918,10 @@ class TestInvestigationUpdateAjaxView(
         self.assertEqual(self.inv.submission_date, None)
         self.assertEqual(self.inv.public_release_date, None)
         self.assertEqual(self.inv.comments, {})
+        self.assertEqual(len(self.inv.headers), 5)
+        self.assertFalse(
+            any([h.startswith('Comment[') for h in self.inv.headers])
+        )
         self.assertIsNone(self._get_tl_event())
 
         with self.login(self.user):
@@ -939,6 +945,8 @@ class TestInvestigationUpdateAjaxView(
             p_meta['public_release_date'],
         )
         self.assertEqual(self.inv.comments, self.post_data['comments'])
+        self.assertEqual(len(self.inv.headers), 6)
+        self.assertIn(f'Comment[{COMMENT_KEY}]', self.inv.headers)
 
         tl_event = self._get_tl_event()
         self.assertEqual(tl_event.extra_data, self.post_data)
@@ -1073,6 +1081,43 @@ class TestInvestigationUpdateAjaxView(
             DATE_INVALID_MSG.format(field='public_release_date'),
         )
 
+    def test_post_comments_multi(self):
+        """Test POST with multiple comments"""
+        self.assertEqual(len(self.inv.headers), 5)
+        self.post_data['comments'][COMMENT_KEY2] = 'test value'
+
+        with self.login(self.user):
+            response = self.client.post(
+                self.url, json.dumps(self.post_data), **POST_KW
+            )
+        self.assertEqual(response.status_code, 200)
+
+        self.inv.refresh_from_db()
+        self.assertEqual(self.inv.comments, self.post_data['comments'])
+        self.assertEqual(len(self.inv.headers), 7)
+        self.assertIn(f'Comment[{COMMENT_KEY}]', self.inv.headers)
+        self.assertIn(f'Comment[{COMMENT_KEY2}]', self.inv.headers)
+
+    def test_post_comments_remove(self):
+        """Test POST with removed comment"""
+        self.inv.comments = {COMMENT_KEY: 'test value'}
+        self.inv.headers.append(f'Comment[{COMMENT_KEY}]')
+        self.inv.save()
+        self.assertEqual(len(self.inv.headers), 6)
+        self.post_data['comments'] = {COMMENT_KEY2: 'test value'}
+
+        with self.login(self.user):
+            response = self.client.post(
+                self.url, json.dumps(self.post_data), **POST_KW
+            )
+        self.assertEqual(response.status_code, 200)
+
+        self.inv.refresh_from_db()
+        self.assertEqual(self.inv.comments, {COMMENT_KEY2: 'test value'})
+        self.assertEqual(len(self.inv.headers), 6)
+        self.assertNotIn(f'Comment[{COMMENT_KEY}]', self.inv.headers)
+        self.assertIn(f'Comment[{COMMENT_KEY2}]', self.inv.headers)
+
     def test_post_uuid_invalid(self):
         """Test POST with invalid investigation UUID"""
         url = reverse(
@@ -1099,8 +1144,8 @@ class TestStudyUpdateAjaxView(SampleSheetModelMixin, SamplesheetsViewTestBase):
 
     def setUp(self):
         super().setUp()
-        self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
-        self.study = self.investigation.studies.first()
+        self.inv = self.import_isa_from_file(SHEET_PATH, self.project)
+        self.study = self.inv.studies.first()
         self.post_data = {
             'study_meta': {
                 'identifier': 's_small_updated',
@@ -1132,6 +1177,7 @@ class TestStudyUpdateAjaxView(SampleSheetModelMixin, SamplesheetsViewTestBase):
             self.study.comments,
             {'Study Grant Number': '', 'Study Funding Agency': ''},
         )
+        self.assertEqual(len(self.study.headers), 8)
         self.assertIsNone(self._get_tl_event())
 
         with self.login(self.user):
@@ -1155,6 +1201,7 @@ class TestStudyUpdateAjaxView(SampleSheetModelMixin, SamplesheetsViewTestBase):
             p_meta['public_release_date'],
         )
         self.assertEqual(self.study.comments, self.post_data['comments'])
+        self.assertEqual(len(self.study.headers), 8)
 
         tl_event = self._get_tl_event()
         self.assertEqual(tl_event.extra_data, self.post_data)
@@ -1181,7 +1228,7 @@ class TestStudyUpdateAjaxView(SampleSheetModelMixin, SamplesheetsViewTestBase):
         self.make_study(
             identifier='s_small2',
             file_name='s_small2.txt',
-            investigation=self.investigation,
+            investigation=self.inv,
             title='Another Study',
             description='',
             comments={},
@@ -1199,7 +1246,7 @@ class TestStudyUpdateAjaxView(SampleSheetModelMixin, SamplesheetsViewTestBase):
         self.make_study(
             identifier='s_small2',
             file_name='s_small2.txt',
-            investigation=self.investigation,
+            investigation=self.inv,
             title='Another Study',
             description='',
             comments={},
@@ -1316,6 +1363,40 @@ class TestStudyUpdateAjaxView(SampleSheetModelMixin, SamplesheetsViewTestBase):
             DATE_INVALID_MSG.format(field='public_release_date'),
         )
 
+    def test_post_comments_insert(self):
+        """Test POST with inserted comment"""
+        self.post_data['comments'][COMMENT_KEY] = 'test_data'
+        self.assertEqual(len(self.study.headers), 8)
+        self.assertNotIn(f'Comment[{COMMENT_KEY}]', self.study.headers)
+
+        with self.login(self.user):
+            response = self.client.post(
+                self.url, json.dumps(self.post_data), **POST_KW
+            )
+        self.assertEqual(response.status_code, 200)
+
+        self.study.refresh_from_db()
+        self.assertEqual(self.study.comments, self.post_data['comments'])
+        self.assertEqual(len(self.study.headers), 9)
+        self.assertIn(f'Comment[{COMMENT_KEY}]', self.study.headers)
+
+    def test_post_comments_remove(self):
+        """Test POST with removed comments"""
+        self.post_data['comments'] = {COMMENT_KEY: 'test_data'}
+        self.assertEqual(len(self.study.headers), 8)
+        self.assertNotIn(f'Comment[{COMMENT_KEY}]', self.study.headers)
+
+        with self.login(self.user):
+            response = self.client.post(
+                self.url, json.dumps(self.post_data), **POST_KW
+            )
+        self.assertEqual(response.status_code, 200)
+
+        self.study.refresh_from_db()
+        self.assertEqual(self.study.comments, self.post_data['comments'])
+        self.assertEqual(len(self.study.headers), 7)
+        self.assertIn(f'Comment[{COMMENT_KEY}]', self.study.headers)
+
     def test_post_uuid_invalid(self):
         """Test POST with invalid study UUID"""
         url = reverse(
@@ -1342,8 +1423,8 @@ class TestAssayUpdateAjaxView(SampleSheetModelMixin, SamplesheetsViewTestBase):
 
     def setUp(self):
         super().setUp()
-        self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
-        self.study = self.investigation.studies.first()
+        self.inv = self.import_isa_from_file(SHEET_PATH, self.project)
+        self.study = self.inv.studies.first()
         self.assay = self.study.assays.first()
         self.post_data = {
             'assay_meta': {
@@ -1351,7 +1432,7 @@ class TestAssayUpdateAjaxView(SampleSheetModelMixin, SamplesheetsViewTestBase):
                 'technology_platform': 'ACME 9000',
             },
             'comments': {
-                'Test Assay Comment': 'test value',
+                COMMENT_KEY: 'test value',
                 sc.ISA_META_ASSAY_DISPLAY_NAME: 'Updated Small Assay',
             },
         }
@@ -1365,6 +1446,7 @@ class TestAssayUpdateAjaxView(SampleSheetModelMixin, SamplesheetsViewTestBase):
         self.assertEqual(self.assay.file_name, 'a_small.txt')
         self.assertEqual(self.assay.technology_platform, '')
         self.assertEqual(self.assay.comments, {})
+        self.assertEqual(len(self.assay.headers), 8)
         self.assertIsNone(self._get_tl_event())
 
         with self.login(self.user):
@@ -1384,6 +1466,7 @@ class TestAssayUpdateAjaxView(SampleSheetModelMixin, SamplesheetsViewTestBase):
             self.assay.get_display_name(),
             self.post_data['comments'][sc.ISA_META_ASSAY_DISPLAY_NAME],
         )
+        self.assertEqual(len(self.assay.headers), 10)
 
         tl_event = self._get_tl_event()
         self.assertEqual(tl_event.extra_data, self.post_data)

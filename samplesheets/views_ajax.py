@@ -247,7 +247,7 @@ class BaseISAPropertyEditAjaxView(BaseSheetEditAjaxView):
     ):
         """
         Update comments for Investigation, Study or Assay. Replaces the existing
-        comment set.
+        comment set. Also updates object headers.
 
         :param obj: Related object (Investigation/Study/Assay)
         :param post_data: POST request data (dict)
@@ -261,6 +261,11 @@ class BaseISAPropertyEditAjaxView(BaseSheetEditAjaxView):
                 v = ''
             res[k.strip()] = v.strip()
         obj.comments = res
+        # Update headers
+        obj.headers = [h for h in obj.headers if not h.startswith('Comment[')]
+        obj.headers += [
+            f'Comment[{k}]' for k in sorted([k for k in comments.keys()])
+        ]
 
     @classmethod
     def validate_isa_file_name(
