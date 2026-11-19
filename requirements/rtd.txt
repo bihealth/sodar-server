@@ -1,0 +1,4 @@
+# ReadTheDocs building requirements
+-r local.txt
+
+gunicorn==27.0.1

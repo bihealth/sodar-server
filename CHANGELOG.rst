@@ -13,6 +13,7 @@ Added
 
 - **General**
     - Python v3.14 support (#2557)
+    - ``rtd.txt`` for ReadTheDocs dependencies (#2644)
 - **Landingzones**
     - ``LandingZone.irods_path`` field (#2620)
     - Landing zone support for study and assay renaming (#2620)
