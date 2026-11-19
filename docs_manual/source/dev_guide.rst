@@ -78,8 +78,7 @@ Code Conventions
 For developing code for the Django site, see
 `SODAR Core code conventions <https://sodar-core.readthedocs.io/en/dev/dev_core_guide.html#code-conventions>`_.
 
-For the samplesheets Vue app, strict linting used in the development environment
-enforces most critical conventions.
+For conventions for the samplesheets Vue3 app, see :ref:`dev_vue_app`.
 
 
 .. _dev_guide_test:
@@ -92,7 +91,7 @@ For testing the Django site, see
 
 For testing the samplesheets Vue app, unit tests using Vitest and Vue Test
 Utils are expected. Data from SODAR Ajax API views needs to be mocked. For
-general hints, see :ref:`dev_resource_vue_test`.
+general hints, see :ref:`dev_vue_app_test`.
 
 
 .. _dev_guide_doc:

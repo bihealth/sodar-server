@@ -154,6 +154,7 @@ Table of Contents
     dev_install
     Development Guidelines <dev_guide>
     dev_apps
+    Samplesheets Vue App <dev_vue_app>
     dev_resource
 
 .. toctree::

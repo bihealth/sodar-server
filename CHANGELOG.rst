@@ -41,6 +41,7 @@ Added
     - ``SampleSheetStudyPluginPoint.get_study_objects()`` helper (#477)
     - Vue3app edit finish cache updating (#1802)
     - ``SheetEditFinishAjaxView`` cache updating (#1802)
+    - Vue3app development docs (#2420)
 
 Changed
 -------
