@@ -764,6 +764,12 @@ IRODS_WEBDAV_URL_ANON_TMPL = re.sub(
 IRODS_WEBDAV_USER_ANON = env.str('IRODS_WEBDAV_USER_ANON', 'ticket')
 IRODS_WEBDAV_IGV_PROXY = env.bool('IRODS_WEBDAV_IGV_PROXY', False)
 
+# ManGO settings
+MANGO_ENABLE = env.bool('MANGO_ENABLE', False)
+MANGO_URL = env.str(
+    'MANGO_URL', 'http://127.0.0.1:3000/mango/collection/browse'
+)
+
 
 # Irodsbackend settings
 # Status query interval in seconds

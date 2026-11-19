@@ -359,6 +359,27 @@ def get_webdav_url(project: Project, user: SODARUser) -> Optional[str]:
         )
 
 
+def get_mango_url(project: Project, user: SODARUser) -> Optional[str]:
+    """
+    Return the ManGO URL for accessing sample data under a specific project.
+    If the project has public guest access with anonymous users enabled, return
+    read-only ticket access URL. If ManGO is not enabled, return None.
+
+    :param project: Project object
+    :param user: User object for user requesting the URL
+    :return: String or None
+    :raise: ValueError if path is invalid
+    """
+    if not settings.MANGO_ENABLE:
+        return None
+    if user and user.is_authenticated:
+        return settings.MANGO_URL.rstrip('/')
+    # NOTE: HTTP Basic Auth in ManGO works only for data object downloads, not
+    # for browsing. We can fix that in ManGO, but at the moment it wouldn't
+    # work, so we return None here, unlike webdav.
+    return None
+
+
 def get_ext_link_labels() -> dict:
     """
     Return external link labels and URLs. Retrieve from config file set in

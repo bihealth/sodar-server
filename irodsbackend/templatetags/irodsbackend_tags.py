@@ -10,6 +10,7 @@ from projectroles.models import Project, SODARUser
 
 # Samplesheets dependency
 from samplesheets.utils import get_webdav_url as _get_webdav_url
+from samplesheets.utils import get_mango_url as _get_mango_url
 
 
 irods_backend = IrodsAPI()
@@ -42,6 +43,14 @@ def get_stats_html(irods_path: str, project: Project) -> str:
 @register.simple_tag
 def get_webdav_url(project: Project, user: SODARUser) -> str:
     url = _get_webdav_url(project, user)
+    if not url:
+        return ''
+    return url
+
+
+@register.simple_tag
+def get_mango_url(project: Project, user: SODARUser) -> str:
+    url = _get_mango_url(project, user)
     if not url:
         return ''
     return url
