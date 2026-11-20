@@ -1024,3 +1024,76 @@ class TestProjectIrodsFileListAPIView(SheetTaskflowAPIPermissionTestBase):
         self.assert_response_api(self.url, self.good_users, 200)
         self.assert_response_api(self.url, self.bad_users, 403)
         self.assert_response_api(self.url, self.anonymous, 401)
+
+
+@override_settings(SHEETS_ENABLE_CACHE=True)
+class TestSheetCacheUpdateAPIView(SheetTaskflowAPIPermissionTestBase):
+    """Tests for SheetCacheUpdateAPIView permissions"""
+
+    def setUp(self):
+        super().setUp()
+        self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
+        self.study = self.investigation.studies.first()
+        self.assay = self.study.assays.first()
+        self.make_irods_colls(self.investigation)
+        self.url = reverse(
+            'samplesheets:api_cache_update',
+            kwargs={'project': self.project.sodar_uuid},
+        )
+        self.good_users = [
+            self.superuser,
+            self.user_owner_cat,
+            self.user_delegate_cat,
+            self.user_contributor_cat,
+            self.user_owner,
+            self.user_delegate,
+            self.user_contributor,
+        ]
+        self.bad_users = [
+            self.user_guest_cat,
+            self.user_finder_cat,
+            self.user_guest,
+            self.user_no_roles,
+        ]
+
+    def test_post(self):
+        """Test SheetCacheUpdateAPIView POST"""
+        self.assert_response_api(self.url, self.good_users, 200, method='POST')
+        self.assert_response_api(self.url, self.bad_users, 403, method='POST')
+        self.assert_response_api(self.url, self.anonymous, 401, method='POST')
+
+    @override_settings(PROJECTROLES_ALLOW_ANONYMOUS=True)
+    def test_post_anon(self):
+        """Test POST with anonymous access"""
+        for role in self.guest_roles:
+            self.project.set_public_access(role)
+            self.assert_response_api(
+                self.url, self.anonymous, 401, method='POST'
+            )
+
+    def test_post_archive(self):
+        """Test POST with archived project"""
+        self.project.set_archive()
+        self.assert_response_api(self.url, self.superuser, 200, method='POST')
+        self.assert_response_api(
+            self.url, self.auth_non_superusers, 403, method='POST'
+        )
+        self.assert_response_api(self.url, self.anonymous, 401, method='POST')
+
+    def test_post_block(self):
+        """Test POST with project access block"""
+        self.set_access_block(self.project)
+        self.assert_response_api(self.url, self.superuser, 200, method='POST')
+        self.assert_response_api(
+            self.url, self.auth_non_superusers, 403, method='POST'
+        )
+        self.assert_response_api(self.url, self.anonymous, 401, method='POST')
+
+    def test_post_read_only(self):
+        """Test POST with site read-only mode"""
+        self.set_site_read_only()
+        self.assert_response_api(self.url, self.superuser, 200, method='POST')
+        self.assert_response_api(
+            self.url, self.auth_non_superusers, 403, method='POST'
+        )
+        self.assert_response_api(self.url, self.anonymous, 401, method='POST')

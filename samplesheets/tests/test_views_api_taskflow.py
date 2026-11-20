@@ -63,6 +63,9 @@ from samplesheets.views import (
     IRODS_REQUEST_EVENT_REJECT as REJECT_ALERT,
 )
 from samplesheets.views_api import (
+    CACHE_DISABLE_MSG,
+    CACHE_NO_IRODS_MSG,
+    CACHE_NO_SHEETS_MSG,
     IRODS_QUERY_ERROR_MSG,
     SAMPLESHEETS_API_MEDIA_TYPE,
     SAMPLESHEETS_API_DEFAULT_VERSION,
@@ -1762,3 +1765,63 @@ class TestProjectIrodsFileListAPIView(SampleSheetAPITaskflowTestBase):
             self.url + '?include_colls=1', version='1.1'
         )
         self.assertEqual(response.status_code, 406)
+
+
+@override_settings(SHEETS_ENABLE_CACHE=True)
+class TestSheetCacheUpdateAPIView(SampleSheetAPITaskflowTestBase):
+    """Tests for SheetCacheUpdateAPIView"""
+
+    def _assert_cache_item_count(self, count: int):
+        """Assert count of project cache items"""
+        self.assertEqual(
+            self.cache_model.objects.filter(
+                name=self.cache_name, project=self.project
+            ).count(),
+            count,
+        )
+
+    def setUp(self):
+        super().setUp()
+        self.cache_backend = plugin_api.get_backend_api('sodar_cache')
+        self.cache_model = self.cache_backend.get_model()
+        self.cache_name = IRODS_STATS_CACHE_NAME.format(
+            uuid=self.project.sodar_uuid
+        )
+        self.url = reverse(
+            'samplesheets:api_cache_update',
+            kwargs={'project': self.project.sodar_uuid},
+        )
+
+    def test_post(self):
+        """Test SheetCacheUpdateAPIView POST"""
+        self.make_irods_colls(self.investigation)
+        self._assert_cache_item_count(0)
+        response = self.request_knox(self.url, 'POST')
+        self.assertEqual(response.status_code, 200)
+        self._assert_cache_item_count(1)
+
+    def test_post_no_colls(self):
+        """Test POST with no iRODS colls"""
+        response = self.request_knox(self.url, 'POST')
+        self.assertEqual(response.status_code, 503)
+        self.assertEqual(response.data['detail'], CACHE_NO_IRODS_MSG)
+        self._assert_cache_item_count(0)
+
+    def test_post_no_inv(self):
+        """Test POST with no investigation"""
+        self.investigation.delete()
+        response = self.request_knox(self.url, 'POST')
+        self.assertEqual(response.status_code, 503)
+        self.assertEqual(response.data['detail'], CACHE_NO_SHEETS_MSG)
+        self._assert_cache_item_count(0)
+
+    @override_settings(SHEETS_ENABLE_CACHE=False)
+    def test_post_disabled(self):
+        """Test POST with cache updating disabled"""
+        self.make_irods_colls(self.investigation)
+        response = self.request_knox(self.url, 'POST')
+        self.assertEqual(response.status_code, 503)
+        self.assertEqual(response.data['detail'], CACHE_DISABLE_MSG)
+        self._assert_cache_item_count(0)
+
+    # TODO: Test with mocked existing celery task

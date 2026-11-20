@@ -22,6 +22,7 @@ Major feature release.
 - Add support for study and assay renaming for landing zones
 - :ref:`Add edit finish cache updating <app_samplesheets_edit_finish>`
 - :ref:`Add cache update controls for samplesheets REST API views <api_samplesheets>`
+- :ref:`Add sheet cache update REST API view <api_samplesheets>`
 - :ref:`Add setzonepaths management command <admin_commands_sodar>`
 - Add Python v3.14 support
 - :ref:`Upgrade Sample Sheets REST API version to v1.3 <api_samplesheets_version_1_3>`
@@ -41,6 +42,8 @@ REST API Updates
     * Allowed versions: ``1.0``, ``1.1``, ``1.2``, ``1.3``
     * ``IrodsDataRequestAcceptAPIView``
         + Add ``update_cache`` field
+    * ``SheetCacheUpdateAPIView``
+        + Add view
     * ``SheetISAExportAPIView``
         + Add ``include_meta`` field
     * ``SheetImportAPIView``

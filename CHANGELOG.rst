@@ -43,6 +43,7 @@ Added
     - Vue3app edit finish cache updating (#1802)
     - ``SheetEditFinishAjaxView`` cache updating (#1802)
     - Vue3app development docs (#2420)
+    - ``SheetCacheUpdateAPIView`` REST API view (#2461)
 
 Changed
 -------

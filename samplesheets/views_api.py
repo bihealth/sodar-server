@@ -4,6 +4,7 @@ import logging
 import re
 import sys
 
+from celery import Celery
 from irods.exception import CAT_NO_ROWS_FOUND
 from irods.models import DataObject
 from packaging.version import parse as parse_version
@@ -46,6 +47,7 @@ from projectroles.models import (
 )
 from projectroles.plugins import PluginAPI
 from projectroles.views_api import (
+    ServiceUnavailable,
     SODARAPIBaseProjectMixin,
     SODARAPIGenericProjectMixin,
     SODARPageNumberPagination,
@@ -114,6 +116,10 @@ FILE_EXISTS_RESTRICT_MSG = (
 SHEETS_VERSION_ERR_MSG = (
     '{feature} requires samplesheets API version >={min_version}'
 )
+CACHE_DISABLE_MSG = 'Sample sheet cache is disabled on this site'
+CACHE_IN_PROGRESS_MSG = 'Cache update is already in progress for project'
+CACHE_NO_IRODS_MSG = 'iRODS collections not created for sample sheets'
+CACHE_NO_SHEETS_MSG = 'No sample sheets in project'
 VERSION_1_1 = parse_version('1.1')
 VERSION_1_2 = parse_version('1.2')
 VERSION_1_3 = parse_version('1.3')
@@ -1291,6 +1297,113 @@ class ProjectIrodsFileListAPIView(
         else:
             ret = obj_list
         return Response(ret, status=status.HTTP_200_OK)
+
+
+@extend_schema(
+    responses={
+        '200': inline_serializer(
+            'SheetCacheUpdateResponse',
+            fields={'detail': serializers.CharField()},
+        ),
+    }
+)
+class SheetCacheUpdateAPIView(
+    SamplesheetsAPIVersioningMixin,
+    SODARAPIBaseProjectMixin,
+    APIView,
+):
+    """
+    Initiate sample sheet cache update for a project.
+
+    This will trigger sample sheet cache update for the given project. This
+    project is asynchronous and the time it takes to complete may vary depending
+    on the size of the sample sheets in the project.
+
+    Returns HTTP 503 if SHEETS_ENABLE_CACHE is enabled, sample sheets are not
+    available in project, iRODS collections have not been created for project or
+    a cache update is already in progress for the project.
+
+    **URL:** ``/samplesheets/api/cache/update/{Project.sodar_uuid}``
+
+    **Methods:** ``POST``
+
+    **Version Changes**:
+
+    - ``1.3``: Add view
+    """
+
+    http_method_names = ['post']
+    permission_required = 'samplesheets.edit_sheet'
+    serializer_class = None
+
+    @classmethod
+    def _check_celery_tasks(cls, project: Project) -> bool:
+        """
+        Return True if an active sheet cache update celery task for project
+        exists.
+
+        :param project: Project object
+        :return: Boolean
+        """
+        celery_app = Celery('sodar_sheet_cache_update_status')
+        celery_app.config_from_object(
+            'django.conf:settings', namespace='CELERY'
+        )
+        celery_tasks = celery_app.control.inspect().active()
+        if not celery_tasks:
+            return False
+        for v in celery_tasks.values():
+            task_found = any(
+                t.get('name').endswith('.update_project_cache_task')
+                and 'args' in t
+                and t['args'][0] == str(project.sodar_uuid)
+                for t in v
+            )
+            return task_found
+        return False
+
+    def post(self, request, *args, **kwargs):
+        """POST request for triggering project samplesheets cache update"""
+        version = parse_version(request.version)
+        if version < VERSION_1_3:
+            raise NotAcceptable(
+                SHEETS_VERSION_ERR_MSG.format(
+                    feature='SheetCacheUpdateAPIView', min_version=VERSION_1_3
+                )
+            )
+        if not settings.SHEETS_ENABLE_CACHE:
+            raise ServiceUnavailable(CACHE_DISABLE_MSG)
+        project = self.get_project()
+        inv = Investigation.objects.filter(project=project, active=True).first()
+        if not inv:
+            raise ServiceUnavailable(CACHE_NO_SHEETS_MSG)
+        elif not inv.irods_status:
+            raise ServiceUnavailable(CACHE_NO_IRODS_MSG)
+
+        # Check for existing cache update task
+        try:
+            task_found = self._check_celery_tasks(project)
+            if task_found:
+                raise ServiceUnavailable(CACHE_IN_PROGRESS_MSG)
+        except Exception as ex:
+            msg = f'Exception querying for celery tasks: {ex}'
+            logger.error(msg)
+            raise APIException(msg)
+
+        try:
+            from samplesheets.tasks_celery import update_project_cache_task
+
+            update_project_cache_task.delay(
+                project_uuid=str(project.sodar_uuid),
+                user_uuid=str(request.user.sodar_uuid),
+                add_alert=True,
+                alert_msg='Manual cache update from API',
+            )
+        except Exception as ex:
+            raise APIException({'detail': str(ex)})
+        return Response(
+            {'detail': 'Cache updating initiated'}, status=status.HTTP_200_OK
+        )
 
 
 # TODO: Temporary HACK, should be replaced by proper API view

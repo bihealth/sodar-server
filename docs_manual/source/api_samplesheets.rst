@@ -72,6 +72,11 @@ iRODS Data Requests
 
 .. autoclass:: IrodsDataRequestRejectAPIView
 
+SODAR Cache Management
+----------------------
+
+.. autoclass:: SheetCacheUpdateAPIView
+
 
 Version Changes
 ===============
@@ -83,6 +88,8 @@ v1.3
 
 - ``IrodsDataRequestAcceptAPIView``
     * Add ``update_cache`` field
+- ``SheetCacheUpdateAPIView``
+    * Add view
 - ``SheetISAExportAPIView``
     * Add ``include_meta`` field
 - ``SheetImportAPIView``

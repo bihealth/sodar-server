@@ -257,14 +257,19 @@ urls_api = [
         name='api_file_exists',
     ),
     path(
-        route='api/remote/get/<uuid:project>/<str:secret>',
-        view=views_api.RemoteSheetGetAPIView.as_view(),
-        name='api_remote_get',
-    ),
-    path(
         route='api/file/list/<uuid:project>',
         view=views_api.ProjectIrodsFileListAPIView.as_view(),
         name='api_file_list',
+    ),
+    path(
+        route='api/cache/update/<uuid:project>',
+        view=views_api.SheetCacheUpdateAPIView.as_view(),
+        name='api_cache_update',
+    ),
+    path(
+        route='api/remote/get/<uuid:project>/<str:secret>',
+        view=views_api.RemoteSheetGetAPIView.as_view(),
+        name='api_remote_get',
     ),
 ]
 
