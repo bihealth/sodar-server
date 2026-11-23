@@ -43,8 +43,6 @@ sphinxcontrib-youtube==1.5.0
 
 # Versioning
 setuptools-scm==10.3.4
-# TODO: Replace with setuptools-scm (see #2582)
-versioneer==0.29
 
 # Redis support
 redis>=8.1.0

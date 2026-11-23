@@ -1,9 +1,5 @@
 [build-system]
-requires = [
-    "setuptools>=84.2.1",
-    "setuptools-scm==10.3.4",
-    "versioneer[toml]==0.29"
-]
+requires = ["setuptools==84.2.1", "setuptools-scm==10.3.4"]
 build-backend = "setuptools.build_meta"
 
 [tool.ruff]
@@ -17,9 +13,7 @@ exclude = [
     "env",
     "src",
     "docs_manual",
-    "versioneer.py",
-    "node_modules",
-    "_version.py"
+    "node_modules"
 ]
 
 [tool.ruff.format]
@@ -33,10 +27,8 @@ exclude = [
     "docs_manual",
     "node_modules",
     "config/*",
-    "versioneer.py",
     "env/*",
-    ".venv",
-    "_version.py"
+    ".venv"
 ]
 ignore = ["E203", "E266", "E501", "F405"]
 select = ["E", "F", "W"]

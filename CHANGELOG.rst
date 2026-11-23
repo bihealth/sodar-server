@@ -53,6 +53,7 @@ Changed
     - Upgrade general Python dependencies (#2578)
     - Upgrade Docker build for Python v3.14 (#2557)
     - Upgrade to Node.js v26 (#2632)
+    - Replace versioneer with setuptools-scm (#2582)
     - Deprecate ``*_vue3`` commands in ``Makefile`` (#2393)
     - Disable changelog and release notes collapsing in docs (#2630)
 - **Irodsbackend**
@@ -91,7 +92,8 @@ Removed
 
 - **General**
     - Python v3.11 support (#2557)
-    - ``django-webpack-loader`` dependency (#2393)
+    - django-webpack-loader dependency (#2393)
+    - versioneer dependency (#2582)
     - xmlsec1 dependency for previously removed SAML support (#2557)
 - **Samplesheets**
     - Legacy Vue2 app from ``vueapp`` (#2393)

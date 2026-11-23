@@ -1,8 +1,6 @@
 import os
-
 from setuptools import find_packages, setup
-
-import versioneer
+from setuptools_scm import get_version
 
 with open(os.path.join(os.path.dirname(__file__), 'README.rst')) as readme:
     README = readme.read()
@@ -12,8 +10,9 @@ os.chdir(os.path.normpath(os.path.join(os.path.abspath(__file__), os.pardir)))
 
 setup(
     name='sodar',
-    version=versioneer.get_version(),
-    cmdclass=versioneer.get_cmdclass(),
+    version=get_version(
+        version_scheme='only-version', local_scheme='no-local-version'
+    ),
     packages=find_packages(),
     include_package_data=True,
     license='MIT License',
