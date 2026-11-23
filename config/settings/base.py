@@ -685,6 +685,7 @@ PROJECTROLES_READ_ONLY_MSG = env.str(
     'This site is currently in read-only mode. Modifying data is not permitted.'
     'This includes landing zone operations.',
 )
+PROJECTROLES_USER_LIST_ENABLE = env.bool('PROJECTROLES_USER_LIST_ENABLE', True)
 PROJECTROLES_SUPPORT_CONTACT = env.str('PROJECTROLES_SUPPORT_CONTACT', None)
 PROJECTROLES_USER_PROFILE_LINK = env.bool(
     'PROJECTROLES_USER_PROFILE_LINK', True

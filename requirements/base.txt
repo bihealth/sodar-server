@@ -74,7 +74,7 @@ martor==1.8.6
 django-autocomplete-light==5.0.0
 
 # SODAR Core
-django-sodar-core==1.5.1
+django-sodar-core==1.5.2
 # -e git+https://github.com/bihealth/sodar-core.git@9f9f634f930a7802a9ad7f6aba15020354920235#egg=django-sodar-core
 
 # Celery

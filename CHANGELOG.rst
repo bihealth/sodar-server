@@ -49,7 +49,7 @@ Changed
 -------
 
 - **General**
-    - Upgrade to django-sodar-core v1.5.1 (#2557)
+    - Upgrade to django-sodar-core v1.5.2 (#2557, #2634)
     - Upgrade general Python dependencies (#2578)
     - Upgrade Docker build for Python v3.14 (#2557)
     - Upgrade to Node.js v26 (#2632)

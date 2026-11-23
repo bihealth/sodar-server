@@ -27,7 +27,7 @@ Major feature release.
 - Add Python v3.14 support
 - :ref:`Upgrade Sample Sheets REST API version to v1.3 <api_samplesheets_version_1_3>`
 - Upgrade to Node.js v26
-- Upgrade to SODAR Core v1.5.1
+- Upgrade to SODAR Core v1.5.2
 - Remove samplesheets legacy Vue2 app
 - Remove Python v3.11 support
 - SODAR Core v1.5 updates
