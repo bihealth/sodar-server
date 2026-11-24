@@ -48,6 +48,9 @@ These commands originate in SODAR Core. More information can be found in the
     is enabled.
 ``transferroles``
     Transfer all project roles from one user to another.
+``updatetitleslugs``
+    Generate title slugs for categories and projects for creation of
+    human-readable redirect URLs.
 
 
 .. _admin_commands_sodar:

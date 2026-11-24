@@ -17,10 +17,10 @@ project, the role of owner or delegate is required.
     Project creation and update view
 
 
-Project Metadata
+Project Settings
 ================
 
-The following project metadata and settings are available for updating:
+The following project settings are available for updating:
 
 Title
     Update the project title. The title must be unique within the parent
@@ -30,7 +30,7 @@ Parent
     which you have sufficient access.
 Description
     Set an optional longer description of the project.
-ReadMe
+Readme
     Set an optional readme document for the project. Markdown notation can be
     used. Note that project guests and viewers can see the readme:s of projects
     and their parent categories. Providing confidential information here should
@@ -44,6 +44,11 @@ Public access
     server allows anonymous users, this will grant specified access to anyone
     browsing the site even if they have not logged in. Note that in case of
     external sites, this setting only applies to the current SODAR site.
+Title slug
+    Unique slugified string for the project title, generated on project
+    creation. Used to build a human-readable redirect URL for the project,
+    accessible in the project dropdown. The slug can be customized, but note
+    that doing so breaks any existing human-readable links for the project.
 Enable project on {target remote site}
     Enable access to project for project members on the selected target site.
     Target sites for which project owner/delegation modifying is enabled by an

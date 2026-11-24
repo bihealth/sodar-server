@@ -37,6 +37,18 @@ before performing the upgrade.
 v1.4
 ====
 
+Project Title Slug Update
+-------------------------
+
+SODAR Core v1.5 introduces project title slugs, which are used to create
+human-readable redirect URLs for categories and projects. If you want to
+generate title slugs for existing projects created before the upgrade, run the
+``updatetitleslugs`` management command. Example:
+
+.. code-block:: bash
+
+    $ ./manage.py updatetitleslugs
+
 Legacy Landing Zone Update
 --------------------------
 

@@ -3,13 +3,12 @@
 Project Overview
 ^^^^^^^^^^^^^^^^
 
-Once you navigate into a project, you can see the project overview on the right
-hand side of the screen. The sidebar on the left hand side has been expanded to
-display links related to the project.
+Once you navigate into a project, you can see the project overview in the main
+content area in your browser. Below the site title bar there is a navigation
+breadcrumb. It can be used to easily return to a parent category.
 
-Below the site title bar there is a navigation breadcrumb. It can be used to
-easily return to a parent category. The project title bar displays the project
-title, description and project-specific links.
+The rest of the view is dedicated to project content. On top of each page is the
+project header, which displays the project title and project-specific shortcuts.
 
 .. figure:: _static/sodar_ui/project_detail.png
     :align: center
@@ -17,9 +16,41 @@ title, description and project-specific links.
 
     Project overview
 
-If you are viewing a category instead of a project, you will see a more limited
-set of information and sidebar links, while still following the same general
-structure.
+The sidebar on the left hand side has been expanded to display links related to
+the project. If you are viewing a category instead of a project, you will see a
+more limited set of information and sidebar links, while still following the
+same general structure.
+
+
+Project Header
+==============
+
+The project header displays the project title along with controls for starring
+and a dropdown menu with project-specific shortcuts.
+
+The starring link can be used to toggle the project in your favourites. Once
+set, project lists can be filtered to only display your starred projects.
+
+The project dropdown contains the following links to project-specific shortcuts:
+
+View Description
+    Open a modal to display a textual description for the project.
+Copy Project UUID
+    Copy the UUID of the project into the clipboard.
+Copy Project URL
+    Copy the project overview URL into the clipboard.
+Copy Human-Readable URL
+    Copy a human-readable redirect URL for the project into the clipboard. This
+    can be used to save or share a link to the project in a format easier to
+    remember than one containing a UUID. The project title in the URL is
+    controlled by the :guilabel:`Title slug` field in the
+    :ref:`project update form <ui_project_update>`.
+
+.. figure:: _static/sodar_ui/project_header.png
+    :align: center
+    :scale: 65%
+
+    Project header and the project dropdown
 
 
 Overview Section
@@ -28,7 +59,7 @@ Overview Section
 The project overview section on the right hand side of the view consists of the
 following elements:
 
-ReadMe
+Readme
     An optional description for the project in MarkDown notation. Can be updated
     :ref:`project update view <ui_project_update>` by users with an *owner* or
     *delegate* role.

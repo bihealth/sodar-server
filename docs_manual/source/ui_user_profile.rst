@@ -43,10 +43,6 @@ Receive email for iRODS data requests
 Receive email for admin alerts
     Receive email notifications for admin alerts where the admin has enabled
     email alering. If unchecked, you can still see the alerts in the SODAR GUI.
-Display project UUID copying link
-    Enabling this will add an icon next to the project title on each project
-    view. Clicking it will copy the project identifier (UUID) into the
-    clipboard.
 Receive alerts for project updates
     Receive UI alerts for category or project creation, updating, moving,
     archiving and deletion.
@@ -61,11 +57,14 @@ Receive email for project membership updates
     member invitation activity.
 Project list title highlight
     Highlight project title in paths displayed in the project list.
-Project list page size
-    Amount of projects per page in the project list.
+Display public access projects in project list
+    Display public access projects in the project list. Public projects with a
+    local role set for you will always be displayed.
 Show username in user dropdown
     Display the name of the current user directly in the user dropdown button.
     Useful for owners of multiple accounts.
+Project list page size
+    Amount of projects per page in the project list.
 
 .. figure:: _static/sodar_ui/user_profile_settings.png
     :align: center
@@ -109,3 +108,13 @@ your user account deactivated, contact your instance's support email or
 administrators. After deactivation you will no longer be able to log in to the
 SODAR instance or access the REST API. You will also not receive any further
 notification emails from the server.
+
+
+Viewing Profiles of Other Users
+===============================
+
+If enabled on the site, you can view the profile of another user by clicking the
+link for their username in the :ref:`ui_user_list` list or elsewhere in the UI.
+
+When viewing another user's profile, you will see their basic user details along
+with a list of mutual projects both of you can access.

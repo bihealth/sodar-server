@@ -7,8 +7,10 @@ This section details the types of alerts displayed for you and how to interact
 with them.
 
 
-Application Alerts
-==================
+.. _ui_alerts_app:
+
+App Alerts
+==========
 
 The SODAR UI will display you alerts raised by its applications. These alerts
 notify of e.g. activity affecting sample data, role changes in projects, status
@@ -59,19 +61,21 @@ user dropdown on the top right corner of the site and selecting
 
 .. _ui_alerts_admin:
 
-Administrator Alerts
-====================
+Admin Alerts
+============
 
 SODAR administrators can issue alert messages to all users. Admin alerts
-can be used to inform users about e.g. upcoming downtime. Similarly to
-application-specific alerts, admin alerts are visible as a blue bar at the top
-of the page, and can be dismissed by clicking the cross on the right. Some
-alerts can contain additional detailed information, which can be accessed by the
-:guilabel:`Details` link. By default, administrator alerts are also sent out to
-users as email.
+can be used to inform users about e.g. upcoming downtime. Admin alerts are
+visible as a blue bar on the top of the view. Some alerts can contain additional
+detais, which can be accessed by clicking the :guilabel:`Details` link. By
+default, administrator alerts are also sent out to users as email.
 
-.. figure:: _static/sodar_ui/alert_admin.png
+Admin alerts can be dismissed by clicking the close link on the right. After
+dismissal, they can still be viewed on a list of past alerts by clicking on the
+:guilabel:`Admin Alerts` link in the :ref:`user dropdown <ui_user_dropdown>`.
+
+.. figure:: _static/sodar_ui/alert_admin_list.png
     :align: center
-    :scale: 35%
+    :scale: 50%
 
-    Admin alert
+    Admin alerts list with an active alert
