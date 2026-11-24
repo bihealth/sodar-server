@@ -65,7 +65,8 @@ Status
 iRODS Dropdown
     A dropdown menu for iRODS-related actions. Here, you can find links to list
     the iRODS files, copy the zone's path to clipboard, copy the WebDAV URL to
-    clipboard, or open the zone in WebDAV.
+    clipboard, or open the zone in an external viewer (currently, WebDAV and
+    ManGO are supported).
 Zone Dropdown
     For each active zone, there is a dropdown menu for zone specific operations.
 
@@ -112,7 +113,7 @@ DELETED
 iRODS Links
 ===========
 
-The buttons for iRODS linking for the landing zone are identical to the ones
+The items in the iRODS dropdown for the landing zone are identical to the ones
 seen in the :ref:`Sample Sheets <app_samplesheets>` application:
 
 |btn_assay_list| List Files
@@ -124,6 +125,9 @@ seen in the :ref:`Sample Sheets <app_samplesheets>` application:
 |btn_assay_webdav| Browse Files in WebDAV
     Opens a new browser tab with the Davrods web interface for browsing the
     landing zone collection through WebDAV.
+|btn_assay_webdav| Open in ManGO
+    Opens a new browser tab with the ManGO web interface for browsing the
+    landing zone collection.
 
 
 .. _app_landingzones_browse_file_list:

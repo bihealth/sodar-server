@@ -68,7 +68,8 @@ Sample Sheets Overview
     :ref:`sample sheets <app_samplesheets>`. Along with file statistics you can
     see an iRODS dropdown menu with buttons that allow you to copy the
     corresponding iRODS path to the clipboard, copy the WebDAV URL to the
-    clipboard, or directly link into the WebDAV URL for browsing the files.
+    clipboard, or directly link into external viewers for browsing the files
+    (either WebDAV or ManGO).
 Landing Zones Overview
     Displays the five most recently created
     :ref:`landing zones <app_landingzones>`.

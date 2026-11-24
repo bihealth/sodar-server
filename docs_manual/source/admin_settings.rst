@@ -175,6 +175,16 @@ iRODS WebDAV Settings
     If SODAR and the WebDAV are deployed on the same host, this should be set
     ``False`` (boolean, default: ``False``).
 
+.. _admin_settings_sodar_mango:
+
+iRODS ManGO Settings
+---------------------
+
+``MANGO_ENABLE``
+    Enable ManGO unless set false (boolean).
+``MANGO_URL``
+    URL for the iRODS ManGO server (string).
+
 .. _admin_settings_sodar_irodsbackend:
 
 iRODS Backend Settings
@@ -344,6 +354,13 @@ repository are described here.
 ``IRODS_SSSD_AUTH``
     Enable SSSD-based authentication for iRODS. Required for LDAP authentication
     from iRODS and Davrods.
+``MANGO_VERSION``
+    Version of `mango-sodar <https://github.com/bihealth/mango-sodar>`_ to be
+    used (e.g. ``0.1.0-0``).
+``MANGO_SECRET_KEY``
+    Secret key used to secure the ManGO server. Set this to a randomly generated
+    string.
+
 
 For a full list of settings with examples, see the SODAR Docker Compose
 repository.

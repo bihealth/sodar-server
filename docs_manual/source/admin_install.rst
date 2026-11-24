@@ -30,9 +30,14 @@ iRODS Servers
       version is v4.3.5. Note that iRODS v5.x is **not** supported by this
       version of SODAR.
     - ``davrods``: iRODS WebDAV server for web access and IGV/UCSC integration.
+    - ``mango``: ManGO portal for web access, upload, and download of files
+      from iRODS.
 Networking
     - ``traefik``: Reverse proxy for TLS/SSL routing.
     - ``sssd``: System Security Service Daemon for LDAP/AD authentication.
+Other
+    - ``tika``: ManGO relies on Apach Tika as a support service to extract
+      metadata and text from files.
 
 
 Quickstart Guide
@@ -171,6 +176,7 @@ parameters:
     $ docker compose -f docker-compose.yml \
         -f docker-compose.override.yml.irods \
         -f docker-compose.override.yml.davrods \
+        -f docker-compose.override.yml.mango \
         -f docker-compose.override.yml.provided-cert \
         up
 
@@ -312,6 +318,11 @@ The following overrides are available for customizing the environment:
 ``docker-compose.override.yml.davrods``
     Davrods service for WebDAV connections to iRODS. Requires the iRODS iCAT
     server.
+``docker-compose.override.yml.mango``
+    ManGO and Apach Tika services for browsing, uploading, and downloading
+    iRODS files. Requires the iRODS iCAT server. Currently, the ManGO
+    integration is still experimental; set `MANGO_ENABLE=0` in your environment
+    to disable the ManGO features in SODAR.
 ``docker-compose.override.yml.sssd``
     SSSD service providing LDAP/AD logins. Includes the iRODS iCAT server. If
     you want to include LDAP/AD logins for iRODS, replace the iRODS override
