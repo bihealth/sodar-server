@@ -9,6 +9,8 @@ from typing import Optional
 
 from irods.path import iRODSPath
 
+from django.conf import settings
+from django.test import override_settings
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.http import urlencode
@@ -186,6 +188,26 @@ class TestProjectDetailView(IrodsDataRequestMixin, SamplesheetsUITestBase):
             self.selenium.find_element(By.ID, 'sodar-ss-details-card-no-irods')
         with self.assertRaises(NoSuchElementException):
             self.selenium.find_element(By.ID, 'sodar-ss-details-table')
+
+    @override_settings(MANGO_ENABLE=True)
+    def test_render_mango(self):
+        """Test rendering ManGO link in samplesheets detail card"""
+        self.login_and_redirect(self.user_contributor, self.url)
+        mango_link = self.selenium.find_element(
+            By.CLASS_NAME, 'sodar-irods-mango-item'
+        )
+        self.assertTrue(
+            mango_link.get_attribute('href').startswith(settings.MANGO_URL)
+        )
+
+    def test_render_mango_disabled(self):
+        """Test rendering ManGO link when ManGO is disabled"""
+        self.login_and_redirect(self.user_contributor, self.url)
+        mango_link = self.selenium.find_element(
+            By.CLASS_NAME, 'sodar-irods-mango-item'
+        )
+        self.assertIsNone(mango_link.get_attribute('href'))
+        self.assertTrue('disabled' in mango_link.get_attribute('class').split())
 
 
 class TestProjectSheetsView(IrodsDataRequestMixin, SamplesheetsUITestBase):
