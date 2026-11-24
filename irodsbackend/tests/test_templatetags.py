@@ -94,7 +94,4 @@ class TestTemplatetags(
     @override_settings(MANGO_ENABLE=True)
     def test_get_mango_url_anon(self):
         """Test get_mango_url() with a anonymous access"""
-        self.assertEqual(
-            tags.get_mango_url(self.project, None),
-            None,
-        )
+        self.assertEqual(tags.get_mango_url(self.project, None), '')

@@ -192,6 +192,8 @@ class TestProjectDetailView(IrodsDataRequestMixin, SamplesheetsUITestBase):
     @override_settings(MANGO_ENABLE=True)
     def test_render_mango(self):
         """Test rendering ManGO link in samplesheets detail card"""
+        self.investigation.irods_status = True
+        self.investigation.save()
         self.login_and_redirect(self.user_contributor, self.url)
         mango_link = self.selenium.find_element(
             By.CLASS_NAME, 'sodar-irods-mango-item'
@@ -202,6 +204,8 @@ class TestProjectDetailView(IrodsDataRequestMixin, SamplesheetsUITestBase):
 
     def test_render_mango_disabled(self):
         """Test rendering ManGO link when ManGO is disabled"""
+        self.investigation.irods_status = True
+        self.investigation.save()
         self.login_and_redirect(self.user_contributor, self.url)
         mango_link = self.selenium.find_element(
             By.CLASS_NAME, 'sodar-irods-mango-item'
