@@ -174,6 +174,7 @@ describe('InvestigationEditModal.vue', () => {
     const appStore = useAppStore()
     const editStore = useEditStore()
     const ic = appStore.sodarContext!.investigation as SodarContextInvestigation
+    expect(editStore.editDataUpdated).toBe(false)
     expect(editStore.updateCache).toBe(false)
 
     const wrapper = await showModal()
@@ -192,6 +193,7 @@ describe('InvestigationEditModal.vue', () => {
 
     expect(ic.comments![SODAR_ISA_CONFIG_CREATE]).toBe(configName)
     expect(ic.comments![SODAR_ISA_CONFIG_OPEN]).toBe(configUp)
+    expect(editStore.editDataUpdated).toBe(true)
     expect(editStore.updateCache).toBe(false) // Should be unchanged
   })
 
@@ -199,6 +201,7 @@ describe('InvestigationEditModal.vue', () => {
     const appStore = useAppStore()
     const editStore = useEditStore()
     const ic = appStore.sodarContext!.investigation as SodarContextInvestigation
+    expect(editStore.editDataUpdated).toBe(false)
     expect(editStore.updateCache).toBe(false)
 
     const wrapper = await showModal()
@@ -217,13 +220,16 @@ describe('InvestigationEditModal.vue', () => {
 
     expect(ic.comments![SODAR_ISA_CONFIG_CREATE]).toBe(configUp)
     expect(ic.comments![SODAR_ISA_CONFIG_OPEN]).toBe(configName)
+    expect(editStore.editDataUpdated).toBe(true)
     expect(editStore.updateCache).toBe(true) // Should be updated
   })
 
   test('handle failed update', async () => {
     // Suppress logging as error message is expected
     vi.spyOn(console, 'error').mockImplementation(() => undefined)
+
     const appStore = useAppStore()
+    const editStore = useEditStore()
     const ic = appStore.sodarContext!.investigation as SodarContextInvestigation
     const og = sodarContext.investigation! as SodarContextInvestigation
     const og_file_name = sodarContext.inv_file_name
@@ -248,10 +254,12 @@ describe('InvestigationEditModal.vue', () => {
     expect(ic.description).toBe(og.description)
     expect(ic.submission_date).toBe(og.submission_date)
     expect(ic.public_release_date).toBe(og.public_release_date)
+    expect(editStore.editDataUpdated).toBe(false)
   })
 
   test('cancel investigation metadata update', async () => {
     const appStore = useAppStore()
+    const editStore = useEditStore()
     const ic = appStore.sodarContext!.investigation as SodarContextInvestigation
     const og = sodarContext.investigation as SodarContextInvestigation
 
@@ -272,6 +280,7 @@ describe('InvestigationEditModal.vue', () => {
     expect(ic.description).toBe(og.description)
     expect(ic.submission_date).toBe(og.submission_date)
     expect(ic.public_release_date).toBe(og.public_release_date)
+    expect(editStore.editDataUpdated).toBe(false)
   })
 
 

@@ -121,7 +121,9 @@ describe('StudyEditModal.vue', () => {
 
   test('update study metadata', async () => {
     const appStore = useAppStore()
+    const editStore = useEditStore()
     const sc = appStore.sodarContext!.studies[STUDY_UUID]!
+    expect(editStore.editDataUpdated).toBe(false)
 
     const wrapper = await showModal()
     expect(fetch).not.toHaveBeenCalled()
@@ -155,12 +157,14 @@ describe('StudyEditModal.vue', () => {
     expect(sc.description).toBe(metaDescUp)
     expect(sc.submission_date).toBe(metaSubDateUp)
     expect(sc.public_release_date).toBe(metaPubDateUp)
+    expect(editStore.editDataUpdated).toBe(true)
   })
 
   test('update study comments', async () => {
     const appStore = useAppStore()
     const editStore = useEditStore()
     const sc = appStore.sodarContext!.studies[STUDY_UUID]!
+    expect(editStore.editDataUpdated).toBe(false)
     expect(editStore.updateCache).toBe(false)
 
     const wrapper = await showModal()
@@ -183,6 +187,7 @@ describe('StudyEditModal.vue', () => {
 
     expect(sc.comments![grantNumComm]).toBe('123')
     expect(sc.comments![studyFundComm]).toBe('Agency')
+    expect(editStore.editDataUpdated).toBe(true)
     expect(editStore.updateCache).toBe(false) // Should be unchanged
   })
 
@@ -255,7 +260,9 @@ describe('StudyEditModal.vue', () => {
   test('handle failed update', async () => {
     // Suppress logging as error message is expected
     vi.spyOn(console, 'error').mockImplementation(() => undefined)
+
     const appStore = useAppStore()
+    const editStore = useEditStore()
     const sc = appStore.sodarContext!.studies[STUDY_UUID]!
     const og = sodarContext.studies[STUDY_UUID]! // Original unaltered data
     fetchDetail = 'Error'
@@ -279,10 +286,12 @@ describe('StudyEditModal.vue', () => {
     expect(sc.description).toBe(og.description)
     expect(sc.submission_date).toBe(og.submission_date)
     expect(sc.public_release_date).toBe(og.public_release_date)
+    expect(editStore.editDataUpdated).toBe(false)
   })
 
   test('cancel study property update', async () => {
     const appStore = useAppStore()
+    const editStore = useEditStore()
     const sc = appStore.sodarContext!.studies[STUDY_UUID]!
     const og = sodarContext.studies[STUDY_UUID]!
 
@@ -302,6 +311,7 @@ describe('StudyEditModal.vue', () => {
     expect(sc.description).toBe(og.description)
     expect(sc.submission_date).toBe(og.submission_date)
     expect(sc.public_release_date).toBe(og.public_release_date)
+    expect(editStore.editDataUpdated).toBe(false)
   })
 
   test('input valid identifier', async () => {

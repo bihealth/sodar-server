@@ -58,6 +58,10 @@ function enableSubmit (): boolean {
   return !updating.value && editStore.modalEditValid
 }
 
+function resetContext () {
+  appStore.sodarContext!.investigation = ogContext
+}
+
 // Post investigation update and handle the results
 async function updateInvestigation () {
   const invUuid = (appStore.sodarContext!.investigation as
@@ -78,6 +82,7 @@ async function updateInvestigation () {
   const resBody: GenericResponseBody = await response.json()
   if (resBody.detail == AJAX_RES_OK) {
     updateContext()
+    editStore.editDataUpdated = true
     if (appStore.notifyCb) {
       appStore.notifyCb(INV_UPDATE_OK_MSG, VARIANT_SUCCESS)
     }
@@ -137,12 +142,13 @@ function hide (update: boolean) {
     try {
       updateInvestigation()
     } catch (error) {
+      resetContext()
       const msg: string = `Error updating investigation: ${error}`
       if (appStore.notifyCb) appStore.notifyCb(msg, VARIANT_DANGER)
       console.error(msg)
     }
   } else { // Cancel
-    appStore.sodarContext!.investigation = ogContext
+    resetContext()
   }
   modalRef.value?.hide()
 }

@@ -77,6 +77,7 @@ async function updateStudy () {
   const resBody: GenericResponseBody = await response.json()
   if (resBody.detail == AJAX_RES_OK) {
     updateContext()
+    editStore.editDataUpdated = true
     if (appStore.notifyCb) {
       appStore.notifyCb(STUDY_UPDATE_OK_MSG, VARIANT_SUCCESS)
     }
@@ -155,6 +156,7 @@ function hide (update: boolean) {
     try {
       updateStudy()
     } catch (error) {
+      tableContext = ogContext
       const msg: string = `Error updating study: ${error}`
       if (appStore.notifyCb) appStore.notifyCb(msg, VARIANT_DANGER)
       console.error(msg)

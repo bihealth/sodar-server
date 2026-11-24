@@ -118,6 +118,7 @@ describe('AssayEditModal.vue', () => {
     const editStore = useEditStore()
     const ac = appStore.sodarContext!.studies[STUDY_UUID]!.assays[ASSAY_UUID]!
     expect(ac.comments).toEqual(defaultComments)
+    expect(editStore.editDataUpdated).toBe(false)
     expect(editStore.updateCache).toBe(false)
 
     const wrapper = await showModal()
@@ -142,6 +143,7 @@ describe('AssayEditModal.vue', () => {
     expect(ac.technology_platform).toBe(metaTechPlatUp)
     // Display name updated to override
     expect(ac.display_name).toBe(defaultComments[SODAR_ISA_ASSAY_DISPLAY_NAME])
+    expect(editStore.editDataUpdated).toBe(true)
     expect(editStore.updateCache).toBe(false) // Should be unchanged
   })
 
@@ -340,7 +342,10 @@ describe('AssayEditModal.vue', () => {
   test('handle failed update', async () => {
     // Suppress logging as error message is expected
     vi.spyOn(console, 'error').mockImplementation(() => undefined)
+
     const appStore = useAppStore()
+    const editStore = useEditStore()
+    expect(editStore.editDataUpdated).toBe(false)
     const ac = appStore.sodarContext!.studies[STUDY_UUID]!.assays[ASSAY_UUID]!
     // Original unaltered data
     const og = sodarContext.studies[STUDY_UUID]!.assays[ASSAY_UUID]!
@@ -359,10 +364,13 @@ describe('AssayEditModal.vue', () => {
     // Original values should be retained
     expect(ac.file_name).toBe(og.file_name)
     expect(ac.technology_platform).toBe(og.technology_platform)
+    expect(editStore.editDataUpdated).toBe(false)
   })
 
   test('cancel assay property update', async () => {
     const appStore = useAppStore()
+    const editStore = useEditStore()
+    expect(editStore.editDataUpdated).toBe(false)
     const ac = appStore.sodarContext!.studies[STUDY_UUID]!.assays[ASSAY_UUID]!
     const og = sodarContext.studies[STUDY_UUID]!.assays[ASSAY_UUID]!
 
@@ -374,6 +382,7 @@ describe('AssayEditModal.vue', () => {
     expect(fetch).not.toHaveBeenCalled()
     expect(ac.file_name).toBe(og.file_name)
     expect(ac.technology_platform).toBe(og.technology_platform)
+    expect(editStore.editDataUpdated).toBe(false)
   })
 
   test('input valid file name', async () => {
