@@ -13,6 +13,15 @@ import {
   type IRowNode
 } from 'ag-grid-community'
 
+// General ISA-Tab and Sample Sheet Types --------------------------------------
+
+// Sheet context and render table ontology reference
+export interface SheetOntologyRef {
+  accession: string | null
+  name: string
+  ontology_name: string | null
+}
+
 // SODAR Context ---------------------------------------------------------------
 
 export interface SodarContextComments {
@@ -24,10 +33,20 @@ export interface SodarContextLinkLabel {
   url: string | null
 }
 
+export interface OntologySourceRef {
+  comments: Array<string>
+  description: string
+  file: string
+  headers: Array<string>
+  name: string
+  version: string
+}
+
 export interface SodarContextInvestigation {
   comments: SodarContextComments | null
   description: string
   identifier: string
+  ontology_source_refs: Array<OntologySourceRef>
   public_release_date: string
   sodar_uuid: string
   submission_date: string
@@ -40,11 +59,11 @@ export interface SodarContextAssay {
   display_row_links: boolean
   file_name: string
   irods_path: string
-  measurement_type: string
+  measurement_type: SheetOntologyRef
   name: string
   plugin_name: string | null
   plugin_title: string | null
-  technology_type: string
+  technology_type: SheetOntologyRef
   technology_platform: string
 }
 
@@ -118,13 +137,6 @@ export interface SheetTableFieldHeader {
   value: string
 }
 
-// Render table ontology reference
-export interface SheetTableOntologyRef {
-  accession: string
-  name: string
-  ontology_name: string | null
-}
-
 // Render table cell data
 export interface SheetTableCellData {
   // colType: string // NOTE: Removed in the Vue3 app (see #2446)
@@ -141,7 +153,7 @@ export interface SheetTableCellData {
 
 export type SheetTableCellDataValue = string |
   Array<string> |
-  Array<SheetTableOntologyRef>
+  Array<SheetOntologyRef>
 
 // Render table row
 export interface SheetTableRowData {
@@ -523,7 +535,7 @@ export interface StudyShortcutResponseBody {
   title: string
 }
 
-export interface OntologyTermResponseRef extends SheetTableOntologyRef {
+export interface OntologyTermResponseRef extends SheetOntologyRef {
   is_obsolete: boolean
   term_id: string
 }
@@ -540,6 +552,11 @@ export interface GenericResponseBody {
 
 // Edit Mode Data --------------------------------------------------------------
 
+// Field validity
+export interface EditFieldStatus {
+  [key: string]: boolean
+}
+
 // Investigation and study edit metadata
 export interface InvStudyEditMeta {
   description: string
@@ -551,9 +568,10 @@ export interface InvStudyEditMeta {
 }
 
 // Assay edit metadata
-// TODO: Add technology type and measurement type fields (see #2612)
 export interface AssayEditMeta {
   fileName: string
+  measurementType: SheetOntologyRef
+  technologyType: SheetOntologyRef
   technologyPlatform: string
 }
 
@@ -603,7 +621,7 @@ export interface GridCellEditorParams extends
   ICellEditorParams, CellEditorParamInput {}
 
 // Override of SheetTableOntologyRef for OntologyEditModal
-export interface EditOntologyRef extends SheetTableOntologyRef {
+export interface EditOntologyRef extends SheetOntologyRef {
   editing?: boolean
   obsolete?: boolean
   unknown?: boolean
@@ -789,9 +807,10 @@ export interface StudyEditRequestBody extends
   study_meta: InvStudyEditRequestMetadata
 }
 
-// TODO: Add technology type and measurement type fields (see #2612)
 export interface AssayEditRequestMetadata {
   file_name: string
+  measurement_type: SheetOntologyRef
+  technology_type: SheetOntologyRef
   technology_platform: string
 }
 

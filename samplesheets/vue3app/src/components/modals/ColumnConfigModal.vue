@@ -29,8 +29,8 @@ import {
   type EditConfigRequestBody,
   type GenericResponseBody,
   type HeaderEditRendererParams,
+  type SheetOntologyRef,
   type SheetTableCellDataValue,
-  type SheetTableOntologyRef,
   type StudyEditConfigNodeField
 } from '@/types.ts'
 import {
@@ -321,7 +321,7 @@ function onConfigPaste () {
 function onOntologyDefaultInput () {
   // Empty input = nothing to do
   if (!ontologyDefaultInput.value) return
-  let p: Array<SheetTableOntologyRef> = []
+  let p: Array<SheetOntologyRef> = []
   let valid: boolean = true
   // Parse input
   try {
@@ -337,7 +337,7 @@ function onOntologyDefaultInput () {
   if (valid) {
     if (!Array.isArray(p)) p = [p]
     for (let i = 0; i < p.length; i++) {
-      const t = p[i] as SheetTableOntologyRef
+      const t = p[i] as SheetOntologyRef
       if (!('name' in t) ||
           t.name.length === 0 ||
           !('ontology_name' in t) ||
@@ -1262,9 +1262,9 @@ function hide (update: boolean) {
               :key="tIdx"
               class="sodar-ss-col-config-tr-ontology-default">
             <td>
-              <a :href="(term as SheetTableOntologyRef).accession"
+              <a :href="(term as SheetOntologyRef).accession!"
                  target="_blank">
-                {{ (term as SheetTableOntologyRef).name }}
+                {{ (term as SheetOntologyRef).name }}
               </a>
             </td>
           </tr>

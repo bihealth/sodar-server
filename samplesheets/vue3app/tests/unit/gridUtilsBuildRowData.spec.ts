@@ -8,8 +8,8 @@ import { buildRowData } from '@/utils/gridUtils.ts'
 import {
   type AssayRenderTable,
   type RenderTableData,
+  type SheetOntologyRef,
   type SheetTableCellData,
-  type SheetTableOntologyRef,
   type SheetTableRowData,
   type SodarContext,
   type StudyDisplayConfig,
@@ -102,11 +102,11 @@ describe('buildRowData()', () => {
 
     const exp = tableData.tables.study.table_data[0]![1]!
     for (let i = 0; i < 2; i++) {
-      const v = exp.value[i]! as SheetTableOntologyRef
-      (exp.value[i]! as SheetTableOntologyRef).accession =
+      const v = exp.value[i]! as SheetOntologyRef
+      (exp.value[i]! as SheetOntologyRef).accession =
         ONTOLOGY_URL_TPL.replace(
           '{ontology_name}', v.ontology_name as string).replace(
-          '{accession}', encodeURIComponent(v.accession))
+          '{accession}', encodeURIComponent(v.accession!))
       exp.uuid = null
     }
 
@@ -122,11 +122,11 @@ describe('buildRowData()', () => {
 
     const exp = tableData.tables.study.table_data[0]![1]!
     for (let i = 0; i < 2; i++) {
-      const v = exp.value[i]! as SheetTableOntologyRef
-      (exp.value[i]! as SheetTableOntologyRef).accession =
+      const v = exp.value[i]! as SheetOntologyRef
+      (exp.value[i]! as SheetOntologyRef).accession =
         ONTOLOGY_URL_TPL.replace(
           '{ontology_name}', v.ontology_name as string).replace(
-          '{accession}', encodeURIComponent(v.accession))
+          '{accession}', encodeURIComponent(v.accession!))
       exp.uuid = null
     }
 
@@ -169,14 +169,14 @@ describe('buildRowData()', () => {
     const appStore = useAppStore()
     appStore.sodarContext!.ontology_url_skip = []
     let v = tableData.tables.study.table_data[
-      0]![1]!.value[0]! as SheetTableOntologyRef
+      0]![1]!.value[0]! as SheetOntologyRef
     v.ontology_name = 'HPO'
     v.accession = 'http://purl.bioontology.org/ontology/HPO/2048'
 
     const res = callBuildRowData(false)
     const row = res![0]!
     const col = row['col1']! as SheetTableCellData
-    v = col.value![0] as SheetTableOntologyRef
+    v = col.value![0] as SheetOntologyRef
     expect(v.accession).toContain('/HP/')
     expect(v.accession).not.toContain('/HPO/')
   })

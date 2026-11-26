@@ -66,6 +66,35 @@ describe('TableDetailListRow.vue', () => {
       '.sodar-ss-table-detail-value-empty').exists()).toBe(true)
   })
 
+  test('render component with ontology term', async () => {
+    props.value = {
+      accession: 'http://purl.obolibrary.org/obo/OBI_0000626',
+      name: 'nucleotide sequencing',
+      ontology_name: 'OBI',
+    }
+    const wrapper = mountComponent()
+    expect(wrapper.find(
+      '.sodar-ss-table-detail-value-empty').exists()).toBe(false)
+    expect(wrapper.find(
+      '.sodar-ss-table-detail-value').text()).toBe(props.value.name)
+    expect(wrapper.find(
+      '.sodar-ss-table-detail-value a').attributes().href).toBe(
+        props.value.accession)
+  })
+
+  test('render component with ontology term and empty accession', async () => {
+    props.value = {
+      accession: null,
+      name: 'nucleotide sequencing',
+      ontology_name: 'OBI',
+    }
+    const wrapper = mountComponent()
+    expect(wrapper.find(
+      '.sodar-ss-table-detail-value').text()).toBe(props.value.name)
+    expect(wrapper.find(
+      '.sodar-ss-table-detail-value a').attributes().href).toBe(undefined)
+  })
+
   test('display copy button', async () => {
     props.copyButton = true
     const wrapper = mountComponent()

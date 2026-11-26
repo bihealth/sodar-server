@@ -13,8 +13,8 @@ import {
   type EditConfigRequestBody,
   type GenericResponseBody,
   type HeaderEditRendererParams,
+  type SheetOntologyRef,
   type SheetTableCellDataValue,
-  type SheetTableOntologyRef,
   type SodarContext,
   type StudyEditContext
 } from '@/types.ts'
@@ -131,12 +131,12 @@ const url = '/samplesheets/ajax/config/update/' + PROJECT_UUID
 
 const ontologyCount = Object.keys(
   studyTablesEdit.edit_context.sodar_ontologies).length
-const ontologyTerm: SheetTableOntologyRef = {
+const ontologyTerm: SheetOntologyRef = {
   name: 'Homo sapiens',
   ontology_name: 'NCBITAXON',
   accession: 'https://purl.obolibrary.org/obo/NCBITaxon_9606'
 }
-const ontologyTerm2: SheetTableOntologyRef = {
+const ontologyTerm2: SheetOntologyRef = {
   name: 'Homo sapiens neanderthalensis',
   ontology_name: 'NCBITAXON',
   accession: 'https://purl.obolibrary.org/obo/NCBITaxon_63221',
@@ -938,7 +938,7 @@ describe('ColumnConfigModal.vue', () => {
 
   test('update ontology default with invalid term', async () => {
     vi.spyOn(console, 'error').mockImplementation(() => undefined)
-    const term = copy(ontologyTerm) as SheetTableOntologyRef
+    const term = copy(ontologyTerm) as SheetOntologyRef
     term.name = '' // Empty name is not allowed
     setOntologyInput()
     const wrapper = await showModal()

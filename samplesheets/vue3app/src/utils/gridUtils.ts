@@ -28,8 +28,8 @@ import {
   type HeaderEditRendererParamInput,
   type NotifyCb,
   type RowEditRendererParamInput,
+  type SheetOntologyRef,
   type SheetTableCellData,
-  type SheetTableOntologyRef,
   type SheetTableRowData,
   type SheetTableTopHeader,
   type SodarContext,
@@ -679,11 +679,11 @@ export function buildRowData (
       if (appStore.sodarContext!.ontology_url_template &&
           !appStore.editMode &&
           table.field_header[j]?.col_type === 'ONTOLOGY') {
-        for (const term of (cellData.value as Array<SheetTableOntologyRef>)) {
+        for (const term of (cellData.value as Array<SheetOntologyRef>)) {
           if (term.accession &&
             (!appStore.sodarContext!.ontology_url_skip ||
               !appStore.sodarContext!.ontology_url_skip.some(
-                x => term.accession.includes(x)))) {
+                x => term.accession?.includes(x)))) {
             let ontologyName = term.ontology_name
             // HACK for mislabeled HP terms
             if (ontologyName === 'HPO') ontologyName = 'HP'

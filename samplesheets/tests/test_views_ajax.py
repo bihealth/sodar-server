@@ -6,6 +6,7 @@ import os
 import uuid
 
 from altamisa.constants import table_headers as th
+from copy import deepcopy
 from typing import Any, Optional
 
 from irods.path import iRODSPath
@@ -71,6 +72,9 @@ from samplesheets.utils import get_node_obj, get_ext_link_labels
 from samplesheets.views import SheetImportMixin
 from samplesheets.views_ajax import (
     ACTIVE_REQ_ALERT,
+    ASSAY_TYPE_NO_NAME_MSG,
+    ASSAY_TYPE_REF_UNSET_MSG,
+    ASSAY_TYPE_REF_UNKNOWN_MSG,
     RENDER_HEIGHT_HEADERS,
     RENDER_HEIGHT_ROW,
     RENDER_HEIGHT_SCROLLBAR,
@@ -104,6 +108,26 @@ ASSAY_INSERT_POOL_MATERIAL_PATH = iRODSPath(
 ASSAY_INSERT_POOL_PROCESS_PATH = iRODSPath(
     EDIT_DIR, 'i_small_assay_insert_pool_process.json'
 )
+ASSAY_MEASURE_TYPE = {
+    'accession': 'http://purl.obolibrary.org/obo/OBI_0002118',
+    'name': 'exome sequencing assay',
+    'ontology_name': 'OBI',
+}
+ASSAY_TECH_TYPE = {
+    'accession': 'http://purl.obolibrary.org/obo/OBI_0000626',
+    'name': 'nucleotide sequencing',
+    'ontology_name': 'OBI',
+}
+ASSAY_MEASURE_TYPE2 = {
+    'accession': 'http://purl.obolibrary.org/obo/OBI_0000615',
+    'name': 'protein expression profiling',
+    'ontology_name': 'OBI',
+}
+ASSAY_TECH_TYPE2 = {
+    'accession': 'http://purl.obolibrary.org/obo/OBI_0000470',
+    'name': 'mass spectrometry',
+    'ontology_name': 'OBI',
+}
 STUDY_DELETE_PATH = EDIT_DIR + 'i_small_study_delete.json'
 ASSAY_DELETE_PATH = EDIT_DIR + 'i_small_assay_delete.json'
 EDIT_SOURCE_NAME = '0818'
@@ -248,9 +272,9 @@ class TestSheetContextAjaxView(IrodsDataRequestMixin, SamplesheetsViewTestBase):
 
     def _import_investigation(self, path: str = SHEET_PATH):
         """Set up investigation by importing from path"""
-        self.investigation = self.import_isa_from_file(path, self.project)
+        self.inv = self.import_isa_from_file(path, self.project)
         # NOTE: This assumes one study and assay
-        self.study = self.investigation.studies.first()
+        self.study = self.inv.studies.first()
         self.assay = self.study.assays.first()
         self.study_uuid = str(self.study.sodar_uuid)
         self.assay_uuid = str(self.assay.sodar_uuid)
@@ -276,15 +300,13 @@ class TestSheetContextAjaxView(IrodsDataRequestMixin, SamplesheetsViewTestBase):
         rd = json.loads(response.data)
         rd.pop('csrf_token')  # HACK
         expected = {
-            'configuration': self.investigation.get_configuration(),
-            'inv_file_name': self.investigation.file_name.split('/')[-1],
+            'configuration': self.inv.get_configuration(),
+            'inv_file_name': self.inv.file_name.split('/')[-1],
             'irods_status': False,
             'irods_path': None,
             'irods_backend_enabled': True if self.irods_backend else False,
-            'parser_version': self.investigation.parser_version,
-            'parser_warnings': (
-                True if self.investigation.parser_warnings else False
-            ),
+            'parser_version': self.inv.parser_version,
+            'parser_warnings': (True if self.inv.parser_warnings else False),
             'irods_webdav_enabled': settings.IRODS_WEBDAV_ENABLED,
             'irods_webdav_url': settings.IRODS_WEBDAV_URL,
             'external_link_labels': get_ext_link_labels(),
@@ -303,13 +325,14 @@ class TestSheetContextAjaxView(IrodsDataRequestMixin, SamplesheetsViewTestBase):
             'project_uuid': str(self.project.sodar_uuid),
             'user_uuid': str(self.user.sodar_uuid),
             'investigation': {
-                'identifier': self.investigation.identifier,
-                'title': self.investigation.title,
+                'identifier': self.inv.identifier,
+                'title': self.inv.title,
                 'description': None,
                 'public_release_date': '',
                 'submission_date': '',
                 'comments': None,
-                'sodar_uuid': str(self.investigation.sodar_uuid),
+                'ontology_source_refs': self.inv.ontology_source_refs,
+                'sodar_uuid': str(self.inv.sodar_uuid),
             },
             'studies': {
                 self.study_uuid: {
@@ -338,8 +361,8 @@ class TestSheetContextAjaxView(IrodsDataRequestMixin, SamplesheetsViewTestBase):
                             'name': self.assay.get_name(),
                             'display_name': self.assay.get_display_name(),
                             'file_name': 'a_small.txt',
-                            'measurement_type': 'exome sequencing assay',
-                            'technology_type': 'nucleotide sequencing',
+                            'measurement_type': ASSAY_MEASURE_TYPE,
+                            'technology_type': ASSAY_TECH_TYPE,
                             'technology_platform': '',
                             'comments': None,
                             'irods_path': self.irods_backend.get_path(
@@ -366,23 +389,21 @@ class TestSheetContextAjaxView(IrodsDataRequestMixin, SamplesheetsViewTestBase):
             },
             'sheet_stats': {
                 'study_count': Study.objects.filter(
-                    investigation=self.investigation
+                    investigation=self.inv
                 ).count(),
                 'assay_count': Assay.objects.filter(
-                    study__investigation=self.investigation
+                    study__investigation=self.inv
                 ).count(),
                 'protocol_count': Protocol.objects.filter(
-                    study__investigation=self.investigation
+                    study__investigation=self.inv
                 ).count(),
                 'process_count': Process.objects.filter(
-                    protocol__study__investigation=self.investigation
+                    protocol__study__investigation=self.inv
                 ).count(),
-                'source_count': self.investigation.get_material_count('SOURCE'),
-                'material_count': self.investigation.get_material_count(
-                    'MATERIAL'
-                ),
-                'sample_count': self.investigation.get_material_count('SAMPLE'),
-                'data_count': self.investigation.get_material_count('DATA'),
+                'source_count': self.inv.get_material_count('SOURCE'),
+                'material_count': self.inv.get_material_count('MATERIAL'),
+                'sample_count': self.inv.get_material_count('SAMPLE'),
+                'data_count': self.inv.get_material_count('DATA'),
             },
         }
         self.assertEqual(rd, expected)
@@ -430,8 +451,8 @@ class TestSheetContextAjaxView(IrodsDataRequestMixin, SamplesheetsViewTestBase):
             'name': self.assay.get_name(),
             'display_name': self.assay.get_display_name(),
             'file_name': 'a_small2.txt',
-            'measurement_type': 'protein expression profiling',
-            'technology_type': 'mass spectrometry',
+            'measurement_type': ASSAY_MEASURE_TYPE2,
+            'technology_type': ASSAY_TECH_TYPE2,
             'technology_platform': 'LC-MS/MS',
             'comments': None,
             'irods_path': self.assay_path,
@@ -518,8 +539,8 @@ class TestSheetContextAjaxView(IrodsDataRequestMixin, SamplesheetsViewTestBase):
     def test_get_irods_request_alert_owner(self):
         """Test GET with active iRODS request alert as owner"""
         self._import_investigation()
-        self.investigation.irods_status = True
-        self.investigation.save()
+        self.inv.irods_status = True
+        self.inv.save()
         self.make_irods_request(
             project=self.project,
             action=IRODS_REQUEST_ACTION_DELETE,
@@ -549,8 +570,8 @@ class TestSheetContextAjaxView(IrodsDataRequestMixin, SamplesheetsViewTestBase):
     def test_get_irods_request_alert_contributor(self):
         """Test GET with active iRODS request alert as contributor"""
         self._import_investigation()
-        self.investigation.irods_status = True
-        self.investigation.save()
+        self.inv.irods_status = True
+        self.inv.save()
         self.make_irods_request(
             project=self.project,
             action=IRODS_REQUEST_ACTION_DELETE,
@@ -598,8 +619,8 @@ class TestSheetContextAjaxView(IrodsDataRequestMixin, SamplesheetsViewTestBase):
         """Test GET as guest"""
         # Import sheet with assay plugin and enabled row links
         self._import_investigation(SHEET_PATH_GERMLINE)
-        self.investigation.irods_status = True
-        self.investigation.save()
+        self.inv.irods_status = True
+        self.inv.save()
         with self.login(self.user_guest):
             response = self.client.get(self.url)
         self.assertEqual(response.status_code, 200)
@@ -627,8 +648,8 @@ class TestSheetContextAjaxView(IrodsDataRequestMixin, SamplesheetsViewTestBase):
     def test_get_viewer(self):
         """Test GET as viewer"""
         self._import_investigation(SHEET_PATH_GERMLINE)
-        self.investigation.irods_status = True
-        self.investigation.save()
+        self.inv.irods_status = True
+        self.inv.save()
         with self.login(self.user_viewer):
             response = self.client.get(self.url)
         self.assertEqual(response.status_code, 200)
@@ -1429,7 +1450,9 @@ class TestAssayUpdateAjaxView(SampleSheetModelMixin, SamplesheetsViewTestBase):
         self.post_data = {
             'assay_meta': {
                 'file_name': 'a_small_updated.txt',
+                'measurement_type': deepcopy(ASSAY_MEASURE_TYPE2),
                 'technology_platform': 'ACME 9000',
+                'technology_type': deepcopy(ASSAY_TECH_TYPE2),
             },
             'comments': {
                 COMMENT_KEY: 'test value',
@@ -1444,7 +1467,9 @@ class TestAssayUpdateAjaxView(SampleSheetModelMixin, SamplesheetsViewTestBase):
     def test_post(self):
         """Test AssayUpdateAjaxView POST"""
         self.assertEqual(self.assay.file_name, 'a_small.txt')
+        self.assertEqual(self.assay.measurement_type, ASSAY_MEASURE_TYPE)
         self.assertEqual(self.assay.technology_platform, '')
+        self.assertEqual(self.assay.technology_type, ASSAY_TECH_TYPE)
         self.assertEqual(self.assay.comments, {})
         self.assertEqual(len(self.assay.headers), 8)
         self.assertIsNone(self._get_tl_event())
@@ -1458,9 +1483,11 @@ class TestAssayUpdateAjaxView(SampleSheetModelMixin, SamplesheetsViewTestBase):
         self.assay.refresh_from_db()
         a_meta = self.post_data['assay_meta']
         self.assertEqual(self.assay.file_name, a_meta['file_name'])
+        self.assertEqual(self.assay.measurement_type, ASSAY_MEASURE_TYPE2)
         self.assertEqual(
             self.assay.technology_platform, a_meta['technology_platform']
         )
+        self.assertEqual(self.assay.technology_type, ASSAY_TECH_TYPE2)
         self.assertEqual(self.assay.comments, self.post_data['comments'])
         self.assertEqual(
             self.assay.get_display_name(),
@@ -1545,6 +1572,110 @@ class TestAssayUpdateAjaxView(SampleSheetModelMixin, SamplesheetsViewTestBase):
             )
         self.assertEqual(response.status_code, 400)
         self.assertEqual(response.data['detail'], FILE_INVALID_MSG)
+
+    def test_post_measure_type_name_only(self):
+        """Test POST with only name set for measurement type"""
+        self.post_data['assay_meta']['measurement_type']['accession'] = None
+        self.post_data['assay_meta']['measurement_type']['ontology_name'] = None
+        with self.login(self.user):
+            response = self.client.post(
+                self.url, json.dumps(self.post_data), **POST_KW
+            )
+        self.assertEqual(response.status_code, 200)
+
+    def test_post_measure_type_no_name(self):
+        """Test POST with no name for measurement type"""
+        self.post_data['assay_meta']['measurement_type']['name'] = ''
+        with self.login(self.user):
+            response = self.client.post(
+                self.url, json.dumps(self.post_data), **POST_KW
+            )
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.data['detail'], ASSAY_TYPE_NO_NAME_MSG)
+
+    def test_post_measure_type_no_accession(self):
+        """Test POST with no accession for measurement type"""
+        self.post_data['assay_meta']['measurement_type']['accession'] = None
+        with self.login(self.user):
+            response = self.client.post(
+                self.url, json.dumps(self.post_data), **POST_KW
+            )
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.data['detail'], ASSAY_TYPE_REF_UNSET_MSG)
+
+    def test_post_measure_type_no_ontology(self):
+        """Test POST with no ontology name for measurement type"""
+        self.post_data['assay_meta']['measurement_type']['ontology_name'] = None
+        with self.login(self.user):
+            response = self.client.post(
+                self.url, json.dumps(self.post_data), **POST_KW
+            )
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.data['detail'], ASSAY_TYPE_REF_UNSET_MSG)
+
+    def test_post_measure_type_unknown_ontology(self):
+        """Test POST with measurement type ontology name not in refs"""
+        self.post_data['assay_meta']['measurement_type']['ontology_name'] = (
+            'NOT_IN_REFS'
+        )
+        with self.login(self.user):
+            response = self.client.post(
+                self.url, json.dumps(self.post_data), **POST_KW
+            )
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.data['detail'], ASSAY_TYPE_REF_UNKNOWN_MSG)
+
+    def test_post_tech_type_name_only(self):
+        """Test POST with only name set for technology type"""
+        self.post_data['assay_meta']['technology_type']['accession'] = None
+        self.post_data['assay_meta']['technology_type']['ontology_name'] = None
+        with self.login(self.user):
+            response = self.client.post(
+                self.url, json.dumps(self.post_data), **POST_KW
+            )
+        self.assertEqual(response.status_code, 200)
+
+    def test_post_tech_type_no_name(self):
+        """Test POST with no name for technology type"""
+        self.post_data['assay_meta']['technology_type']['name'] = ''
+        with self.login(self.user):
+            response = self.client.post(
+                self.url, json.dumps(self.post_data), **POST_KW
+            )
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.data['detail'], ASSAY_TYPE_NO_NAME_MSG)
+
+    def test_post_tech_type_no_accession(self):
+        """Test POST with no accession for technology type"""
+        self.post_data['assay_meta']['technology_type']['accession'] = None
+        with self.login(self.user):
+            response = self.client.post(
+                self.url, json.dumps(self.post_data), **POST_KW
+            )
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.data['detail'], ASSAY_TYPE_REF_UNSET_MSG)
+
+    def test_post_tech_type_no_ontology(self):
+        """Test POST with no ontology name for technology type"""
+        self.post_data['assay_meta']['technology_type']['ontology_name'] = None
+        with self.login(self.user):
+            response = self.client.post(
+                self.url, json.dumps(self.post_data), **POST_KW
+            )
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.data['detail'], ASSAY_TYPE_REF_UNSET_MSG)
+
+    def test_post_tech_type_unknown_ontology(self):
+        """Test POST with technology type ontology name not in refs"""
+        self.post_data['assay_meta']['technology_type']['ontology_name'] = (
+            'NOT_IN_REFS'
+        )
+        with self.login(self.user):
+            response = self.client.post(
+                self.url, json.dumps(self.post_data), **POST_KW
+            )
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.data['detail'], ASSAY_TYPE_REF_UNKNOWN_MSG)
 
     def test_post_comments_override(self):
         """Test POST with comments override"""

@@ -132,7 +132,7 @@ function show () {
   }
   invComments.value = invContext.comments
   updating.value = false
-  editStore.modalEditValid = true // Assume all data must be valid when opening
+  editStore.modalEditStatus = {} // Assume all data must be valid when opening
   showModal.value = true
 }
 

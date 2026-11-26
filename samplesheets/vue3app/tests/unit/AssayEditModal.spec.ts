@@ -8,6 +8,8 @@ import AssayEditModal from '@/components/modals/AssayEditModal.vue'
 import { useAppStore } from '@/stores/appStore.ts'
 import { useEditStore } from '@/stores/editStore.ts'
 import {
+  type AssayEditRequestMetadata,
+  type SheetOntologyRef,
   type SodarContext,
   type SodarContextAssay,
   type SodarContextComments
@@ -35,17 +37,38 @@ let fetchDetail: string
 let fetchStatus: number
 const url = URL_ASSAY_UPDATE_PREFIX + ASSAY_UUID
 
+const assayContext: SodarContextAssay = sodarContext.studies[
+  STUDY_UUID]!.assays[ASSAY_UUID]!
+const defaultMeasureType: SheetOntologyRef = assayContext.measurement_type
+const defaultTechType: SheetOntologyRef = assayContext.technology_type
+const defaultMetaData: AssayEditRequestMetadata = {
+  file_name: assayContext.file_name,
+  measurement_type: defaultMeasureType,
+  technology_platform: assayContext.technology_platform,
+  technology_type: defaultTechType,
+}
 const defaultComments: SodarContextComments = {
   [SODAR_ISA_ASSAY_DISPLAY_NAME]: 'Custom Assay Name',
   'Test Assay Comment': 'test value',
 }
 
 const metaFileUp = 'a_small_update.txt'
+const metaTypeNameUp = 'updated name'
 const metaTechPlatUp = 'Sequencer McSequencerface 9000'
+const typeNameUp = 'imaginary type for testing'
+const typeOboUp = 'ORDO'
+const typeAccUp = 'http://purl.obolibrary.org/obo/ORDO_0000170'
+
 const pluginName = 'samplesheets_assay_dna_sequencing'
 
 const metaFileSel = '#sodar-ss-assay-input-meta-file'
 const metaTechPlatSel = '#sodar-ss-assay-input-meta-tech-platform'
+const techTypeNameSel = '#sodar-ss-assay-input-meta-tech-name'
+const techTypeOboSel = '#sodar-ss-assay-input-meta-tech-obo'
+const techTypeAccSel = '#sodar-ss-assay-input-meta-tech-acc'
+const measureTypeNameSel = '#sodar-ss-assay-input-meta-measure-name'
+const measureTypeOboSel = '#sodar-ss-assay-input-meta-measure-obo'
+const measureTypeAccSel = '#sodar-ss-assay-input-meta-measure-acc'
 const commInputSel = '.sodar-ss-isa-comment-input'
 const commInsKeySel = '.sodar-ss-isa-comment-insert-key'
 const commInsValSel = '.sodar-ss-isa-comment-insert-value'
@@ -100,6 +123,18 @@ describe('AssayEditModal.vue', () => {
     expect(wrapper.find('#sodar-ss-assay-edit-table').exists()).toBe(true)
     expect(wrapper.find('.sodar-ss-isa-comment-edit-body').exists()).toBe(true)
     expect(wrapper.find(metaFileSel).attributes().value).toBe(ac.file_name)
+    expect(wrapper.find(techTypeNameSel).attributes().value).toBe(
+      ac.technology_type.name)
+    expect(wrapper.find(techTypeOboSel).attributes().value).toBe(
+      ac.technology_type.ontology_name)
+    expect(wrapper.find(techTypeAccSel).attributes().value).toBe(
+      ac.technology_type.accession)
+    expect(wrapper.find(measureTypeNameSel).attributes().value).toBe(
+      ac.measurement_type.name)
+    expect(wrapper.find(measureTypeOboSel).attributes().value).toBe(
+      ac.measurement_type.ontology_name)
+    expect(wrapper.find(measureTypeAccSel).attributes().value).toBe(
+      ac.measurement_type.accession)
     expect(wrapper.find(
       metaTechPlatSel).attributes().value).toBe(ac.technology_platform)
     expect(wrapper.find(updateBtnSel).attributes().disabled).not.toBeDefined()
@@ -125,12 +160,11 @@ describe('AssayEditModal.vue', () => {
     expect(fetch).not.toHaveBeenCalled()
     await wrapper.find(metaFileSel).setValue(metaFileUp)
     await wrapper.find(metaTechPlatSel).setValue(metaTechPlatUp)
-    await wrapper.find('#sodar-ss-assay-edit-btn-update').trigger('click')
+    await wrapper.find(updateBtnSel).trigger('click')
 
-    const expMeta = {
-      file_name: metaFileUp,
-      technology_platform: metaTechPlatUp,
-    }
+    const expMeta = copy(defaultMetaData) as AssayEditRequestMetadata
+    expMeta.file_name = metaFileUp
+    expMeta.technology_platform = metaTechPlatUp
     expect(fetch).toHaveBeenCalledWith(
       url, expect.objectContaining({
         body: JSON.stringify({
@@ -147,7 +181,7 @@ describe('AssayEditModal.vue', () => {
     expect(editStore.updateCache).toBe(false) // Should be unchanged
   })
 
-    test('update assay metadata with empty display name', async () => {
+  test('update assay metadata with empty display name', async () => {
     const appStore = useAppStore()
     const ac = appStore.sodarContext!.studies[STUDY_UUID]!.assays[ASSAY_UUID]!
     ac.comments![SODAR_ISA_ASSAY_DISPLAY_NAME] = ''
@@ -155,12 +189,11 @@ describe('AssayEditModal.vue', () => {
     const wrapper = await showModal()
     await wrapper.find(metaFileSel).setValue(metaFileUp)
     await wrapper.find(metaTechPlatSel).setValue(metaTechPlatUp)
-    await wrapper.find('#sodar-ss-assay-edit-btn-update').trigger('click')
+    await wrapper.find(updateBtnSel).trigger('click')
 
-    const expMeta = {
-      file_name: metaFileUp,
-      technology_platform: metaTechPlatUp,
-    }
+    const expMeta = copy(defaultMetaData) as AssayEditRequestMetadata
+    expMeta.file_name = metaFileUp
+    expMeta.technology_platform = metaTechPlatUp
     const expComments = {
       [SODAR_ISA_ASSAY_DISPLAY_NAME]: '',
       'Test Assay Comment': 'test value',
@@ -188,12 +221,72 @@ describe('AssayEditModal.vue', () => {
     const wrapper = await showModal()
     await wrapper.find(metaFileSel).setValue(metaFileUp)
     await wrapper.find(metaTechPlatSel).setValue(metaTechPlatUp)
-    await wrapper.find('#sodar-ss-assay-edit-btn-update').trigger('click')
+    await wrapper.find(updateBtnSel).trigger('click')
 
     expect(fetch).toHaveBeenCalled()
     expect(ac.technology_platform).toBe(metaTechPlatUp)
     // Override in comments = display name should remain
     expect(ac.display_name).toBe('Small')
+  })
+
+  test('update assay technology type name', async () => {
+    const appStore = useAppStore()
+    const editStore = useEditStore()
+    const ac = appStore.sodarContext!.studies[STUDY_UUID]!.assays[ASSAY_UUID]!
+    expect(ac.technology_type).toEqual(defaultTechType)
+    expect(editStore.editDataUpdated).toBe(false)
+    expect(editStore.updateCache).toBe(false)
+
+    const wrapper = await showModal()
+    expect(fetch).not.toHaveBeenCalled()
+    await wrapper.find(techTypeNameSel).setValue(metaTypeNameUp)
+    await wrapper.find(updateBtnSel).trigger('click')
+
+    const expMeta = copy(defaultMetaData) as AssayEditRequestMetadata
+    expMeta.technology_type = copy(
+      defaultMetaData.technology_type) as SheetOntologyRef
+    expMeta.technology_type.name = metaTypeNameUp
+    expect(fetch).toHaveBeenCalledWith(
+      url, expect.objectContaining({
+        body: JSON.stringify({
+          assay_meta: expMeta,
+          comments: defaultComments })}))
+    expect(mockNotifyCb).toHaveBeenCalledWith(
+      ASSAY_UPDATE_OK_MSG, VARIANT_SUCCESS)
+
+    expect(ac.technology_type.name).toBe(metaTypeNameUp)
+    expect(editStore.editDataUpdated).toBe(true)
+    expect(editStore.updateCache).toBe(true) // Should be updated
+  })
+
+  test('update assay measurement type name', async () => {
+    const appStore = useAppStore()
+    const editStore = useEditStore()
+    const ac = appStore.sodarContext!.studies[STUDY_UUID]!.assays[ASSAY_UUID]!
+    expect(ac.measurement_type).toEqual(defaultMeasureType)
+    expect(editStore.editDataUpdated).toBe(false)
+    expect(editStore.updateCache).toBe(false)
+
+    const wrapper = await showModal()
+    expect(fetch).not.toHaveBeenCalled()
+    await wrapper.find(measureTypeNameSel).setValue(metaTypeNameUp)
+    await wrapper.find(updateBtnSel).trigger('click')
+
+    const expMeta = copy(defaultMetaData) as AssayEditRequestMetadata
+    expMeta.measurement_type = copy(
+      defaultMetaData.measurement_type) as SheetOntologyRef
+    expMeta.measurement_type.name = metaTypeNameUp
+    expect(fetch).toHaveBeenCalledWith(
+      url, expect.objectContaining({
+        body: JSON.stringify({
+          assay_meta: expMeta,
+          comments: defaultComments })}))
+    expect(mockNotifyCb).toHaveBeenCalledWith(
+      ASSAY_UPDATE_OK_MSG, VARIANT_SUCCESS)
+
+    expect(ac.measurement_type.name).toBe(metaTypeNameUp)
+    expect(editStore.editDataUpdated).toBe(true)
+    expect(editStore.updateCache).toBe(true) // Should be updated
   })
 
   test('update assay comments with plugin name inserted', async () => {
@@ -204,7 +297,7 @@ describe('AssayEditModal.vue', () => {
     await wrapper.find(commInsKeySel).setValue(SODAR_ISA_ASSAY_PLUGIN)
     await wrapper.find(commInsValSel).setValue(pluginName)
     await wrapper.find(commInsBtnSel).trigger('click')
-    await wrapper.find('#sodar-ss-assay-edit-btn-update').trigger('click')
+    await wrapper.find(updateBtnSel).trigger('click')
 
     expect(fetch).toHaveBeenCalled()
     expect(mockNotifyCb).toHaveBeenCalledWith(
@@ -223,7 +316,7 @@ describe('AssayEditModal.vue', () => {
     const wrapper = await showModal()
     await wrapper.find(metaFileSel).setValue(metaFileUp)
     await wrapper.find(commInsBtnSel).trigger('click')
-    await wrapper.find('#sodar-ss-assay-edit-btn-update').trigger('click')
+    await wrapper.find(updateBtnSel).trigger('click')
 
     expect(fetch).toHaveBeenCalled()
     expect(mockNotifyCb).toHaveBeenCalledWith(
@@ -242,7 +335,7 @@ describe('AssayEditModal.vue', () => {
     const wrapper = await showModal()
     const commFields = wrapper.findAll(commInputSel)
     await commFields![2]!.setValue('updated_plugin_name')
-    await wrapper.find('#sodar-ss-assay-edit-btn-update').trigger('click')
+    await wrapper.find(updateBtnSel).trigger('click')
 
     expect(fetch).toHaveBeenCalled()
     expect(mockNotifyCb).toHaveBeenCalledWith(
@@ -258,7 +351,7 @@ describe('AssayEditModal.vue', () => {
     await wrapper.find(commInsKeySel).setValue(SODAR_ISA_ASSAY_LINK_ROW)
     await wrapper.find(commInsValSel).setValue('abc;def')
     await wrapper.find(commInsBtnSel).trigger('click')
-    await wrapper.find('#sodar-ss-assay-edit-btn-update').trigger('click')
+    await wrapper.find(updateBtnSel).trigger('click')
 
     expect(fetch).toHaveBeenCalled()
     expect(mockNotifyCb).toHaveBeenCalledWith(
@@ -275,7 +368,7 @@ describe('AssayEditModal.vue', () => {
       SODAR_ISA_ASSAY_PATH_PREFIX + ' 1')
     await wrapper.find(commInsValSel).setValue('abc')
     await wrapper.find(commInsBtnSel).trigger('click')
-    await wrapper.find('#sodar-ss-assay-edit-btn-update').trigger('click')
+    await wrapper.find(updateBtnSel).trigger('click')
 
     expect(fetch).toHaveBeenCalled()
     expect(mockNotifyCb).toHaveBeenCalledWith(
@@ -295,7 +388,7 @@ describe('AssayEditModal.vue', () => {
     const delButtons = wrapper.findAll(commDelBtnSel)
     expect(delButtons.length).toBe(3)
     await delButtons![2]!.trigger('click')
-    await wrapper.find('#sodar-ss-assay-edit-btn-update').trigger('click')
+    await wrapper.find(updateBtnSel).trigger('click')
 
     expect(fetch).toHaveBeenCalled()
     expect(mockNotifyCb).toHaveBeenCalledWith(
@@ -314,7 +407,7 @@ describe('AssayEditModal.vue', () => {
     const wrapper = await showModal()
     const commFields = wrapper.findAll(commInputSel)
     await commFields![2]!.setValue('def')
-    await wrapper.find('#sodar-ss-assay-edit-btn-update').trigger('click')
+    await wrapper.find(updateBtnSel).trigger('click')
 
     expect(fetch).toHaveBeenCalled()
     expect(mockNotifyCb).toHaveBeenCalledWith(
@@ -331,7 +424,7 @@ describe('AssayEditModal.vue', () => {
     expect(editStore.updateCache).toBe(false)
 
     const wrapper = await showModal()
-    await wrapper.find('#sodar-ss-assay-edit-btn-update').trigger('click')
+    await wrapper.find(updateBtnSel).trigger('click')
 
     expect(fetch).toHaveBeenCalled()
     expect(mockNotifyCb).toHaveBeenCalledWith(
@@ -355,7 +448,7 @@ describe('AssayEditModal.vue', () => {
     const wrapper = await showModal()
     await wrapper.find(metaFileSel).setValue(metaFileUp)
     await wrapper.find(metaTechPlatSel).setValue(metaTechPlatUp)
-    await wrapper.find('#sodar-ss-assay-edit-btn-update').trigger('click')
+    await wrapper.find(updateBtnSel).trigger('click')
 
     expect(fetch).toHaveBeenCalled()
     expect(mockNotifyCb).toHaveBeenCalledWith(
@@ -443,6 +536,168 @@ describe('AssayEditModal.vue', () => {
     const input = wrapper.find(metaFileSel)
     await input.setValue(metaFileUp)
     expect(input.classes()).toContain(INVALID_CLASS)
+    expect(wrapper.find(updateBtnSel).attributes().disabled).toBeDefined()
+  })
+
+  test('update technology type', async () => {
+    const appStore = useAppStore()
+    const editStore = useEditStore()
+    const ac = appStore.sodarContext!.studies[STUDY_UUID]!.assays[ASSAY_UUID]!
+    expect(ac.technology_type).toEqual(defaultTechType)
+    expect(editStore.editDataUpdated).toBe(false)
+    expect(editStore.updateCache).toBe(false)
+
+    const wrapper = await showModal()
+    await wrapper.find(techTypeNameSel).setValue(typeNameUp)
+    await wrapper.find(techTypeOboSel).setValue(typeOboUp)
+    await wrapper.find(techTypeAccSel).setValue(typeAccUp)
+    await wrapper.find(updateBtnSel).trigger('click')
+
+    const expMeta = copy(defaultMetaData) as AssayEditRequestMetadata
+    expMeta.technology_type.name = typeNameUp
+    expMeta.technology_type.ontology_name = typeOboUp
+    expMeta.technology_type.accession = typeAccUp
+    expect(fetch).toHaveBeenCalledWith(
+      url, expect.objectContaining({
+        body: JSON.stringify({
+          assay_meta: expMeta,
+          comments: defaultComments })}))
+    expect(mockNotifyCb).toHaveBeenCalledWith(
+      ASSAY_UPDATE_OK_MSG, VARIANT_SUCCESS)
+
+    expect(ac.technology_type.name).toBe(typeNameUp)
+    expect(ac.technology_type.ontology_name).toBe(typeOboUp)
+    expect(ac.technology_type.accession).toBe(typeAccUp)
+
+    expect(editStore.editDataUpdated).toBe(true)
+    expect(editStore.updateCache).toBe(true) // Should be updated
+  })
+
+  test('input technology type with empty name', async () => {
+    const wrapper = await showModal()
+    const input = wrapper.find(techTypeNameSel)
+    await input.setValue('')
+    // Empty name is not allowed
+    expect(wrapper.find(updateBtnSel).attributes().disabled).toBeDefined()
+  })
+
+  test('input technology type with unknown ontology', async () => {
+    const wrapper = await showModal()
+    const input = wrapper.find(techTypeOboSel)
+    await input.setValue('UNKNOWN')
+    // Unknown ontology is not allowed
+    expect(wrapper.find(updateBtnSel).attributes().disabled).toBeDefined()
+  })
+
+  test('input technology type with empty ontology and accession', async () => {
+    const wrapper = await showModal()
+    const inputObo = wrapper.find(techTypeOboSel)
+    const inputAcc = wrapper.find(techTypeAccSel)
+    await inputObo.setValue('')
+    await inputAcc.setValue('')
+    // Both reference values can be empty
+    expect(inputObo.classes()).not.toContain(INVALID_CLASS)
+    expect(inputAcc.classes()).not.toContain(INVALID_CLASS)
+    expect(wrapper.find(updateBtnSel).attributes().disabled).not.toBeDefined()
+  })
+
+  test('input technology type with empty ontology', async () => {
+    const wrapper = await showModal()
+    const inputObo = wrapper.find(techTypeOboSel)
+    const inputAcc = wrapper.find(techTypeAccSel)
+    await inputObo.setValue('')
+    // Only one reference field filled is not allowed
+    expect(inputObo.classes()).toContain(INVALID_CLASS)
+    expect(inputAcc.classes()).toContain(INVALID_CLASS)
+    expect(wrapper.find(updateBtnSel).attributes().disabled).toBeDefined()
+  })
+
+  test('input technology type with empty accession', async () => {
+    const wrapper = await showModal()
+    const inputObo = wrapper.find(techTypeOboSel)
+    const inputAcc = wrapper.find(techTypeAccSel)
+    await inputAcc.setValue('')
+    expect(inputObo.classes()).toContain(INVALID_CLASS)
+    expect(inputAcc.classes()).toContain(INVALID_CLASS)
+    expect(wrapper.find(updateBtnSel).attributes().disabled).toBeDefined()
+  })
+
+ test('update measurement type', async () => {
+    const appStore = useAppStore()
+    const editStore = useEditStore()
+    const ac = appStore.sodarContext!.studies[STUDY_UUID]!.assays[ASSAY_UUID]!
+    expect(ac.measurement_type).toEqual(defaultMeasureType)
+    expect(editStore.editDataUpdated).toBe(false)
+    expect(editStore.updateCache).toBe(false)
+
+    const wrapper = await showModal()
+    await wrapper.find(measureTypeNameSel).setValue(typeNameUp)
+    await wrapper.find(measureTypeOboSel).setValue(typeOboUp)
+    await wrapper.find(measureTypeAccSel).setValue(typeAccUp)
+    await wrapper.find(updateBtnSel).trigger('click')
+
+    const expMeta = copy(defaultMetaData) as AssayEditRequestMetadata
+    expMeta.measurement_type.name = typeNameUp
+    expMeta.measurement_type.ontology_name = typeOboUp
+    expMeta.measurement_type.accession = typeAccUp
+    expect(fetch).toHaveBeenCalledWith(
+      url, expect.objectContaining({
+        body: JSON.stringify({
+          assay_meta: expMeta,
+          comments: defaultComments })}))
+    expect(mockNotifyCb).toHaveBeenCalledWith(
+      ASSAY_UPDATE_OK_MSG, VARIANT_SUCCESS)
+
+    expect(ac.measurement_type.name).toBe(typeNameUp)
+    expect(ac.measurement_type.ontology_name).toBe(typeOboUp)
+    expect(ac.measurement_type.accession).toBe(typeAccUp)
+
+    expect(editStore.editDataUpdated).toBe(true)
+    expect(editStore.updateCache).toBe(true) // Should be updated
+  })
+
+  test('input measurement type with empty name', async () => {
+    const wrapper = await showModal()
+    const input = wrapper.find(measureTypeNameSel)
+    await input.setValue('')
+    expect(wrapper.find(updateBtnSel).attributes().disabled).toBeDefined()
+  })
+
+  test('input measurement type with unknown ontology', async () => {
+    const wrapper = await showModal()
+    const input = wrapper.find(measureTypeOboSel)
+    await input.setValue('UNKNOWN')
+    expect(wrapper.find(updateBtnSel).attributes().disabled).toBeDefined()
+  })
+
+  test('input measurement type with empty ontology and accession', async () => {
+    const wrapper = await showModal()
+    const inputObo = wrapper.find(measureTypeOboSel)
+    const inputAcc = wrapper.find(measureTypeAccSel)
+    await inputObo.setValue('')
+    await inputAcc.setValue('')
+    expect(inputObo.classes()).not.toContain(INVALID_CLASS)
+    expect(inputAcc.classes()).not.toContain(INVALID_CLASS)
+    expect(wrapper.find(updateBtnSel).attributes().disabled).not.toBeDefined()
+  })
+
+  test('input measurement type with empty ontology', async () => {
+    const wrapper = await showModal()
+    const inputObo = wrapper.find(measureTypeOboSel)
+    const inputAcc = wrapper.find(measureTypeAccSel)
+    await inputObo.setValue('')
+    expect(inputObo.classes()).toContain(INVALID_CLASS)
+    expect(inputAcc.classes()).toContain(INVALID_CLASS)
+    expect(wrapper.find(updateBtnSel).attributes().disabled).toBeDefined()
+  })
+
+  test('input measurement type with empty accession', async () => {
+    const wrapper = await showModal()
+    const inputObo = wrapper.find(measureTypeOboSel)
+    const inputAcc = wrapper.find(measureTypeAccSel)
+    await inputAcc.setValue('')
+    expect(inputObo.classes()).toContain(INVALID_CLASS)
+    expect(inputAcc.classes()).toContain(INVALID_CLASS)
     expect(wrapper.find(updateBtnSel).attributes().disabled).toBeDefined()
   })
 })

@@ -50,7 +50,6 @@ from samplesheets.utils import (
     get_node_obj,
     get_webdav_url,
     get_ext_link_labels,
-    get_isa_field_name,
     get_bool,
 )
 from samplesheets.views import (
@@ -118,6 +117,9 @@ FILE_DUPE_MSG = 'Duplicate file names in investigation'
 FILE_INVALID_MSG = 'Invalid file name'
 ID_EMPTY_MSG = 'Empty identifier is not allowed'
 STUDY_EDIT_ID_DUPE_MSG = 'Duplicate study identifiers in investigation'
+ASSAY_TYPE_NO_NAME_MSG = 'Empty assay type name not allowed'
+ASSAY_TYPE_REF_UNSET_MSG = 'Both ontology name and accession must be set'
+ASSAY_TYPE_REF_UNKNOWN_MSG = 'Ontology not in investigation source refs'
 TL_ERR_PREFIX = 'Exception creating timeline event: '
 PROP_EDIT_ERR_PREFIX = 'SheetEditException raised: '
 PROP_GEN_ERR_PREFIX = 'Exception raised: '
@@ -563,6 +565,7 @@ class SheetContextAjaxView(SODARBaseProjectAjaxView):
                 'public_release_date': pub_date,
                 'submission_date': sub_date,
                 'comments': get_comments(inv),
+                'ontology_source_refs': inv.ontology_source_refs or [],
                 'sodar_uuid': str(inv.sodar_uuid),
             },
         }
@@ -633,8 +636,8 @@ class SheetContextAjaxView(SODARBaseProjectAjaxView):
             'name': assay.get_name(),
             'display_name': assay.get_display_name(),
             'file_name': assay.file_name,
-            'measurement_type': get_isa_field_name(assay.measurement_type),
-            'technology_type': get_isa_field_name(assay.technology_type),
+            'measurement_type': assay.measurement_type,
+            'technology_type': assay.technology_type,
             'technology_platform': assay.technology_platform,
             'comments': get_comments(assay),
             'irods_path': (
@@ -1128,6 +1131,24 @@ class StudyUpdateAjaxView(BaseISAPropertyEditAjaxView):
 class AssayUpdateAjaxView(BaseISAPropertyEditAjaxView):
     """Ajax view for updating assay properties"""
 
+    def _validate_type_term(self, term: dict, assay: Assay):
+        """
+        Validate technology/measurement type term.
+
+        :raise: SheetEditException if the term fails validation.
+        """
+        if not term['name']:
+            self.raise_ex(ASSAY_TYPE_NO_NAME_MSG)
+        if (not term['accession']) != (not term['ontology_name']):
+            self.raise_ex(ASSAY_TYPE_REF_UNSET_MSG)
+        if term['ontology_name']:
+            refs = [
+                r['name']
+                for r in assay.study.investigation.ontology_source_refs
+            ]
+            if term['ontology_name'] not in refs:
+                self.raise_ex(ASSAY_TYPE_REF_UNKNOWN_MSG)
+
     def _update_metadata(self, assay: Assay, data: dict):
         """
         Update Assay metadata properties.
@@ -1138,16 +1159,20 @@ class AssayUpdateAjaxView(BaseISAPropertyEditAjaxView):
         q_kw = {'study__investigation': assay.study.investigation}
         e_kw = {'sodar_uuid': assay.sodar_uuid}
 
-        # File name
+        # Validations
         v = data['file_name'].strip()
         if not self.validate_isa_file_name(assay, v):
             self.raise_ex(FILE_INVALID_MSG)
         if Assay.objects.filter(file_name=v, **q_kw).exclude(**e_kw).exists():
             self.raise_ex(FILE_DUPE_MSG)
+        self._validate_type_term(data['measurement_type'], assay)
+        self._validate_type_term(data['technology_type'], assay)
+
+        # Set fields
         assay.file_name = v
-        # Technology platform
+        assay.measurement_type = data['measurement_type']
         assay.technology_platform = data['technology_platform'].strip()
-        # TODO: Add technology type and measurement type fields (see #2612)
+        assay.technology_type = data['technology_type']
 
     def get_object(self) -> Assay:
         return Assay.objects.get(sodar_uuid=self.kwargs.get('assay'))

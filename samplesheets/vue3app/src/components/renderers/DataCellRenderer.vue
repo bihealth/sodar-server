@@ -3,7 +3,7 @@ import { ref } from 'vue'
 import { BButton } from 'bootstrap-vue-next'
 import { useClipboard } from '@vueuse/core'
 
-import { type SheetTableCellData, type SheetTableOntologyRef} from '@/types.ts'
+import { type SheetOntologyRef, type SheetTableCellData  } from '@/types.ts'
 import { CELL_EMPTY_VAL } from '@/constants.ts'
 
 // Interfaces ------------------------------------------------------------------
@@ -127,9 +127,9 @@ function getNoUrlFileClass (): string {
 function getOntologyTermString (): string {
   const ret = []
   for (let i = 0; i < cellData.value.length; i++) {
-    const term = cellData.value[i] as SheetTableOntologyRef
-    const idx = term.accession.indexOf('HP_')
-    ret.push(term.accession.substring(idx).replace('_', ':'))
+    const term = cellData.value[i] as SheetOntologyRef
+    const idx = term.accession?.indexOf('HP_') as number
+    ret.push(term.accession?.substring(idx).replace('_', ':'))
   }
   return ret.join(';')
 }
@@ -205,14 +205,14 @@ if (cellData && cellData.value && cellData.value.length > 0) {
       <span v-for="(term, termIdx) in cellData.value"
             :key="termIdx">
         <span v-if="!params?.editMode">
-          <a :href="(term as SheetTableOntologyRef).accession"
-             :title="(term as SheetTableOntologyRef).ontology_name as string"
+          <a :href="(term as SheetOntologyRef).accession!"
+             :title="(term as SheetOntologyRef).ontology_name as string"
              target="_blank">
-            {{ (term as SheetTableOntologyRef).name }}
+            {{ (term as SheetOntologyRef).name }}
           </a><span v-if="termIdx < cellData.value.length - 1">; </span>
         </span>
         <span v-else>
-          {{ (term as SheetTableOntologyRef).name }}<span
+          {{ (term as SheetOntologyRef).name }}<span
             v-if="termIdx < cellData.value.length - 1">; </span>
         </span>
       </span>

@@ -39,7 +39,13 @@ function onCopy (legend: string, value: string) {
     </dt>
     <dd v-if="!(['', null].includes(value))"
         class="col-md-9 sodar-ss-table-detail-value">
-      {{ value }}
+      <!-- Ontology term ref -->
+      <span v-if="value && typeof value !== 'string'">
+        <a :href="value.accession" target="_blank">{{ value.name }}</a>
+      </span>
+      <span v-else>
+        {{ value }}
+      </span>
       <span v-if="copyButton"
             class="pull-right">
         <BButton

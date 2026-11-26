@@ -145,7 +145,7 @@ function show (uuid: string) {
   }
   studyComments.value = JSON.parse(
     JSON.stringify(tableContext.comments)) as SodarContextComments
-  editStore.modalEditValid = true // Assume all data must be valid when opening
+  editStore.modalEditStatus = {} // Assume all data must be valid when opening
   updating.value = false
   showModal.value = true
 }

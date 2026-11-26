@@ -8,6 +8,9 @@ import { EDIT_REGEX, EDIT_REGEX_FILE_NAME } from '@/constants.ts'
 
 // Constants -------------------------------------------------------------------
 
+const FIELD_PREFIX = 'meta'
+const ID_FIELD = FIELD_PREFIX + 'Identifier'
+const FILE_NAME_FIELD = FIELD_PREFIX + 'FileName'
 const INVALID_CLASS = 'text-danger'
 
 // Interfaces ------------------------------------------------------------------
@@ -47,10 +50,10 @@ function onDateInput (fieldName: string) {
   const v = metadata.value![fieldName as keyof InvStudyEditMeta]!.trim()
   if (v && !EDIT_REGEX['date']!.test(v)) {
     fieldsValid.value![fieldName] = false
-    editStore.modalEditValid = false
+    editStore.modalEditStatus[FIELD_PREFIX + fieldName] = false
   } else {
     fieldsValid.value![fieldName] = true
-    editStore.modalEditValid = true
+    editStore.modalEditStatus[FIELD_PREFIX + fieldName] = true
   }
 }
 
@@ -60,10 +63,10 @@ function onFileNameInput () {
       !EDIT_REGEX_FILE_NAME.test(f) ||
       (props.fileNames as Array<string>).includes(f)) {
     fieldsValid.value!.fileName = false
-    editStore.modalEditValid = false
+    editStore.modalEditStatus[FILE_NAME_FIELD] = false
   } else {
     fieldsValid.value!.fileName = true
-    editStore.modalEditValid = true
+    editStore.modalEditStatus[FILE_NAME_FIELD] = true
   }
 }
 
@@ -71,10 +74,10 @@ function onIdentifierInput () {
   const v = metadata.value!.identifier.trim()
   if (v === '' || (props.identifiers as Array<string>).includes(v)) {
     fieldsValid.value!.identifier = false
-    editStore.modalEditValid = false
+    editStore.modalEditStatus[ID_FIELD] = false
   } else {
     fieldsValid.value!.identifier = true
-    editStore.modalEditValid = true
+    editStore.modalEditStatus[ID_FIELD] = true
   }
 }
 </script>

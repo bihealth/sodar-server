@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'vitest'
 
 import { compareDataCellValues } from '@/utils/gridUtils.ts'
-import { type SheetTableCellData, type SheetTableOntologyRef } from '@/types.ts'
+import { type SheetOntologyRef, type SheetTableCellData } from '@/types.ts'
 import {
   EDIT_COL_TYPE_NAME,
   EDIT_COL_TYPE_NUMERIC,
@@ -50,11 +50,11 @@ describe('compareDataCellValues()', () => {
   test('compare data cells with object values', async () => {
     const dataA = {
       colType: EDIT_COL_TYPE_ONTOLOGY,
-      value: [{ name: 'a' } as SheetTableOntologyRef]
+      value: [{ name: 'a' } as SheetOntologyRef]
     } as SheetTableCellData
     const dataB = {
       colType: EDIT_COL_TYPE_ONTOLOGY,
-      value: [{ name: 'b' } as SheetTableOntologyRef]
+      value: [{ name: 'b' } as SheetOntologyRef]
     } as SheetTableCellData
     const res = compareDataCellValues(dataB, dataA) // Inverse order
     expect(res).toBe(1)

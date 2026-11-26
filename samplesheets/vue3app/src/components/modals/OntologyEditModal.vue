@@ -351,7 +351,7 @@ function onTermInsertClick () {
     addTerm(
       insertValue.value.name,
       insertValue.value.ontology_name as string,
-      insertValue.value.accession,
+      insertValue.value.accession as string,
       false)) {
     updated.value = true
     resetInsertValue()
@@ -376,7 +376,7 @@ function onTermOptionClick (term: OntologyTermResponseRef) {
       addTerm(
         term.name,
         term.ontology_name as string,
-        term.accession,
+        term.accession as string,
         term.is_obsolete)) {
     updated.value = true
   }
@@ -700,7 +700,7 @@ defineExpose({ show })
                   class="sodar-ss-ontology-term-display
                          sodar-ss-ontology-term-acc">
                 <div class="sodar-ss-ontology-url">
-                  <a :href="term.accession" target="_blank">
+                  <a :href="term.accession!" target="_blank">
                     {{ term.accession }}
                   </a>
                 </div>

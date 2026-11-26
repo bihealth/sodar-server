@@ -3,6 +3,7 @@ import { ref, useTemplateRef } from 'vue'
 import { BButton, BButtonGroup, BFormInput, BModal } from 'bootstrap-vue-next'
 
 import IsaCommentEditSection from '@/components/modals/include/IsaCommentEditSection.vue'
+import IsaOntologyTermEditSection from '@/components/modals/include/IsaOntologyTermEditSection.vue'
 import ModalHeader from '@/components/modals/include/ModalHeader.vue'
 import ModalTableSeparator from '@/components/modals/include/ModalTableSeparator.vue'
 
@@ -13,6 +14,7 @@ import {
   type AssayEditMeta,
   type AssayEditRequestBody,
   type GenericResponseBody,
+  type SheetOntologyRef,
   type SodarContextAssay,
   type SodarContextComments,
 } from '@/types.ts'
@@ -35,6 +37,8 @@ import {
 
 // Constants -------------------------------------------------------------------
 
+const FIELD_PREFIX = 'assay'
+const FILE_NAME_FIELD = FIELD_PREFIX + 'FileName'
 const INVALID_CLASS = 'text-danger'
 const MANDATORY_COMMENTS = [SODAR_ISA_ASSAY_DISPLAY_NAME]
 const CACHE_UPDATE_COMMENTS = [
@@ -53,11 +57,9 @@ const editStore = useEditStore()
 
 const assayComments = ref<SodarContextComments | null>(null)
 const assayMeta = ref<AssayEditMeta | null>(null)
-const fileNameValid = ref<boolean>(true)
 const modalRef = useTemplateRef('assayEditModalRef')
 const showModal = ref<boolean>(false)
 const updating = ref<boolean>(true)
-const valid = ref<boolean>(true)
 
 // Internal Vars ---------------------------------------------------------------
 
@@ -82,35 +84,54 @@ function checkGenericRowPaths (
   }
 }
 
+// Cleanup ontology term to match data returned from the server
+// TODO: Move into common utils once needed elsewhere
+function cleanupOntologyTerm (term: SheetOntologyRef) {
+  term.name = term.name.trim()
+  if (!term.accession) term.accession = null
+  if (!term.ontology_name) term.ontology_name = null
+}
+
+// Compare ontology term contents
+// TODO: Move into common utils once needed elsewhere
+function compareOntologyTerms (
+    term1: SheetOntologyRef,
+    term2: SheetOntologyRef
+): boolean {
+  return Object.keys(term2).every(
+    k => term1.hasOwnProperty(k) &&
+    term2[k as keyof SheetOntologyRef] === term1[k as keyof SheetOntologyRef]
+  )
+}
+
 function enableSubmit (): boolean {
-  return !updating.value && valid.value
+  return !updating.value && editStore.modalEditValid
 }
 
 function getFileNameClass (): string {
-  if (!fileNameValid.value) return INVALID_CLASS
+  if (editStore.modalEditStatus[FILE_NAME_FIELD] === false) return INVALID_CLASS
   return ''
 }
 
 function onFileNameInput () {
   const f = assayMeta.value!.fileName.trim()
-  if (!f.startsWith('a') ||
-      !EDIT_REGEX_FILE_NAME.test(f) ||
-      assayFileNames.includes(f)) {
-    fileNameValid.value = false
-    valid.value = false
-  } else {
-    fileNameValid.value = true
-    valid.value = true
-  }
+  editStore.modalEditStatus[FILE_NAME_FIELD] = !(!f.startsWith('a') ||
+    !EDIT_REGEX_FILE_NAME.test(f) ||
+    assayFileNames.includes(f))
 }
 
 // Post assay update and handle the results
 async function updateAssay () {
   const url = URL_ASSAY_UPDATE_PREFIX + tableUuid
+  // Cleanup type fields
+  cleanupOntologyTerm(assayMeta.value!.technologyType)
+  cleanupOntologyTerm(assayMeta.value!.measurementType)
   const updateBody: AssayEditRequestBody = {
     assay_meta: {
       file_name: assayMeta.value!.fileName.trim(),
+      measurement_type: assayMeta.value!.measurementType,
       technology_platform: assayMeta.value!.technologyPlatform.trim(),
+      technology_type: assayMeta.value!.technologyType,
     },
     comments: assayComments.value!
   }
@@ -133,7 +154,9 @@ async function updateAssay () {
 function updateContext () {
   // Update table context
   tableContext.file_name = assayMeta.value!.fileName.trim()
+  tableContext.measurement_type = assayMeta.value!.measurementType
   tableContext.technology_platform = assayMeta.value!.technologyPlatform.trim()
+  tableContext.technology_type = assayMeta.value!.technologyType
   tableContext.comments = assayComments.value
 
   // Update display name
@@ -150,13 +173,19 @@ function updateContext () {
   }
 
   // Update editStore
-  // TODO: Add technology type and measurement type checks (see #2612)
   if (editStore.updateCache) return
   for (const c of CACHE_UPDATE_COMMENTS) {
     if (tableContext.comments![c] !== ogContext.comments![c]) {
       editStore.updateCache = true
       break
     }
+  }
+  if (!editStore.updateCache && (
+      !compareOntologyTerms(
+          assayMeta.value!.measurementType, ogContext.measurement_type) ||
+      !compareOntologyTerms(
+          assayMeta.value!.technologyType, ogContext.technology_type))) {
+    editStore.updateCache = true
   }
   checkGenericRowPaths(tableContext.comments!, ogContext.comments!)
   checkGenericRowPaths(ogContext.comments!, tableContext.comments!)
@@ -181,16 +210,16 @@ function show (uuid: string) {
     }
   }
 
-  // TODO: Add technology type and measurement type fields (see #2612)
   assayMeta.value = {
     fileName: tableContext.file_name,
+    measurementType: JSON.parse(JSON.stringify(tableContext.measurement_type)),
+    technologyType: JSON.parse(JSON.stringify(tableContext.technology_type)),
     technologyPlatform: tableContext.technology_platform,
   }
   assayComments.value = JSON.parse(
     JSON.stringify(tableContext.comments)) as SodarContextComments
+  editStore.modalEditStatus = {}
   updating.value = false
-  valid.value = true // We assume all data must be valid when opening
-  fileNameValid.value = true
   showModal.value = true
 }
 
@@ -236,7 +265,7 @@ defineExpose({ show })
     </template>
     <div id="sodar-ss-assay-edit-content">
       <table
-          v-if="assayMeta"
+          v-if="assayMeta && showModal"
           class="table table-borderless sodar-ss-isa-isa-edit-table w-100 mb-3"
           id="sodar-ss-assay-edit-table">
         <!-- Metadata -->
@@ -248,6 +277,7 @@ defineExpose({ show })
             <td>File Name</td>
             <td>
               <BFormInput
+                  v-if="showModal"
                   v-model="assayMeta.fileName"
                   :class="getFileNameClass()"
                   id="sodar-ss-assay-input-meta-file"
@@ -255,6 +285,20 @@ defineExpose({ show })
               </BFormInput>
             </td>
           </tr>
+          <IsaOntologyTermEditSection
+              v-if="showModal"
+              class-name="sodar-ss-assay-input-meta-tech"
+              field-name="assayTechType"
+              :term="assayMeta.technologyType"
+              title="Technology Type">
+          </IsaOntologyTermEditSection>
+          <IsaOntologyTermEditSection
+              v-if="showModal"
+              class-name="sodar-ss-assay-input-meta-measure"
+              field-name="assayMeasureType"
+              :term="assayMeta.measurementType"
+              title="Measurement Type">
+          </IsaOntologyTermEditSection>
           <tr>
             <td>Technology Platform</td>
             <td>

@@ -2,6 +2,7 @@ import { type TemplateRef } from 'vue'
 import { type Mock } from 'vitest'
 import {
   type NotifyCb,
+  type SheetOntologyRef,
   type SodarContextAssay,
   type SodarContextComments,
   type SodarContextStudy
@@ -63,5 +64,5 @@ export interface TableDetailListRowProps {
   notifyCb?: NotifyCb
   rowClass: string
   title: string
-  value: string
+  value: string | SheetOntologyRef
 }

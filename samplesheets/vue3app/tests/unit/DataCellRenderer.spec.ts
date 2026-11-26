@@ -4,8 +4,8 @@ import { mount, type VueWrapper } from '@vue/test-utils'
 import DataCellRenderer from '@/components/renderers/DataCellRenderer.vue'
 import {
   type DataCellRendererParams,
+  type SheetOntologyRef,
   type SheetTableCellData,
-  type SheetTableOntologyRef
 } from '@/types.ts'
 import { CELL_EMPTY_VAL } from '@/constants.ts'
 
@@ -83,7 +83,7 @@ describe('DataCellRenderer.vue', () => {
     params.colType = 'ONTOLOGY'
     // Example ontology value is two NCBITAXON terms
     params.value!.value = studyTables.tables.study.table_data[0]![1]!.value as
-      Array<SheetTableOntologyRef>
+      Array<SheetOntologyRef>
     const wrapper = mountComponent()
 
     const val = wrapper.find('.sodar-ss-data-val-ontology')
@@ -106,7 +106,7 @@ describe('DataCellRenderer.vue', () => {
     params.editMode = true
     params.colType = 'ONTOLOGY'
     params.value!.value = studyTables.tables.study.table_data[0]![1]!.value as
-      Array<SheetTableOntologyRef>
+      Array<SheetOntologyRef>
     const wrapper = mountComponent()
 
     const val = wrapper.find('.sodar-ss-data-val-ontology')

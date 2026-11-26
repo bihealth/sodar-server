@@ -22,6 +22,60 @@ export const sodarContextInvestigation: SodarContextInvestigation = {
   public_release_date: '',
   submission_date: '2026-10-15',
   comments: null,
+  ontology_source_refs: [
+    {
+      'file': 'http://data.bioontology.org/ontologies/ORDO',
+      'name': 'ORDO',
+      'headers': [
+        'Term Source Name',
+        'Term Source File',
+        'Term Source Version',
+        'Term Source Description'
+      ],
+      'version': '12',
+      'comments': [],
+      'description': 'Orphanet Rare Disease Ontology'
+    },
+    {
+      'file': 'http://data.bioontology.org/ontologies/OBI',
+      'name': 'OBI',
+      'headers': [
+        'Term Source Name',
+        'Term Source File',
+        'Term Source Version',
+        'Term Source Description'
+      ],
+      'version': '35',
+      'comments': [],
+      'description': 'Ontology for Biomedical Investigations'
+    },
+    {
+      'file': 'http://data.bioontology.org/ontologies/HP',
+      'name': 'HP',
+      'headers': [
+        'Term Source Name',
+        'Term Source File',
+        'Term Source Version',
+        'Term Source Description'
+      ],
+      'version': '570',
+      'comments': [],
+      'description': 'Human Phenotype Ontology'
+    },
+    {
+      'file': 'BIOPORTAL',
+      'name': 'NCBITAXON',
+      'headers': [
+        'Term Source Name',
+        'Term Source File',
+        'Term Source Version',
+        'Term Source Description'
+      ],
+      'version': '10',
+      'comments': [],
+      'description': 'National Center for Biotechnology Information (NCBI) Organismal Classification'
+    }
+  ],
   sodar_uuid: INV_UUID,
 }
 
@@ -29,8 +83,16 @@ export const sodarContextAssay: SodarContextAssay = {
   name: 'small',
   display_name: 'Small',
   file_name: 'a_small.txt',
-  measurement_type: 'exome sequencing assay',
-  technology_type: 'nucleotide sequencing',
+  measurement_type: {
+    accession: 'http://purl.obolibrary.org/obo/OBI_0002118',
+    name: 'exome sequencing assay',
+    ontology_name: 'OBI',
+  },
+  technology_type: {
+    accession: 'http://purl.obolibrary.org/obo/OBI_0000626',
+    name: 'nucleotide sequencing',
+    ontology_name: 'OBI',
+  },
   technology_platform: '',
   comments: null,
   irods_path: ASSAY_PATH,

@@ -5,10 +5,7 @@ import { useClipboard } from '@vueuse/core'
 
 import { useAppStore } from '@/stores/appStore.ts'
 import { useTableStore } from '@/stores/tableStore.ts'
-import {
-  type SheetTableCellDataValue,
-  type SheetTableOntologyRef,
-} from '@/types.ts'
+import { type SheetOntologyRef, type SheetTableCellDataValue } from '@/types.ts'
 import {
   SEL_APP_CONTAINER,
   SEL_APP_CONTENT,
@@ -109,7 +106,7 @@ function getCopyValue (val: SheetTableCellDataValue, unit?: string): string {
   for (let i = 0; i < val.length; i++) {
     if (i > 0) ret += ';'
     if (val[i]!.hasOwnProperty('name')) {
-      ret += (val[i] as SheetTableOntologyRef).name
+      ret += (val[i] as SheetOntologyRef).name
     } else ret += val[i]
     if (unit) ret += ' ' + unit
   }
