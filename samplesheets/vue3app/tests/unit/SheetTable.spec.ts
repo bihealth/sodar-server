@@ -1,5 +1,5 @@
 import { type TemplateRef } from 'vue'
-import { beforeEach, describe, expect, test, vi } from 'vitest'
+import { beforeAll, beforeEach, describe, expect, test, vi } from 'vitest'
 import { config, mount, type VueWrapper } from '@vue/test-utils'
 import { setActivePinia, createPinia } from 'pinia'
 import { AllCommunityModule, ModuleRegistry } from 'ag-grid-community'
@@ -67,17 +67,6 @@ const excelBtnSel = '.sodar-ss-excel-export-btn'
 
 const mockModal = { show: vi.fn() }
 
-// Expose renderers and editors for ag-grid
-config.global.components = {
-  DataCellEditor,
-  DataCellRenderer,
-  HeaderEditRenderer,
-  IrodsButtonsRenderer,
-  RowEditRenderer,
-  StudyShortcutsRenderer
-}
-// Register ag-grid modules
-ModuleRegistry.registerModules([AllCommunityModule])
 // Mock relevant editUtils functions
 vi.mock('@/utils/editUtils.ts', async () => {
   const actual = await vi.importActual('@/utils/editUtils.ts')
@@ -100,6 +89,20 @@ describe('SheetTable.vue', () => {
     return mount(SheetTable, { props: props })
   }
 
+  beforeAll(() => {
+    // Expose renderers and editors for ag-grid
+    config.global.components = {
+      DataCellEditor,
+      DataCellRenderer,
+      HeaderEditRenderer,
+      IrodsButtonsRenderer,
+      RowEditRenderer,
+      StudyShortcutsRenderer
+    }
+    // Register ag-grid modules
+    ModuleRegistry.registerModules([AllCommunityModule])
+  })
+  
   beforeEach(() => {
     vi.resetAllMocks()
 
