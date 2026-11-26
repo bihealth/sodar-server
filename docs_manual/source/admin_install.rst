@@ -36,7 +36,7 @@ Networking
     - ``traefik``: Reverse proxy for TLS/SSL routing.
     - ``sssd``: System Security Service Daemon for LDAP/AD authentication.
 Other
-    - ``tika``: ManGO relies on Apach Tika as a support service to extract
+    - ``tika``: ManGO relies on Apache Tika as a support service to extract
       metadata and text from files.
 
 

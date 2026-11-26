@@ -125,7 +125,7 @@ seen in the :ref:`Sample Sheets <app_samplesheets>` application:
 |btn_assay_webdav| Browse Files in WebDAV
     Opens a new browser tab with the Davrods web interface for browsing the
     landing zone collection through WebDAV.
-|btn_assay_webdav| Open in ManGO
+|btn_assay_mango| Open in ManGO
     Opens a new browser tab with the ManGO web interface for browsing the
     landing zone collection.
 
@@ -175,3 +175,4 @@ pages of results, you will find pagination controls in the bottom of the modal.
 .. |btn_assay_path| image:: _static/app_samplesheets/btn_assay_path.png
 .. |btn_assay_url| image:: _static/app_samplesheets/btn_assay_url.png
 .. |btn_assay_webdav| image:: _static/app_samplesheets/btn_assay_webdav.png
+.. |btn_assay_mango| image:: _static/app_samplesheets/btn_assay_mango.png
