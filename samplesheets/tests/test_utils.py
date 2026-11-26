@@ -25,6 +25,7 @@ from samplesheets.utils import (
     get_index_by_header,
     get_last_material_name,
     get_webdav_url,
+    get_mango_url,
     get_ext_link_labels,
     get_latest_file_path,
 )
@@ -241,6 +242,42 @@ class TestGetWebdavUrl(SamplesheetsUtilsTestBase):
     def test_webdav_disabled(self):
         """Test get_webdav_url() with disabled WebDAV"""
         self.assertIsNone(get_webdav_url(self.project, self.user_owner))
+
+
+class TestGetMangoUrl(SamplesheetsUtilsTestBase):
+    """Tests for get_mango_url()"""
+
+    def setUp(self):
+        super().setUp()
+        self.user_anon = AnonymousUser()
+
+    @override_settings(MANGO_ENABLE=True)
+    def test_project_user(self):
+        """Test get_mango_url() with a project user"""
+        expected = settings.MANGO_URL
+        self.assertEqual(get_mango_url(self.project, self.user_owner), expected)
+
+    @override_settings(MANGO_ENABLE=True, PROJECTROLES_ALLOW_ANONYMOUS=True)
+    def test_anon_user(self):
+        """Test get_mango_url() with anonymous user for a public project"""
+        # Mock public project update
+        self.project.set_public_access(self.role_guest)
+        app_settings.set(
+            'samplesheets',
+            'public_access_ticket',
+            IRODS_TICKET_STR,
+            project=self.project,
+        )
+        self.assertIsNone(get_mango_url(self.project, self.user_anon))
+
+    @override_settings(MANGO_ENABLE=True, PROJECTROLES_ALLOW_ANONYMOUS=True)
+    def test_anon_user_private_project(self):
+        """Test get_mango_url() with anonymous user and non-public project"""
+        self.assertIsNone(get_mango_url(self.project, self.user_anon))
+
+    def test_mango_disabled(self):
+        """Test get_mango_url() with disabled ManGO"""
+        self.assertIsNone(get_mango_url(self.project, self.user_owner))
 
 
 class TestGetExtLinkLabels(SamplesheetsUtilsTestBase):

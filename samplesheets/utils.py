@@ -359,6 +359,24 @@ def get_webdav_url(project: Project, user: SODARUser) -> Optional[str]:
         )
 
 
+def get_mango_url(project: Project, user: SODARUser) -> Optional[str]:
+    """
+    Return the ManGO URL for accessing sample data under a specific project.
+    Public guest access with anonymous users is currently not supported, but
+    planned for the future.
+
+    :param project: Project object (currently ignored)
+    :param user: User object for user requesting the URL
+    :return: String or None
+    """
+    if not settings.MANGO_ENABLE:
+        return None
+    if user and user.is_authenticated:
+        return settings.MANGO_URL.rstrip('/')
+    # TODO: Enable public guest access with iRODS tickets
+    return None
+
+
 def get_ext_link_labels() -> dict:
     """
     Return external link labels and URLs. Retrieve from config file set in

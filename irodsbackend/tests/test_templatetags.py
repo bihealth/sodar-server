@@ -1,6 +1,7 @@
 """Tests for template tags in the irodsbackend app"""
 
 from django.conf import settings
+from django.test import override_settings
 
 from test_plus.test import TestCase
 
@@ -81,3 +82,16 @@ class TestTemplatetags(
                 user='ticket', ticket=IRODS_TICKET_STR
             ),
         )
+
+    @override_settings(MANGO_ENABLE=True)
+    def test_get_mango_url(self):
+        """Test get_mango_url() with a project user"""
+        self.assertEqual(
+            tags.get_mango_url(self.project, self.user),
+            settings.MANGO_URL,
+        )
+
+    @override_settings(MANGO_ENABLE=True)
+    def test_get_mango_url_anon(self):
+        """Test get_mango_url() with a anonymous access"""
+        self.assertEqual(tags.get_mango_url(self.project, None), '')
